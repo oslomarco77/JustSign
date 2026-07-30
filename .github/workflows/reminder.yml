@@ -1,0 +1,21 @@
+name: SignDee Sign Reminder
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger sign-reminder endpoint
+        run: |
+          curl -s -X POST https://justsign-api.vercel.app/api/sign-reminder \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -o response.txt -w "\nHTTP Status: %{http_code}\n"
+          cat response.txt
+
+      - name: Done
+        run: echo "Reminder check complete at $(date)"
