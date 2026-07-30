@@ -1,0 +1,101 @@
+{
+  "installCommand": "echo skip",
+  "crons": [
+    {
+      "path": "/api/reminder-cron",
+      "schedule": "0 2 * * *"
+    }
+  ],
+  "functions": {
+    "api/admin-stats.js": {
+      "maxDuration": 30
+    },
+    "api/create-charge.js": {
+      "maxDuration": 30
+    },
+    "api/create-payment-intent.js": {
+      "maxDuration": 30
+    },
+    "api/line-webhook.js": {
+      "maxDuration": 30
+    },
+    "api/myip.js": {
+      "maxDuration": 60
+    },
+    "api/reminder-cron.js": {
+      "maxDuration": 60
+    },
+    "api/save-liff-signature.js": {
+      "maxDuration": 30
+    },
+    "api/send-contract-pdf.js": {
+      "maxDuration": 60
+    },
+    "api/sign-reminder.js": {
+      "maxDuration": 30
+    },
+    "api/start-reminder.js": {
+      "maxDuration": 30
+    },
+    "api/verify-charge.js": {
+      "maxDuration": 30
+    },
+    "api/verify-payment-intent.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET,POST,OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Content-Type"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "sale.signdee.com"
+        }
+      ],
+      "destination": "/index-sale.html",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "nda.signdee.com"
+        }
+      ],
+      "destination": "/index-nda.html",
+      "permanent": false
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "emp.signdee.com"
+        }
+      ],
+      "destination": "/index-emp.html",
+      "permanent": false
+    }
+  ]
+}

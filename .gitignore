@@ -1,0 +1,19 @@
+node_modules/
+.vercel
+
+# ไฟล์ทดสอบ / scratch — ไม่ต้องขึ้น repo
+_apply-imgsafe.js
+beamtest.json
+body.json
+t2.json
+deploy.txt
+
+# ไฟล์สำรองที่สร้างตอนแก้โค้ด — เก็บไว้ในเครื่องพอ
+index.backup-*.html
+*.bak-*
+*.bak
+
+# ความลับ (เผื่อในอนาคต) — ห้ามขึ้น repo เด็ดขาด
+.env
+.env.*
+*.pem

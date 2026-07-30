@@ -1,0 +1,2677 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignDee Sale — สัญญาจะซื้อจะขายอาคารชุด</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="/img-safe.js"></script>
+<script>
+/* CDN สำรอง — ถ้า jsdelivr โหลดไม่ได้ (ISP บล็อก/ล่ม) ให้ดึงจาก unpkg แทน */
+(function(){
+  function load(src){ return new Promise(function(res){ var s=document.createElement('script'); s.src=src; s.onload=res; s.onerror=res; document.head.appendChild(s); }); }
+  window._libsReady = (async function(){
+    if (!window.supabase)   await load('https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js');
+    if (!window.QRCode)     await load('https://cdn.jsdelivr.net/gh/davidshimjs/qrcodejs/qrcode.min.js');
+    if (!window.html2canvas) await load('https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js');
+    if (!window.jspdf)      await load('https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js');
+  })();
+})();
+</script>
+<style>
+:root {
+  --bg:#F1F0EA; --white:#FEFEFC; --surf:#FEFEFC; --surf2:#EAE8DF;
+  --border:#E6E4DC; --border2:#D2D0C6; --text:#14171F; --text2:#5B6270; --text3:#8E95A3;
+  --primary:#0B1220; --accent:#2E86C6; --accent2:#6EC3EA; --accent-d:rgba(46,134,198,0.10);
+  --green:#1a7f5a; --red:#c0392b; --blue:#2E86C6;
+  --r:16px; --r-lg:24px;
+  --shadow:0 2px 10px rgba(11,18,32,0.06),0 1px 3px rgba(11,18,32,0.04);
+  --shadow-lg:0 20px 48px -18px rgba(11,18,32,0.24),0 2px 8px rgba(11,18,32,0.06);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Sarabun',sans-serif; background:var(--bg); color:var(--text); line-height:1.5; -webkit-font-smoothing:antialiased; }
+h1,h2,h3,.step-title { font-family:'Anuphan',sans-serif; }
+
+/* ── shell ── */
+.topbar { position:sticky; top:0; z-index:20; background:rgba(241,240,234,.85); backdrop-filter:blur(10px); border-bottom:1px solid var(--border); }
+.topbar-inner { max-width:640px; margin:0 auto; padding:14px 20px; display:flex; align-items:center; gap:12px; }
+.back-btn { width:38px; height:38px; border-radius:50%; border:1px solid var(--border); background:var(--white); cursor:pointer; font-size:16px; color:var(--text2); flex:0 0 auto; }
+.progress-wrap { flex:1; }
+.progress-meta { display:flex; justify-content:space-between; font-size:12px; color:var(--text3); margin-bottom:5px; }
+.progress-bar { height:4px; background:var(--surf2); border-radius:99px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--accent); border-radius:99px; transition:width .35s; }
+
+.wrap { max-width:640px; margin:0 auto; padding:28px 20px 120px; }
+.step { display:none; animation:fade .4s; }
+.step.active { display:block; }
+@keyframes fade { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+.step-icon svg { width:28px; height:28px; }
+.step-icon { width:52px; height:52px; border-radius:14px; background:var(--accent-d); display:flex; align-items:center; justify-content:center; font-size:26px; margin-bottom:16px; }
+.step-title { font-size:26px; font-weight:700; letter-spacing:-.02em; margin-bottom:6px; }
+.step-sub { color:var(--text2); font-size:15px; margin-bottom:22px; }
+
+/* ── fields ── */
+.field { margin-bottom:16px; }
+.field-label { font-size:13.5px; font-weight:600; color:var(--text); margin-bottom:6px; display:block; }
+.req { color:var(--red); }
+.field-micro { font-size:12px; color:var(--text3); margin-top:5px; }
+input,select,textarea { width:100%; padding:13px 14px; border:1px solid var(--border); border-radius:12px; font-family:'Sarabun',sans-serif; font-size:15px; color:var(--text); background:var(--white); }
+input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
+.row { display:flex; gap:12px; } .row > * { flex:1; }
+.chip-row { display:flex; gap:8px; flex-wrap:wrap; }
+.chip { padding:9px 15px; border:1px solid var(--border); border-radius:99px; background:var(--white); font-size:13.5px; cursor:pointer; color:var(--text2); font-family:'Sarabun',sans-serif; }
+.chip.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+
+/* ── nav ── */
+.navbar { position:fixed; bottom:0; left:0; right:0; background:linear-gradient(transparent,var(--bg) 30%); padding:16px 20px 22px; }
+.navbar-inner { max-width:640px; margin:0 auto; }
+.btn-next { width:100%; padding:16px; border:none; border-radius:99px; background:var(--primary); color:#fff; font-family:'Anuphan',sans-serif; font-size:16px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); }
+.btn-next:active { transform:scale(.99); }
+.nav-hint { text-align:center; font-size:12px; color:var(--text3); margin-top:9px; }
+
+/* ── role choice ── */
+#roleChoice { display:none; } #roleChoice.active { display:block; }
+
+/* ── stepper (group nav) ── */
+.wgn { padding:10px 16px 12px; background:var(--bg); }
+.wgn-track { display:flex; align-items:flex-start; justify-content:center; max-width:560px; margin:0 auto; }
+.wgn-item { display:flex; flex-direction:column; align-items:center; gap:6px; cursor:pointer; flex:1; position:relative; z-index:0; }
+.wgn-item:not(:last-child)::after { content:''; position:absolute; top:16px; left:calc(50% + 22px); right:calc(-50% + 22px); height:2px; background:var(--border2); z-index:-1; }
+.wgn-item.done:not(:last-child)::after { background:var(--accent); }
+.wgn-item.active:not(:last-child)::after { background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent),var(--border2)); background-size:300% 100%; animation:wgnFlow 1.8s linear infinite; }
+@keyframes wgnFlow { 0%{background-position:0% 0;} 100%{background-position:-300% 0;} }
+.wgn-dot { width:32px; height:32px; border-radius:50%; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:15px; color:var(--primary);
+  box-shadow:-4px -4px 8px rgba(255,255,255,.95), 4px 4px 10px rgba(178,173,157,.5); transition:box-shadow .2s; }
+.wgn-dot svg { width:16px; height:16px; }
+.wgn-item.active .wgn-dot { box-shadow:0 0 0 2.5px var(--accent), -3px -3px 6px rgba(255,255,255,.9), 3px 3px 8px rgba(178,173,157,.4); }
+.wgn-item.done .wgn-dot { background:var(--accent); color:#fff; }
+.wgn-check { display:none; font-weight:800; }
+.wgn-item.done .wgn-ico { display:none; }
+.wgn-item.done .wgn-check { display:block; }
+.wgn-label { font-size:10px; color:var(--text3); text-align:center; line-height:1.3; max-width:64px; }
+.wgn-item.active .wgn-label { color:var(--text); font-weight:700; }
+.wgn-item.done .wgn-label { color:var(--text2); }
+.rc-wrap { max-width:560px; margin:0 auto; padding:48px 22px 60px; display:flex; flex-direction:column; min-height:100vh; justify-content:center; }
+.rc-brand { text-align:center; margin-bottom:8px; font-family:'Anuphan',sans-serif; font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.02em; }
+.rc-brand span { color:var(--accent); }
+.rc-head { text-align:center; font-family:'Anuphan',sans-serif; font-size:25px; font-weight:800; color:var(--text); margin:18px 0 6px; letter-spacing:-0.02em; }
+.rc-sub { text-align:center; font-size:15px; color:var(--text2); margin-bottom:30px; line-height:1.5; }
+.rc-card { position:relative; background:var(--bg); border:none; border-radius:26px; padding:24px 22px; margin-bottom:18px; cursor:pointer; text-align:left; display:flex; gap:16px; align-items:flex-start;
+  box-shadow:-5px -5px 12px rgba(255,255,255,.9), 5px 5px 14px rgba(178,173,157,.5); transition:.18s; }
+.rc-card:hover { box-shadow:-6px -6px 14px rgba(255,255,255,.95), 6px 6px 16px rgba(178,173,157,.55); transform:translateY(-2px); }
+.rc-card:active { box-shadow:inset 5px 5px 10px rgba(178,173,157,.5), inset -5px -5px 10px rgba(255,255,255,.9); transform:translateY(0); }
+.rc-card.selected { box-shadow:inset 3px 3px 7px rgba(178,173,157,.35), inset -3px -3px 7px rgba(255,255,255,.85), 0 0 0 2.5px var(--accent); }
+.rc-check { position:absolute; top:16px; right:16px; width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; font-size:13px; font-weight:800; display:none; align-items:center; justify-content:center; }
+.rc-card.selected .rc-check { display:flex; }
+.rc-ico { flex:0 0 52px; width:52px; height:52px; border-radius:16px; background:var(--bg); display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--text);
+  box-shadow:inset 2px 2px 5px rgba(178,173,157,.4), inset -2px -2px 5px rgba(255,255,255,.9); }
+.rc-card-body { flex:1; min-width:0; }
+.rc-card-title { font-size:17px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.rc-card-desc { font-size:13.5px; color:var(--text2); line-height:1.5; }
+.rc-card-tag { display:inline-block; margin-top:10px; font-size:11.5px; font-weight:600; color:var(--accent); background:var(--accent-d); padding:3px 10px; border-radius:20px; }
+.rc-foot { text-align:center; font-size:12.5px; color:var(--text3); margin-top:14px; }
+
+/* ── fee allocation ── */
+.fee-group { border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:14px; background:var(--white); }
+.fee-q { font-size:14px; font-weight:600; margin-bottom:9px; }
+.seg { display:flex; gap:6px; }
+.seg-opt { flex:1; text-align:center; padding:9px; border:1px solid var(--border); border-radius:9px; font-size:13px; cursor:pointer; color:var(--text2); }
+.seg-opt.active { background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600; }
+
+/* ── review / contract ── */
+.doc { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:26px 24px; box-shadow:var(--shadow); font-size:14.5px; line-height:1.7; }
+.doc h2 { text-align:center; font-size:19px; margin-bottom:4px; }
+.doc .doc-sub { text-align:center; color:var(--text2); font-size:13px; margin-bottom:18px; }
+.doc .clause { margin-bottom:14px; }
+.doc .clause-no { font-weight:700; }
+.doc .sig-row { display:flex; justify-content:space-around; margin-top:32px; text-align:center; font-size:13.5px; color:var(--text2); }
+.summary-note { background:var(--accent-d); border-radius:12px; padding:12px 14px; font-size:12.5px; color:var(--text2); margin:16px 0; line-height:1.55; }
+.btn-ghost { width:100%; padding:14px; border:1px solid var(--border); border-radius:99px; background:var(--white); font-family:'Anuphan',sans-serif; font-size:15px; font-weight:600; color:var(--accent); cursor:pointer; margin-top:12px; }
+.ocr-btn { width:100%; padding:13px; border:1.5px solid var(--accent); border-radius:12px; background:var(--accent-d); color:var(--accent); font-family:'Sarabun',sans-serif; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:14px; }
+.ocr-btn:active { transform:scale(.99); }
+.clause-card { border:1px solid var(--border); border-radius:14px; background:var(--white); overflow:hidden; margin-bottom:8px; transition:border-color .18s; }
+.clause-card:hover { border-color:var(--border2); }
+.clause-card-header { display:flex; align-items:center; gap:11px; padding:14px 14px; cursor:pointer; }
+.clause-card.open .clause-card-header { background:var(--bg); }
+.clause-num-badge { flex:0 0 30px; width:30px; height:30px; border-radius:9px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Anuphan',sans-serif; font-weight:700; font-size:13px; }
+.clause-title-text { flex:1; font-size:14px; font-weight:600; color:var(--text); line-height:1.4; }
+.clause-tag { display:inline-block; margin-left:7px; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; vertical-align:middle; }
+.clause-tag.important { background:rgba(192,57,43,.09); color:#c0392b; }
+.clause-tag.standard { background:var(--surf2); color:var(--text3); }
+.clause-chevron { color:var(--text3); font-size:12px; transition:transform .22s; }
+.clause-card.open .clause-chevron { transform:rotate(180deg); }
+.clause-body { max-height:0; overflow:hidden; transition:max-height .28s ease; }
+.clause-card.open .clause-body { max-height:900px; }
+.clause-body-inner { padding:0 15px 15px 55px; font-size:13.5px; line-height:1.85; color:var(--text2); }
+
+@media print { .topbar,.navbar { display:none!important; } .wrap { padding:0; } .doc { border:none; box-shadow:none; } body { background:#fff; } }
+</style>
+</head>
+<body>
+
+<!-- ══ ROLE CHOICE ══ -->
+<div id="roleChoice" class="active">
+  <div class="rc-wrap">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:-8px;">
+      <button id="sdMemberBtn" onclick="sdMemberClick()" style="display:flex;align-items:center;gap:7px;background:transparent;border:none;font-family:inherit;font-size:13.5px;font-weight:600;color:var(--text2);cursor:pointer;padding:6px;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c0-3.6 3.1-6 7-6s7 2.4 7 6" stroke-linecap="round"/></svg>
+        <span id="sdMemberBtnText">เข้าสู่ระบบ</span>
+      </button>
+    </div>
+    <div class="rc-brand">Sign<span>Dee</span></div>
+    <div class="rc-head">คุณคือใคร?</div>
+    <div class="rc-sub">เลือกบทบาทเพื่อให้เราจัดขั้นตอนการเซ็นสัญญาให้เหมาะกับคุณ</div>
+
+    <div class="rc-card" id="rcCard-seller" onclick="_selectRole(this,'seller')">
+      <div class="rc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M4 11.5 12 4l8 7.5"/><path d="M6 10v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-9"/><path d="M10 20v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5"/></svg></div>
+      <div class="rc-card-body">
+        <div class="rc-card-title">ผู้จะขาย / เจ้าของห้องชุด</div>
+        <div class="rc-card-desc">เจ้าของห้องชุดร่างสัญญาเองแล้วส่งให้ผู้จะซื้อเซ็น</div>
+        <span class="rc-card-tag">เซ็นเองในแอป</span>
+      </div>
+      <div class="rc-check">✓</div>
+    </div>
+
+    <div class="rc-card" id="rcCard-agent" onclick="_selectRole(this,'agent')">
+      <div class="rc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="8.5" cy="8" r="2.6"/><circle cx="16" cy="9" r="2.2"/><path d="M3.5 20c0-3 2.4-5.2 5-5.2s5 2.2 5 5.2"/><path d="M13 20c0-2.4 1.9-4.3 4-4.3s4 1.9 4 4.3"/></svg></div>
+      <div class="rc-card-body">
+        <div class="rc-card-title">นายหน้า / ผู้ร่างสัญญา</div>
+        <div class="rc-card-desc">นายหน้าร่างสัญญาให้แล้วส่งผู้จะขายและผู้จะซื้อเซ็น</div>
+        <span class="rc-card-tag">ส่งให้ทุกฝ่ายเซ็น</span>
+      </div>
+      <div class="rc-check">✓</div>
+    </div>
+
+    <div class="rc-card" id="rcCard-buyer" onclick="_selectRole(this,'buyer')">
+      <div class="rc-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="10" cy="8" r="3"/><path d="M4 20c0-3.3 2.7-5.6 6-5.6"/><path d="M14.5 16.5l1.8 1.8L20 14.5"/></svg></div>
+      <div class="rc-card-body">
+        <div class="rc-card-title">ผู้จะซื้อ</div>
+        <div class="rc-card-desc">ผู้จะซื้อร่างสัญญาเองแล้วส่งให้ผู้จะขายเซ็น</div>
+        <span class="rc-card-tag">เซ็นเองในแอป</span>
+      </div>
+      <div class="rc-check">✓</div>
+    </div>
+
+    <label id="rcAgreeRow" style="display:flex;align-items:flex-start;gap:10px;margin:22px 2px 6px;cursor:pointer;user-select:none;">
+      <input type="checkbox" id="rcAgreeCheck" style="width:19px;height:19px;flex-shrink:0;margin-top:1px;accent-color:var(--accent);cursor:pointer;">
+      <span style="font-size:13.5px;line-height:1.55;color:var(--text2);">ฉันยอมรับและปฏิบัติตาม<a href="https://signdee.com" target="_blank" style="color:var(--accent);text-decoration:none;">เงื่อนไขการให้บริการ</a>และ<a href="https://signdee.com" target="_blank" style="color:var(--accent);text-decoration:none;">ความเป็นส่วนตัว</a>ของ signdee.com</span>
+    </label>
+
+    <button type="button" class="btn-next" id="rcNextBtn" onclick="_confirmRoleChoice()" style="margin-top:6px;">ถัดไป</button>
+    <div class="rc-foot">เลือกบทบาทให้ตรงกับตัวคุณ เพื่อให้ระบบจัดขั้นตอนการลงนามได้ถูกต้อง</div>
+  </div>
+</div>
+
+<!-- ══ WIZARD ══ -->
+<div id="wizard" style="display:none;">
+  <div class="topbar">
+    <div class="topbar-inner">
+      <button class="back-btn" onclick="prevStep()">←</button>
+      <div class="progress-wrap">
+        <div class="progress-meta"><span id="stepLabel">ข้อมูลห้องชุด</span><span id="stepCount">ขั้นตอน 1 จาก 6</span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:16%"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+
+    <!-- STEP 1 — ห้องชุด -->
+    <div class="step active" id="ws1">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M5 21V4.5C5 3.67 5.67 3 6.5 3H12v18"/><path d="M12 8h6.5c.83 0 1.5.67 1.5 1.5V21"/><line x1="3" y1="21" x2="21" y2="21"/><circle cx="8" cy="7" r="0.55" fill="currentColor" stroke="none"/><circle cx="8" cy="11" r="0.55" fill="currentColor" stroke="none"/><circle cx="8" cy="15" r="0.55" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="0.55" fill="currentColor" stroke="none"/><circle cx="15.5" cy="16" r="0.55" fill="currentColor" stroke="none"/></svg></div>
+  <div class="wgn"><div class="wgn-track"><div class="wgn-item" data-group="property" onclick="_wgnJump('property')"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M5 21V4.5C5 3.67 5.67 3 6.5 3H12v18"/><path d="M12 8h6.5c.83 0 1.5.67 1.5 1.5V21"/><line x1="3" y1="21" x2="21" y2="21"/><circle cx="8" cy="7" r="0.55" fill="currentColor" stroke="none"/><circle cx="8" cy="11" r="0.55" fill="currentColor" stroke="none"/><circle cx="8" cy="15" r="0.55" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="0.55" fill="currentColor" stroke="none"/><circle cx="15.5" cy="16" r="0.55" fill="currentColor" stroke="none"/></svg></span><span class="wgn-check">✓</span></div><div class="wgn-label">ห้องชุด</div></div><div class="wgn-item" data-group="seller" onclick="_wgnJump('seller')"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/></svg></span><span class="wgn-check">✓</span></div><div class="wgn-label">ผู้จะขาย</div></div><div class="wgn-item" data-group="buyer" onclick="_wgnJump('buyer')"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="10" cy="8" r="3"/><path d="M4 20c0-3.3 2.7-5.6 6-5.6"/><path d="M14.5 16.5l1.8 1.8L20 14.5"/></svg></span><span class="wgn-check">✓</span></div><div class="wgn-label">ผู้จะซื้อ</div></div><div class="wgn-item" data-group="review" onclick="_wgnJump('review')"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3.3A1.3 1.3 0 0 1 10.3 2h3.4A1.3 1.3 0 0 1 15 3.3V4"/><path d="M9.2 12.5l2 2 4-4.3"/></svg></span><span class="wgn-check">✓</span></div><div class="wgn-label">ตรวจสอบ</div></div><div class="wgn-item" data-group="payment" onclick="_wgnJump('payment')"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="6" width="19" height="13" rx="2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="10" y2="14.5"/></svg></span><span class="wgn-check">✓</span></div><div class="wgn-label">ชำระเงิน &amp; เซ็น</div></div></div></div>
+
+      <h2 class="step-title">ข้อมูลห้องชุด</h2>
+      <p class="step-sub">รายละเอียดห้องชุดที่จะซื้อขาย ตามที่ปรากฏในโฉนด/หนังสือกรรมสิทธิ์</p>
+      <div class="field"><label class="field-label">ชื่ออาคารชุด <span class="req">*</span></label><input id="f_condoName" placeholder="เช่น คอนโดลุมพินี วิลล์ นครอินทร์-ริเวอร์วิว" oninput="autoSave()"></div>
+      <div class="row">
+        <div class="field"><label class="field-label">ห้องชุดเลขที่ <span class="req">*</span></label><input id="f_unitNo" placeholder="94/19" oninput="autoSave()"></div>
+        <div class="field"><label class="field-label">ชั้นที่</label><input id="f_floor" placeholder="3" oninput="autoSave()"></div>
+        <div class="field"><label class="field-label">อาคาร</label><input id="f_building" placeholder="บี" oninput="autoSave()"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="field-label">เนื้อที่ (ตร.ม.) <span class="req">*</span></label><input id="f_area" type="number" step="0.01" placeholder="22.92" oninput="autoSave()"></div>
+        <div class="field"><label class="field-label">จำนวนห้องชุด</label><input id="f_units" type="number" value="1" oninput="autoSave()"></div>
+        <div class="field"><label class="field-label">โฉนดเลขที่</label><input id="f_deedNo" placeholder="3218" oninput="autoSave()"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="field-label">ตำบล/แขวง</label><input id="f_subdistrict" placeholder="ตลาดขวัญ" oninput="autoSave()"></div>
+        <div class="field"><label class="field-label">อำเภอ/เขต</label><input id="f_district" placeholder="เมืองนนทบุรี" oninput="autoSave()"></div>
+        <div class="field"><label class="field-label">จังหวัด</label><input id="f_province" placeholder="นนทบุรี" oninput="autoSave()"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label class="field-label">วันที่ทำสัญญา</label><input id="f_contractDate" type="date" oninput="autoSave()"></div>
+      </div>
+    </div>
+
+    <!-- STEP 2 — ผู้จะขาย -->
+    <div class="step" id="ws2">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/></svg></div>
+      <h2 class="step-title">ข้อมูลผู้จะขาย</h2>
+      <p class="step-sub">อัปโหลดรูปบัตรเพื่อกรอกอัตโนมัติ หรือกรอกเองด้านล่าง</p>
+      <button type="button" class="ocr-btn" onclick="document.getElementById('sCardInput').click()">📷 อัปโหลดรูปบัตรประชาชน — กรอกให้อัตโนมัติ</button>
+      <input type="file" id="sCardInput" accept="image/*" style="display:none" onchange="onCardPick(event,'s')">
+      <div id="sOcrPanel" style="margin-bottom:6px;"></div>
+      <div class="field"><label class="field-label">ชื่อ-นามสกุล <span class="req">*</span></label><input id="f_sName" placeholder="นาย/นาง/นางสาว ..." oninput="autoSave()"></div>
+      <div class="row">
+        <div class="field"><label class="field-label">อายุ</label><input id="f_sAge" type="number" placeholder="35" oninput="autoSave()"></div>
+        <div class="field" style="flex:2;"><label class="field-label">เลขบัตรประชาชน <span class="req">*</span></label><input id="f_sId" inputmode="numeric" placeholder="X XXXX XXXXX XX X" oninput="formatThaiID(this);autoSave()"></div>
+      </div>
+      <div class="field"><label class="field-label">ที่อยู่</label><textarea id="f_sAddr" rows="2" placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" oninput="autoSave()"></textarea></div>
+      <div class="field"><label class="field-label">เบอร์โทรศัพท์</label><input id="f_sPhone" inputmode="tel" placeholder="08X-XXX-XXXX" oninput="autoSave()"></div>
+    </div>
+
+    <!-- STEP 3 — ผู้จะซื้อ -->
+    <!-- STEP 3 — สำเนาบัตรผู้จะขาย -->
+    <div class="step" id="ws3">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.6 16.6c.5-1.6 1.8-2.5 3.4-2.5s2.9.9 3.4 2.5"/><line x1="14.5" y1="10" x2="19" y2="10"/><line x1="14.5" y1="13.5" x2="19" y2="13.5"/></svg></div>
+      <h2 class="step-title">สำเนาบัตรผู้จะขาย</h2>
+      <p class="step-sub">อัปโหลดรูปบัตรประชาชน — จะปรากฏในภาคผนวก ก ของสัญญา</p>
+      <input type="file" id="sCardCopyInput" accept="image/*" style="display:none" onchange="onCardCopy(event,'s')">
+      <div id="sCardBox" onclick="document.getElementById('sCardCopyInput').click()" style="border:2px dashed var(--border2);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;background:var(--white);">
+        <div style="font-size:38px;">🪪</div>
+        <div style="font-weight:700;margin-top:8px;">แตะเพื่ออัปโหลดสำเนาบัตร</div>
+        <div style="font-size:12.5px;color:var(--text3);margin-top:4px;">JPG, PNG · ไม่เกิน 5MB</div>
+      </div>
+      <div id="sCardPreview" style="display:none;margin-top:12px;text-align:center;">
+        <div id="sCardAutoNote" style="display:none;padding:9px 12px;border:1px solid var(--green);border-radius:10px;background:rgba(26,127,90,.08);font-size:12.5px;color:var(--green);font-weight:600;margin-bottom:10px;text-align:left;">✓ ใช้รูปบัตรที่อัปโหลดไว้ตอนกรอกข้อมูลอัตโนมัติ — เปลี่ยนได้ถ้าต้องการ</div>
+        <img id="sCardImg" style="max-width:100%;max-height:230px;border-radius:12px;border:1px solid var(--border);">
+        <button class="btn-ghost" style="margin-top:8px;" onclick="clearCardCopy('s')">🗑️ ลบรูป</button>
+      </div>
+      <div class="summary-note">🔒 ใช้เพื่อยืนยันตัวตนคู่สัญญาเท่านั้น</div>
+    </div>
+
+    <!-- STEP 4 — ข้อมูลผู้จะซื้อ -->
+    <div class="step" id="ws4">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="10" cy="8" r="3"/><path d="M4 20c0-3.3 2.7-5.6 6-5.6"/><path d="M14.5 16.5l1.8 1.8L20 14.5"/></svg></div>
+      <h2 class="step-title">ข้อมูลผู้จะซื้อ</h2>
+      <p class="step-sub">อัปโหลดรูปบัตรเพื่อกรอกอัตโนมัติ หรือกรอกเองด้านล่าง</p>
+      <button type="button" class="ocr-btn" onclick="document.getElementById('bCardInput').click()">📷 อัปโหลดรูปบัตรประชาชน — กรอกให้อัตโนมัติ</button>
+      <input type="file" id="bCardInput" accept="image/*" style="display:none" onchange="onCardPick(event,'b')">
+      <div id="bOcrPanel" style="margin-bottom:6px;"></div>
+      <div class="field"><label class="field-label">ชื่อ-นามสกุล <span class="req">*</span></label><input id="f_bName" placeholder="นาย/นาง/นางสาว ..." oninput="autoSave()"></div>
+      <div class="row">
+        <div class="field"><label class="field-label">อายุ</label><input id="f_bAge" type="number" placeholder="38" oninput="autoSave()"></div>
+        <div class="field" style="flex:2;"><label class="field-label">เลขบัตรประชาชน <span class="req">*</span></label><input id="f_bId" inputmode="numeric" placeholder="X XXXX XXXXX XX X" oninput="formatThaiID(this);autoSave()"></div>
+      </div>
+      <div class="field"><label class="field-label">ที่อยู่</label><textarea id="f_bAddr" rows="2" placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" oninput="autoSave()"></textarea></div>
+      <div class="field"><label class="field-label">เบอร์โทรศัพท์</label><input id="f_bPhone" inputmode="tel" placeholder="09X-XXX-XXXX" oninput="autoSave()"></div>
+    </div>
+
+    <!-- STEP 4 — การชำระเงิน -->
+    <!-- STEP 5 — สำเนาบัตรผู้จะซื้อ -->
+    <div class="step" id="ws5">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="5" width="19" height="14" rx="2"/><circle cx="8" cy="11" r="2.2"/><path d="M4.6 16.6c.5-1.6 1.8-2.5 3.4-2.5s2.9.9 3.4 2.5"/><line x1="14.5" y1="10" x2="19" y2="10"/><line x1="14.5" y1="13.5" x2="19" y2="13.5"/></svg></div>
+      <h2 class="step-title">สำเนาบัตรผู้จะซื้อ</h2>
+      <p class="step-sub">อัปโหลดรูปบัตรประชาชน — จะปรากฏในภาคผนวก ก ของสัญญา</p>
+      <input type="file" id="bCardCopyInput" accept="image/*" style="display:none" onchange="onCardCopy(event,'b')">
+      <div id="bCardBox" onclick="document.getElementById('bCardCopyInput').click()" style="border:2px dashed var(--border2);border-radius:16px;padding:30px 20px;text-align:center;cursor:pointer;background:var(--white);">
+        <div style="font-size:38px;">🪪</div>
+        <div style="font-weight:700;margin-top:8px;">แตะเพื่ออัปโหลดสำเนาบัตร</div>
+        <div style="font-size:12.5px;color:var(--text3);margin-top:4px;">JPG, PNG · ไม่เกิน 5MB</div>
+      </div>
+      <div id="bCardPreview" style="display:none;margin-top:12px;text-align:center;">
+        <div id="bCardAutoNote" style="display:none;padding:9px 12px;border:1px solid var(--green);border-radius:10px;background:rgba(26,127,90,.08);font-size:12.5px;color:var(--green);font-weight:600;margin-bottom:10px;text-align:left;">✓ ใช้รูปบัตรที่อัปโหลดไว้ตอนกรอกข้อมูลอัตโนมัติ — เปลี่ยนได้ถ้าต้องการ</div>
+        <img id="bCardImg" style="max-width:100%;max-height:230px;border-radius:12px;border:1px solid var(--border);">
+        <button class="btn-ghost" style="margin-top:8px;" onclick="clearCardCopy('b')">🗑️ ลบรูป</button>
+      </div>
+      <div class="summary-note">🔒 ใช้เพื่อยืนยันตัวตนคู่สัญญาเท่านั้น</div>
+    </div>
+
+    <!-- STEP 6 — การชำระเงิน -->
+    <div class="step" id="ws6">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="6" width="19" height="13" rx="2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="10" y2="14.5"/></svg></div>
+      <h2 class="step-title">การชำระเงิน</h2>
+      <p class="step-sub">ราคาซื้อขาย เงินมัดจำ และเงินส่วนที่เหลือ</p>
+      <div class="field"><label class="field-label">ราคาซื้อขายรวม (บาท) <span class="req">*</span></label><input id="f_totalPrice" type="number" placeholder="1190000" oninput="recalc();autoSave()"><div class="field-micro" id="totalWords"></div></div>
+      <div class="row">
+        <div class="field"><label class="field-label">เงินมัดจำ (บาท)</label><input id="f_depositAmt" type="number" placeholder="10000" oninput="recalc();autoSave()"></div>
+        <div class="field"><label class="field-label">วันที่วางมัดจำ</label><input id="f_depositDate" type="date" oninput="autoSave()"></div>
+      </div>
+      <div class="field"><label class="field-label">วิธีชำระมัดจำ</label>
+        <select id="f_depositMethod" onchange="autoSave()">
+          <option value="โอนเงินเข้าบัญชีธนาคารของผู้จะขาย">โอนเข้าบัญชีธนาคารผู้จะขาย</option>
+          <option value="เงินสด">เงินสด</option>
+          <option value="พร้อมเพย์ (PromptPay)">พร้อมเพย์</option>
+          <option value="เช็ค">เช็ค</option>
+        </select>
+      </div>
+      <div id="depositChannelBox" style="margin-bottom:16px;"></div>
+      <div class="field"><label class="field-label">เงินส่วนที่เหลือ (บาท) — ชำระวันโอนกรรมสิทธิ์</label><input id="f_remaining" type="number" readonly style="background:var(--surf2)"><div class="field-micro" id="remainWords"></div></div>
+      <div class="field">
+        <label class="field-label">สลิปการโอนมัดจำ <span style="color:var(--text3);font-weight:400;">(ไม่บังคับ)</span></label>
+        <input type="file" id="f_depSlipInput" accept="image/*" style="display:none" onchange="onSlipPick(event)">
+        <div id="depSlipBox" onclick="document.getElementById('f_depSlipInput').click()" style="border:1.5px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;color:var(--text2);background:var(--white);">
+          <div style="font-size:26px;margin-bottom:4px;">📎</div>
+          <div style="font-size:13.5px;">แตะเพื่ออัปโหลดสลิป (JPG / PNG)</div>
+        </div>
+        <div id="depSlipPreview" style="display:none;margin-top:10px;text-align:center;">
+          <img id="depSlipImg" alt="สลิปมัดจำ" style="max-width:100%;max-height:240px;border-radius:12px;border:1px solid var(--border);">
+          <button class="btn-ghost" style="margin-top:8px;" onclick="clearSlip()">🗑️ ลบสลิป</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 5 — โอนกรรมสิทธิ์ + ค่าธรรมเนียม -->
+    <div class="step" id="ws7">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M3 8h13M16 8l-3.5-3.5M16 8l-3.5 3.5"/><path d="M21 16H8M8 16l3.5-3.5M8 16l3.5 3.5"/></svg></div>
+      <h2 class="step-title">การโอนกรรมสิทธิ์</h2>
+      <p class="step-sub">กำหนดวันโอน และการแบ่งภาระค่าธรรมเนียม/ภาษี</p>
+      <div class="field"><label class="field-label">กำหนดจดทะเบียนโอนภายใน</label>
+        <div style="display:flex;gap:10px;">
+          <select id="f_tdMonth" onchange="_syncTransferDeadline()" style="flex:2;"></select>
+          <select id="f_tdYear" onchange="_syncTransferDeadline()" style="flex:1;"></select>
+        </div>
+        <input id="f_transferDeadline" type="hidden">
+        <div class="field-micro">เดือน/ปีที่จะไปจดทะเบียนโอน ณ สำนักงานที่ดิน</div></div>
+
+      <div class="fee-group">
+        <div class="fee-q">ค่าใช้จ่าย ณ วันโอน</div>
+        <div class="field-micro" style="margin-bottom:9px;">เช่น ค่าธรรมเนียมการโอน ภาษีเงินได้ ภาษีธุรกิจเฉพาะ ค่าอากรแสตมป์ ค่าพยาน เป็นต้น</div>
+        <div class="seg" id="segTransfer">
+          <div class="seg-opt active" data-v="ผู้จะขาย" onclick="pickFee('Transfer',this)">ผู้ขายจ่าย</div>
+          <div class="seg-opt" data-v="ผู้จะซื้อ" onclick="pickFee('Transfer',this)">ผู้ซื้อจ่าย</div>
+          <div class="seg-opt" data-v="คนละครึ่ง" onclick="pickFee('Transfer',this)">คนละครึ่ง</div>
+        </div>
+      </div>
+      <div class="fee-group">
+        <div class="fee-q">ค่าจดจำนอง (กรณีผู้ซื้อใช้สินเชื่อธนาคาร)</div>
+        <div class="seg" id="segMortgage">
+          <div class="seg-opt active" data-v="ผู้จะซื้อ" onclick="pickFee('Mortgage',this)">ผู้ซื้อจ่าย</div>
+          <div class="seg-opt" data-v="ผู้จะขาย" onclick="pickFee('Mortgage',this)">ผู้ขายจ่าย</div>
+          <div class="seg-opt" data-v="คนละครึ่ง" onclick="pickFee('Mortgage',this)">คนละครึ่ง</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 6 — ตรวจทาน -->
+    <!-- STEP 6 — สภาพห้องชุด -->
+    <div class="step" id="ws8">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.6"/><path d="M8.5 7l1.3-2.2h4.4L15.5 7"/></svg></div>
+      <h2 class="step-title">สภาพห้องชุด</h2>
+      <p class="step-sub">ถ่ายรูปสภาพห้องชุดก่อนโอน เพื่อเป็นหลักฐานแนบท้ายสัญญา (ไม่บังคับ)</p>
+      <input type="file" id="unitPhotoInput" accept="image/*" multiple style="display:none" onchange="onUnitPhotos(event)">
+      <div onclick="document.getElementById('unitPhotoInput').click()" style="border:2px dashed var(--border2);border-radius:16px;padding:34px 20px;text-align:center;cursor:pointer;background:var(--white);">
+        <div style="font-size:40px;">📁</div>
+        <div style="font-weight:700;margin-top:8px;">แตะหรือเลือกรูปมาวางที่นี่</div>
+        <div style="font-size:12.5px;color:var(--text3);margin-top:4px;">เลือกหลายรูปพร้อมกันได้ · JPG, PNG · สูงสุด 20 รูป</div>
+        <button type="button" class="btn-next" style="width:auto;padding:10px 22px;margin-top:14px;" onclick="event.stopPropagation();document.getElementById('unitPhotoInput').click()">+ เพิ่มรูป</button>
+      </div>
+      <div style="font-size:13px;font-weight:700;margin-top:12px;">รูปที่เพิ่มแล้ว: <span id="photoCount">0</span> / 20</div>
+      <div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;"></div>
+      <div class="summary-note" style="margin-top:16px;">💡 ขั้นตอนนี้เป็นตัวเลือก แต่แนะนำอย่างยิ่ง รูปถ่ายสภาพห้องช่วยป้องกันข้อพิพาทเรื่องความเสียหาย</div>
+    </div>
+
+    <!-- STEP 7 — ตรวจสอบข้อมูลก่อนสร้างสัญญา -->
+    <div class="step" id="ws9">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3.3A1.3 1.3 0 0 1 10.3 2h3.4A1.3 1.3 0 0 1 15 3.3V4"/><path d="M9.2 12.5l2 2 4-4.3"/></svg></div>
+      <h2 class="step-title">ตรวจสอบข้อมูลก่อนสร้างสัญญา</h2>
+      <p class="step-sub">ตรวจสอบข้อมูลทั้งหมดให้ถูกต้องก่อนดำเนินการต่อ สามารถกด "แก้ไข" ได้ทุกส่วน</p>
+      <div id="reviewSummary"></div>
+      <div class="doc" id="contractDoc" style="display:none;"></div>
+      <div class="summary-note">
+        ℹ️ นี่คือสัญญา<b>จะซื้อจะขาย</b> (สัญญาผูกพันก่อนโอน) — การโอนกรรมสิทธิ์จริงต้องไปจดทะเบียนที่<b>สำนักงานที่ดิน</b> เอกสารนี้ไม่ได้ทำหน้าที่โอนกรรมสิทธิ์
+      </div>
+    </div>
+
+    <!-- STEP 8 — ชำระค่าบริการ -->
+    <div class="step" id="ws10">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="6" width="19" height="13" rx="2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="10" y2="14.5"/></svg></div>
+      <h2 class="step-title">ชำระค่าบริการ</h2>
+      <p class="step-sub">ค่าบริการจัดทำสัญญาออนไลน์ ชำระผ่าน PromptPay</p>
+
+      <div id="payBox">
+        <div style="text-align:center;padding:22px;border:1px solid var(--border);border-radius:var(--r);background:var(--white);box-shadow:var(--shadow);">
+          <div style="font-family:'Anuphan',sans-serif;font-size:52px;font-weight:700;color:var(--text);line-height:1;">฿790</div>
+          <div style="color:var(--text2);font-size:13.5px;margin-top:6px;">ต่อสัญญา · รวมสร้าง PDF + เซ็นทางไกล</div>
+        </div>
+        <button class="btn-next" id="payBtn" style="margin-top:18px;" onclick="startPayment()">ชำระ ฿790 ผ่าน PromptPay</button>
+        <button id="devSkipPayBtn" style="display:none;margin-top:10px;width:100%;padding:12px;border:1.5px dashed #d97706;border-radius:12px;background:rgba(217,119,6,.08);color:#d97706;font-family:'Sarabun',sans-serif;font-weight:700;cursor:pointer;" onclick="devSkipPayment()">⚡ ข้ามการชำระเงิน (DEV)</button>
+        <div class="nav-hint">ข้อมูลถูกบันทึกอัตโนมัติ · ปลอดภัยด้วยการเข้ารหัส</div>
+      </div>
+
+      <div id="qrBox" style="display:none;text-align:center;">
+        <div style="border:1px solid var(--border);border-radius:var(--r);background:var(--white);padding:22px;box-shadow:var(--shadow);">
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">สแกนจ่ายด้วยแอปธนาคาร</div>
+          <img id="qrImg" alt="PromptPay QR" style="width:230px;max-width:80%;border-radius:12px;">
+          <div style="font-size:22px;font-weight:700;color:var(--text);margin-top:10px;">฿790.00</div>
+          <div id="payStatus" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:13px;color:var(--text2);">
+            <div style="width:14px;height:14px;border:2px solid var(--accent2);border-top-color:var(--accent);border-radius:50%;animation:ocrspin .8s linear infinite;"></div>
+            รอรับการชำระเงิน…
+          </div>
+        </div>
+        <div class="nav-hint">เมื่อชำระสำเร็จ ระบบจะดำเนินการต่อให้อัตโนมัติ</div>
+      </div>
+
+      <div id="paidBox" style="display:none;text-align:center;padding:36px 20px;">
+        <div style="font-size:56px;margin-bottom:12px;">✅</div>
+        <div style="font-family:'Anuphan',sans-serif;font-size:24px;font-weight:700;margin-bottom:6px;">ชำระเงินสำเร็จ!</div>
+        <div style="color:var(--text2);font-size:14px;line-height:1.6;">บันทึกสัญญาเรียบร้อยแล้ว</div>
+        <button class="btn-next" style="margin-top:20px;" onclick="showStep(11)">ถัดไป: อ่านและยอมรับสัญญา →</button>
+      </div>
+    </div>
+
+    <!-- STEP 11 — อ่านและยอมรับสัญญา -->
+    <div class="step" id="ws11">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><line x1="8.5" y1="12" x2="15.5" y2="12"/><line x1="8.5" y1="16" x2="13" y2="16"/></svg></div>
+      <h2 class="step-title">อ่านและยอมรับสัญญา</h2>
+      <p class="step-sub">ส่งลิงก์ให้คู่สัญญาอ่านและลงนามบนมือถือตัวเอง — สะดวก เป็นส่วนตัว</p>
+
+      <div id="signDispatch"></div>
+
+      <div style="display:flex;align-items:center;gap:12px;margin:26px 0 18px;">
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+        <div style="font-size:12.5px;color:var(--text3);white-space:nowrap;">หรือดูสัญญาบนหน้าจอนี้</div>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
+
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;box-shadow:var(--shadow);">
+        <div style="background:var(--bg);border-bottom:1px solid var(--border);padding:18px 20px;text-align:center;">
+          <div style="font-size:22px;margin-bottom:5px;">📋</div>
+          <div style="font-family:'Anuphan',sans-serif;font-size:17px;font-weight:700;color:var(--text);">สัญญาจะซื้อจะขายอาคารชุด (ห้องชุด)</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px;" id="rvMeta">—</div>
+        </div>
+
+        <!-- คู่สัญญา -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--border);">
+          <div style="padding:14px 18px;border-right:1px solid var(--border);">
+            <div style="font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:4px;">ผู้จะขาย / SELLER</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);" id="rvSName">—</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.6;" id="rvSInfo">—</div>
+          </div>
+          <div style="padding:14px 18px;">
+            <div style="font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--text3);font-weight:700;margin-bottom:4px;">ผู้จะซื้อ / BUYER</div>
+            <div style="font-size:14px;font-weight:700;color:var(--text);" id="rvBName">—</div>
+            <div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.6;" id="rvBInfo">—</div>
+          </div>
+        </div>
+
+        <!-- ข้อสัญญา -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px 10px;">
+          <div style="font-size:13px;font-weight:700;color:var(--text);">ข้อตกลงและเงื่อนไข</div>
+          <div style="font-size:11px;color:var(--text3);background:var(--surf2);padding:3px 10px;border-radius:20px;">กด 1 ข้อ เพื่ออ่านต่อ</div>
+        </div>
+        <div style="padding:0 14px 16px;" id="rvClauseList"></div>
+
+        <!-- ความคืบหน้า -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid var(--border);background:var(--bg);padding:16px 18px;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div style="font-size:22px;">📖</div>
+            <div>
+              <div style="font-size:13px;font-weight:700;color:var(--text);">ความคืบหน้าการอ่านสัญญา</div>
+              <div style="font-size:12px;color:var(--text2);margin-top:2px;" id="rvReadProgress">ยังไม่ได้เปิดอ่านข้อใด — แตะที่หัวข้อเพื่ออ่าน</div>
+            </div>
+          </div>
+          <div style="font-size:20px;font-weight:700;color:var(--accent);font-family:'Anuphan',sans-serif;" id="rvReadCount">0/6</div>
+        </div>
+      </div>
+
+      <!-- ยอมรับสัญญา (เฉพาะคู่สัญญาที่เป็นคนกรอก) -->
+      <div id="rvAgreeWrap" style="display:none;margin-top:18px;">
+        <div id="rvAgreeBox" style="opacity:.5;pointer-events:none;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px;transition:.2s;">
+          <label style="display:flex;gap:12px;align-items:flex-start;cursor:pointer;">
+            <input type="checkbox" id="rvAgreeCheck" onchange="_rvAgreeChanged()" style="width:22px;height:22px;flex:0 0 22px;margin-top:2px;cursor:pointer;accent-color:var(--accent);">
+            <div>
+              <div style="font-size:14.5px;font-weight:700;color:var(--text);line-height:1.5;">ข้าพเจ้าได้อ่านและเข้าใจสัญญาฉบับนี้ครบทุกข้อแล้ว</div>
+              <div style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-top:4px;">และยอมรับข้อกำหนด เงื่อนไข และสิทธิ์หน้าที่ตามที่ระบุในสัญญาทุกประการ ซึ่งมีผลผูกพันทางกฎหมายต่อคู่สัญญาทั้งสองฝ่าย</div>
+            </div>
+          </label>
+        </div>
+        <div style="margin-top:12px;background:rgba(196,145,58,.08);border:1px solid rgba(196,145,58,.25);border-radius:12px;padding:13px 15px;font-size:12.5px;color:var(--text2);line-height:1.7;">
+          ⚖️ สัญญาฉบับนี้มีผลบังคับใช้ตาม <b style="color:#8a6520;">ประมวลกฎหมายแพ่งและพาณิชย์</b> และ <b style="color:#8a6520;">พ.ร.บ. ธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544</b>
+        </div>
+        <button class="btn-next" id="rvSignBtn" disabled style="margin-top:16px;opacity:.5;" onclick="showStep(12)">✍️ ถัดไป — ลงลายมือชื่อ →</button>
+      </div>
+
+      <div class="summary-note" id="rvAgentNote" style="margin-top:16px;display:none;">
+        ℹ️ เมื่อคู่สัญญาลงนามครบทั้ง 2 ฝ่าย ระบบจะสร้าง PDF พร้อมใบรับรองการลงนามอิเล็กทรอนิกส์ให้ดาวน์โหลด
+      </div>
+    </div>
+
+    <!-- STEP 12 — ลงลายมือชื่อ (คนกรอกเซ็นในแอป) -->
+    <div class="step" id="ws12">
+      <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M3 20.5c3-1 4-2 6.5-5.5"/><path d="M13.5 5.5l5 5L9 20H4v-5l9.5-9.5z"/><path d="M15.5 3.5l5 5"/></svg></div>
+      <h2 class="step-title">ลงลายมือชื่อ</h2>
+      <p class="step-sub" id="ws12Sub">ลงลายมือชื่อของคุณในกรอบด้านล่าง</p>
+
+      <div id="ownSignWrap">
+        <canvas id="ownPad" width="640" height="210" style="width:100%;height:auto;border:1.5px dashed var(--border2);border-radius:14px;background:var(--white);touch-action:none;cursor:crosshair;"></canvas>
+        <button class="btn-ghost" onclick="clearOwnPad()">🗑️ ล้างลายเซ็น</button>
+        <button class="btn-next" id="ownSignBtn" style="margin-top:10px;" onclick="submitOwnSignature()">✍️ ยืนยันลงนามสัญญา</button>
+        <div style="font-size:11.5px;color:var(--text3);margin-top:10px;text-align:center;line-height:1.6;">การลงลายมือชื่ออิเล็กทรอนิกส์นี้มีผลผูกพันตาม พ.ร.บ.ว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544</div>
+      </div>
+
+      <div id="ownSignDone" style="display:none;text-align:center;padding:30px 20px;">
+        <div style="font-size:52px;">✅</div>
+        <div style="font-family:'Anuphan',sans-serif;font-size:22px;font-weight:700;margin:8px 0 6px;">ลงนามเรียบร้อยแล้ว!</div>
+        <div style="color:var(--text2);font-size:14px;line-height:1.6;" id="ownSignSub">รออีกฝ่ายลงนาม — เมื่อครบ ระบบจะสร้าง PDF ให้ดาวน์โหลด</div>
+        <div id="ownStatusList" style="margin-top:18px;text-align:left;max-width:420px;margin-left:auto;margin-right:auto;"></div>
+        <div id="ownDoneExtra" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="navbar">
+    <div class="navbar-inner">
+      <button class="btn-next" id="btnNext" onclick="nextStep()">ถัดไป →</button>
+      <div class="nav-hint">บันทึกอัตโนมัติ · กดย้อนกลับได้ตลอด</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ หน้าเซ็นสัญญา (remote sign via ?saleRead=rs_/rb_) ══ -->
+<div id="saleSignPage" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:9999;overflow:auto;">
+  <div style="background:var(--primary);color:#fff;padding:14px 18px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:2;">
+    <div style="width:34px;height:34px;border-radius:9px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;">S</div>
+    <div><div style="font-family:'Anuphan',sans-serif;font-weight:700;font-size:16px;">SignDee · เซ็นสัญญาซื้อขาย</div><div style="font-size:11px;opacity:.7;">สัญญาจะซื้อจะขายอาคารชุด</div></div>
+  </div>
+  <div style="max-width:720px;margin:0 auto;padding:18px 16px 60px;">
+    <div id="signLoading" style="text-align:center;padding:60px 20px;color:var(--text2);">
+      <div style="width:26px;height:26px;border:3px solid var(--accent2);border-top-color:var(--accent);border-radius:50%;animation:ocrspin .8s linear infinite;margin:0 auto 14px;"></div>
+      กำลังโหลดสัญญา…
+    </div>
+
+    <div id="signContent" style="display:none;">
+      <div style="background:var(--accent-d);border:1px solid var(--accent2);border-radius:12px;padding:12px 14px;margin-bottom:16px;font-size:13.5px;color:var(--text);">
+        เรียน <b id="signPartyName">—</b> — กรุณาอ่านสัญญาให้ครบถ้วนแล้วลงลายมือชื่อด้านล่าง
+      </div>
+      <div class="doc" id="signDoc" style="background:var(--white);border:1px solid var(--border);border-radius:14px;padding:22px;box-shadow:var(--shadow);"></div>
+
+      <div id="buyerDepositGate" style="margin-top:18px;"></div>
+      <div id="signPadWrap" style="margin-top:18px;">
+        <div id="saleLineBox" style="margin-bottom:14px;"></div>
+        <div style="font-weight:700;font-size:14px;margin-bottom:8px;">ลงลายมือชื่อ (<span id="signPartyLabel">—</span>)</div>
+        <canvas id="signPad" width="640" height="200" style="width:100%;height:auto;border:1.5px dashed var(--border2);border-radius:12px;background:var(--white);touch-action:none;cursor:crosshair;"></canvas>
+        <button class="btn-ghost" style="margin-top:8px;" onclick="clearSignPad()">🗑️ ล้างลายเซ็น</button>
+        <button class="btn-next" id="signSubmitBtn" style="margin-top:10px;" onclick="submitSaleSignature()">✍️ ยืนยันลงนามสัญญา</button>
+        <div style="font-size:11.5px;color:var(--text3);margin-top:10px;text-align:center;line-height:1.5;">การลงลายมือชื่ออิเล็กทรอนิกส์นี้มีผลผูกพันตาม พ.ร.บ.ว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544</div>
+      </div>
+
+      <div id="signStatus" style="display:none;text-align:center;padding:30px 20px;"></div>
+    </div>
+
+    <div id="signError" style="display:none;text-align:center;padding:60px 20px;">
+      <div style="font-size:48px;margin-bottom:12px;">⚠️</div>
+      <div style="font-family:'Anuphan',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px;">ไม่พบสัญญา</div>
+      <div style="color:var(--text2);font-size:14px;" id="signErrorMsg">ลิงก์ไม่ถูกต้องหรือสัญญาถูกลบไปแล้ว</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DEV toolbar (แสดงเมื่อ ?dev=<secret>) ══ -->
+<div id="devBar" style="display:none;position:fixed;right:12px;bottom:12px;z-index:5000;background:#14171F;color:#fff;border-radius:12px;padding:9px;box-shadow:0 4px 20px rgba(0,0,0,.3);font-size:12px;width:170px;">
+  <div style="font-weight:700;margin-bottom:7px;opacity:.6;">⚡ DEV MODE</div>
+  <button onclick="_devFill()" style="display:block;width:100%;margin-bottom:5px;padding:7px 10px;background:#333;border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;">📝 กรอกข้อมูลตัวอย่าง</button>
+  <button onclick="showStep(10)" style="display:block;width:100%;margin-bottom:5px;padding:7px 10px;background:#2E86C6;border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;">→ ข้ามไปหน้าจ่ายเงิน</button>
+  <button onclick="location.href='?dev=off'" style="display:block;width:100%;padding:7px 10px;background:transparent;border:1px solid #555;border-radius:8px;color:#aaa;font-size:11px;cursor:pointer;">ปิด DEV</button>
+</div>
+
+<script>
+const TOTAL_STEPS = 12;
+const STEP_LABELS = ['ข้อมูลห้องชุด','ข้อมูลผู้จะขาย','สำเนาบัตรผู้จะขาย','ข้อมูลผู้จะซื้อ','สำเนาบัตรผู้จะซื้อ','การชำระเงิน','การโอนกรรมสิทธิ์','สภาพห้องชุด','ตรวจสอบข้อมูล','ชำระค่าบริการ','อ่านและยอมรับสัญญา','ลงลายมือชื่อ'];
+let curStep = 1;
+window._creatorRole = 'seller';
+window._fee = { Transfer:'ผู้จะขาย', Mortgage:'ผู้จะซื้อ' };
+const DRAFT_KEY = 'signdee_sale_draft';
+
+/* ── role ── */
+function _selectRole(el, role) {
+  window._rcSelectedRole = role;
+  document.querySelectorAll('.rc-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function _confirmRoleChoice() {
+  if (!window._rcSelectedRole) { alert('⚠️ กรุณาเลือกบทบาทของคุณก่อน'); return; }
+  const agree = document.getElementById('rcAgreeCheck');
+  if (agree && !agree.checked) {
+    alert('⚠️ กรุณายอมรับเงื่อนไขการให้บริการและความเป็นส่วนตัวก่อนดำเนินการต่อ');
+    const row = document.getElementById('rcAgreeRow');
+    if (row) { const sp = row.querySelector('span'); if (sp) sp.style.color = 'var(--red)'; }
+    return;
+  }
+  chooseRole(window._rcSelectedRole);
+}
+function chooseRole(role) {
+  window._creatorRole = role;
+  try { localStorage.setItem('signdee_sale_role', role); } catch(_){}
+  document.getElementById('roleChoice').style.display = 'none';
+  document.getElementById('wizard').style.display = 'block';
+  showStep(1);
+}
+
+
+/* ── nav ── */
+
+/* ── stepper (group nav) ── */
+const WGN_GROUPS = [
+  { key:'property', steps:[1] },
+  { key:'seller',   steps:[2,3] },
+  { key:'buyer',    steps:[4,5] },
+  { key:'review',   steps:[6,7,8,9] },
+  { key:'payment',  steps:[10,11,12] }
+];
+function _wgnGroupForStep(n) {
+  for (const g of WGN_GROUPS) if (g.steps.indexOf(n) !== -1) return g;
+  return WGN_GROUPS[WGN_GROUPS.length-1];
+}
+function _wgnJump(key) {
+  const g = WGN_GROUPS.find(x => x.key === key);
+  if (!g) return;
+  const target = g.steps[0];
+  if (target > curStep) return;          // ห้ามข้ามไปข้างหน้า
+  showStep(target);
+}
+function updateStepper(n) {
+  const active = _wgnGroupForStep(n);
+  document.querySelectorAll('.wgn-item').forEach(el => {
+    const g = WGN_GROUPS.find(x => x.key === el.getAttribute('data-group'));
+    if (!g) return;
+    const last = g.steps[g.steps.length-1];
+    const isActive = g.key === active.key;
+    el.classList.toggle('active', isActive);
+    el.classList.toggle('done', !isActive && n > last);
+  });
+}
+function showStep(n) {
+  document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+  document.getElementById('ws'+n).classList.add('active');
+  curStep = n;
+  document.getElementById('stepLabel').textContent = STEP_LABELS[n-1];
+  document.getElementById('stepCount').textContent = `ขั้นตอน ${n} จาก ${TOTAL_STEPS}`;
+  document.getElementById('progressFill').style.width = Math.round(n/TOTAL_STEPS*100)+'%';
+  if (n===6) _renderDepositChannels();
+  if (n===9) { buildSummary(); buildContract(); }
+  if (n===11) _initReadAccept();
+  if (n===12) _initOwnSign();
+  // ขั้นชำระเงิน (7): ซ่อนปุ่ม nav ล่าง (ใช้ปุ่มจ่ายในขั้นแทน)
+  const navbar = document.querySelector('.navbar');
+  if (navbar) navbar.style.display = (n>=10) ? 'none' : 'block';
+  document.getElementById('btnNext').textContent = n===9 ? 'ดำเนินการชำระเงิน →' : 'ถัดไป →';
+  updateStepper(n);
+  window.scrollTo(0,0);
+}
+function nextStep() {
+  if (curStep < TOTAL_STEPS) showStep(curStep+1);
+}
+function prevStep() {
+  if (curStep > 1) showStep(curStep-1);
+  else { document.getElementById('wizard').style.display='none'; document.getElementById('roleChoice').classList.add('active'); }
+}
+
+/* ── helpers ── */
+function formatThaiID(el) {
+  let v = el.value.replace(/\D/g,'').slice(0,13);
+  let out = '';
+  const g = [1,4,5,2,1];
+  let i = 0;
+  for (const len of g) { if (i>=v.length) break; if (out) out+='-'; out+=v.slice(i,i+len); i+=len; }
+  el.value = out;
+}
+/* ── Turnstile (กันบอท) — invisible, ขอ token สดก่อนเรียก endpoint ที่มีค่าใช้จ่าย ── */
+const TURNSTILE_SITEKEY = '0x4AAAAAAD8CHNcVMgcVLwTJ'; // Cloudflare Turnstile site key (public) — SignDee
+let _cfWidgetId = null, _cfResolver = null;
+function _cfTurnstileOnload(){ try{ if(!window.turnstile) return; const el=document.getElementById('cfTurnstile'); if(!el||_cfWidgetId!==null) return; _cfWidgetId=window.turnstile.render('#cfTurnstile',{sitekey:TURNSTILE_SITEKEY,size:'invisible',callback:t=>{if(_cfResolver){_cfResolver(t||'');_cfResolver=null;}},'error-callback':()=>{if(_cfResolver){_cfResolver('');_cfResolver=null;}},'timeout-callback':()=>{if(_cfResolver){_cfResolver('');_cfResolver=null;}}}); }catch(_){} }
+function _turnstileToken(){ return new Promise(resolve=>{ if(!window.turnstile||_cfWidgetId===null){resolve('');return;} _cfResolver=resolve; try{window.turnstile.reset(_cfWidgetId);window.turnstile.execute(_cfWidgetId);}catch(_){_cfResolver=null;resolve('');return;} setTimeout(()=>{if(_cfResolver){_cfResolver=null;resolve('');}},8000); }); }
+
+/* ── OCR อ่านบัตรประชาชน (reuse /api/myip จาก justsign-api) ── */
+/* ยิง API เข้า origin เดียวกับหน้าเว็บเสมอ (preview → backend ของ preview, prod → prod)
+   ถ้าฮาร์ดโค้ด justsign-api.vercel.app หน้า preview จะไปคุยกับ production (ไม่มี endpoint ใหม่) */
+const SALE_API = (function(){
+  const h=(location.hostname||'').toLowerCase();
+  if(/\.vercel\.app$/.test(h) || /(^|\.)signdee\.com$/.test(h)) return '';   // same-origin
+  return 'https://justsign-api.vercel.app';                                   // file:// หรือโดเมนอื่น
+})();
+/* LIFF app ของสัญญาซื้อขาย — สร้างใน LINE Developers ตั้ง Endpoint URL = https://sale.signdee.com/
+   ปล่อยว่าง = ปิดฟีเจอร์ LINE Login (ระบบทำงานปกติทุกอย่าง) */
+const SALE_LIFF_ID = '2010783187-TeYi8sQh';   // LIFF "SignDee Sale" — channel SignDee Login (provider JustSign, เดียวกับ OA)
+const LINE_OA_URL  = 'https://line.me/R/ti/p/@975xiuqi';
+const PAY_GATEWAY = 'beam';   // 'beam' = QR PromptPay ผ่าน Beam · 'stripe' = ของเดิม
+async function onCardPick(e, who) {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  if (!f.type.startsWith('image/')) { alert('กรุณาเลือกไฟล์รูปภาพของบัตร'); return; }
+
+  /* แปลงเป็น JPEG ครั้งเดียวแล้วใช้ร่วมกันทั้ง OCR และสำเนาบัตร
+     เดิมส่งไฟล์ดิบให้ OCR ก่อน ทำให้ HEIC เจอข้อความ "อ่านบัตรไม่สำเร็จ"
+     ตามด้วย alert เรื่องฟอร์แมตอีกที ซึ่งชวนสับสน
+     ใช้ 1400px q0.85 เพื่อคงความคมให้ OCR อ่านวรรณยุกต์ได้ */
+  const res = await SignDeeImg.process(f, { maxEdge: 1400, quality: 0.85, maxBytes: 1200 * 1024 });
+  if (!res.ok) { SignDeeImg.explainFailure([{ name: f.name, kind: res.kind }]); return; }
+
+  runSaleOCR(res.dataUrl, who);
+  _autoSetCardCopy(res.dataUrl, who);   // ใช้รูปเดียวกันเป็นสำเนาบัตรในภาคผนวก ก
+}
+/* รูปบัตรที่อัปโหลดตอนกรอกข้อมูล → ใช้เป็นสำเนาบัตร (STEP 3 / STEP 5) ให้อัตโนมัติ
+   ไม่ทับของเดิมถ้าผู้ใช้เคยอัปสำเนาบัตรไว้เองแล้ว */
+async function _autoSetCardCopy(dataUrl, who) {
+  try {
+    if (window['_' + who + 'CardCopy']) return;
+    const small = await _compressPhoto(dataUrl);
+
+    // ถอดรหัสไม่ได้ (เช่น HEIC บนเบราว์เซอร์ที่ไม่รองรับ)
+    // ต้องบอกผู้ใช้ ห้ามเก็บ null เงียบ ๆ แล้วปล่อยให้ภาคผนวกบัตรว่างเปล่า
+    if (!small) {
+      _showPhotoError([{ name: 'รูปบัตรประชาชน', kind: 'heic' }]);
+      return;
+    }
+
+    window['_' + who + 'CardCopy'] = small;
+    const img = document.getElementById(who+'CardImg');     if (img) img.src = small;
+    const pv  = document.getElementById(who+'CardPreview'); if (pv)  pv.style.display = 'block';
+    const bx  = document.getElementById(who+'CardBox');     if (bx)  bx.style.display = 'none';
+    const nt  = document.getElementById(who+'CardAutoNote');
+    if (nt) nt.style.display = 'block';
+    try { localStorage.setItem('signdee_sale_'+who+'card', small); } catch(_){}
+    try { autoSave(); } catch(_){}
+  } catch(_){}
+}
+function _ocrCompress(dataUrl) {
+  return new Promise(resolve => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 1400; let w = img.width, h = img.height;
+        if (Math.max(w,h) > MAX) { const s = MAX/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+        const c = document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        resolve(c.toDataURL('image/jpeg',0.82));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch { resolve(dataUrl); }
+  });
+}
+async function runSaleOCR(dataUrl, who) {
+  const panel = document.getElementById(who+'OcrPanel');
+  if (!panel) return;
+  panel.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--accent-d);margin-bottom:14px;"><div style="width:18px;height:18px;border:2.5px solid #bfdbfe;border-top-color:var(--accent);border-radius:50%;animation:ocrspin .8s linear infinite;"></div><div style="font-size:13.5px;font-weight:600;color:var(--text2);">🔎 กำลังอ่านข้อมูลจากบัตร…</div></div><style>@keyframes ocrspin{to{transform:rotate(360deg)}}</style>';
+  let resp;
+  try {
+    const compact = await _ocrCompress(dataUrl);
+    const _tsTok = (typeof _turnstileToken === 'function') ? await _turnstileToken() : '';
+    const r = await fetch(SALE_API+'/api/myip', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ image: compact, party: who, turnstile_token: _tsTok }) });
+    resp = await r.json();
+  } catch(e) { resp = { ok:false }; }
+  if (!resp || !resp.ok || !resp.fields) {
+    panel.innerHTML = '<div style="padding:12px 14px;border:1px dashed var(--border);border-radius:12px;background:var(--surf2);font-size:12.5px;color:var(--text3);line-height:1.5;margin-bottom:14px;">อ่านข้อมูลจากบัตรอัตโนมัติไม่สำเร็จ — กรอกข้อมูลด้วยตนเองด้านล่างได้ตามปกติ ✍️</div>';
+    return;
+  }
+  renderSaleOcrReview(who, resp.fields, resp.id_valid);
+  try { window._ocrDob = window._ocrDob || {}; window._ocrDob[who] = resp.fields.date_of_birth || ''; } catch(_){}
+  applySaleOcr(who, true);        // เติมลงฟอร์มให้เลย ไม่ต้องรอกดปุ่ม
+}
+function renderSaleOcrReview(who, f, idValid) {
+  const panel = document.getElementById(who+'OcrPanel');
+  if (!panel) return;
+  const docNo = f.id_number || f.passport_number || '';
+  const nameVal = f.full_name_th || [f.first_name_en, f.last_name_en].filter(Boolean).join(' ');
+  const esc = v => String(v||'').replace(/"/g,'&quot;');
+  let badge = '';
+  if (docNo) badge = idValid
+    ? '<span style="font-size:11px;font-weight:700;color:#16a34a;background:rgba(22,163,74,.1);padding:2px 8px;border-radius:20px;">✓ เลขบัตรถูกต้อง</span>'
+    : '<span style="font-size:11px;font-weight:700;color:#d97706;background:rgba(217,119,6,.1);padding:2px 8px;border-radius:20px;">⚠ ตรวจสอบเลขบัตร</span>';
+  const row = (label, id, val, ph) => '<div style="margin-bottom:10px;"><div style="font-size:11.5px;font-weight:600;color:var(--text3);margin-bottom:4px;">'+label+'</div><input id="'+id+'" value="'+esc(val)+'" placeholder="'+ph+'" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13.5px;color:var(--text);background:var(--white);box-sizing:border-box;"></div>';
+  panel.innerHTML =
+    '<div style="border:1px solid var(--accent2);border-radius:14px;overflow:hidden;background:var(--accent-d);margin-bottom:14px;">' +
+      '<div style="padding:11px 14px;background:rgba(46,134,198,.12);display:flex;align-items:center;justify-content:space-between;gap:8px;"><div style="font-size:13px;font-weight:700;color:var(--accent);">🪄 กรอกให้อัตโนมัติแล้ว — โปรดตรวจสอบ</div>'+badge+'</div>' +
+      '<div style="padding:14px;">' +
+        row('ชื่อ-นามสกุล', who+'_ocrName', nameVal, 'ชื่อ-นามสกุล') +
+        row('เลขบัตรประชาชน', who+'_ocrId', docNo, 'X XXXX XXXXX XX X') +
+        row('ที่อยู่', who+'_ocrAddr', f.address_th, 'ที่อยู่ตามบัตร') +
+        '<div style="display:flex;gap:8px;margin-top:6px;"><button type="button" onclick="applySaleOcr(\''+who+'\')" style="flex:1;padding:11px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;">✓ แก้ข้างบนแล้ว กรอกใหม่</button><button type="button" onclick="document.getElementById(\''+who+'OcrPanel\').innerHTML=\'\'" style="padding:11px 14px;border:1px solid var(--border);border-radius:9px;background:transparent;color:var(--text3);font-family:inherit;font-size:13px;cursor:pointer;">ปิด</button></div>' +
+        '<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.5;">ℹ️ ช่วยกรอกให้เร็วขึ้นเท่านั้น ไม่ใช่การยืนยันตัวตนตามกฎหมาย — โปรดตรวจทุกช่องให้ตรงกับบัตรจริง</div>' +
+      '</div>' +
+    '</div>';
+}
+function _ageFromDob(dob) {
+  try {
+    if (!dob) return '';
+    const d = new Date(dob); if (isNaN(d)) return '';
+    const n = new Date(); let a = n.getFullYear() - d.getFullYear();
+    const m = n.getMonth() - d.getMonth();
+    if (m < 0 || (m === 0 && n.getDate() < d.getDate())) a--;
+    return (a > 0 && a < 130) ? String(a) : '';
+  } catch(_) { return ''; }
+}
+/* silent=true → เติมฟอร์มเงียบ ๆ ตอนอ่านบัตรเสร็จ (ไม่ปิดพาเนลตรวจสอบ) */
+function applySaleOcr(who, silent) {
+  const g = id => (document.getElementById(id)?.value||'').trim();
+  const name = g(who+'_ocrName'), id = g(who+'_ocrId'), addr = g(who+'_ocrAddr');
+  const nameEl = document.getElementById('f_'+who+'Name');
+  const idEl   = document.getElementById('f_'+who+'Id');
+  const addrEl = document.getElementById('f_'+who+'Addr');
+  const ageEl  = document.getElementById('f_'+who+'Age');
+  if (nameEl && name) nameEl.value = name;
+  if (idEl && id) { idEl.value = id; try { formatThaiID(idEl); } catch(_){} }
+  if (addrEl && addr) {
+    // ช่องที่อยู่ถูก sdAddrSplitField() ซ่อนแล้วแทนด้วยช่องย่อย 6 ช่อง
+    // → ต้องเซ็ตผ่าน sdAddrSetValue ไม่งั้นค่าจะลงแต่ textarea ที่มองไม่เห็น
+    if (typeof sdAddrSetValue === 'function') sdAddrSetValue('f_'+who+'Addr', addr);
+    else addrEl.value = addr;
+  }
+  const age = _ageFromDob((window._ocrDob||{})[who]);
+  if (ageEl && age && !ageEl.value) ageEl.value = age;
+  try { autoSave(); } catch(_){}
+  if (silent) return;
+  const panel = document.getElementById(who+'OcrPanel');
+  if (panel) panel.innerHTML = '<div style="padding:11px 14px;border:1px solid var(--green);border-radius:12px;background:rgba(26,127,90,.08);font-size:12.5px;color:var(--green);font-weight:600;margin-bottom:14px;">✓ กรอกข้อมูลจากบัตรแล้ว — ตรวจทานด้านล่างได้เลย</div>';
+}
+
+function pickFee(kind, el) {
+  el.parentElement.querySelectorAll('.seg-opt').forEach(o=>o.classList.remove('active'));
+  el.classList.add('active');
+  window._fee[kind] = el.dataset.v;
+  autoSave();
+}
+function recalc() {
+  const total = parseInt(document.getElementById('f_totalPrice').value)||0;
+  const dep = parseInt(document.getElementById('f_depositAmt').value)||0;
+  const remain = Math.max(0, total-dep);
+  document.getElementById('f_remaining').value = remain || '';
+  document.getElementById('totalWords').textContent  = total ? '('+bahtText(total)+')' : '';
+  document.getElementById('remainWords').textContent = remain ? '('+bahtText(remain)+')' : '';
+}
+
+
+/* ── ระบบสมาชิก (session ใช้ร่วมกับ app.signdee.com ผ่าน cookie .signdee.com) ── */
+const MEMBER_KEY = 'signdee_member';
+const APP_URL = 'https://app.signdee.com/';
+function _ck(name){
+  try { const m = document.cookie.match('(?:^|; )'+name+'=([^;]*)'); return m ? decodeURIComponent(m[1]) : null; }
+  catch(e){ return null; }
+}
+function sdGetMember(){
+  try { const c = _ck(MEMBER_KEY); return c ? JSON.parse(c) : null; } catch(e){ return null; }
+}
+function sdRenderMember(){
+  const m = sdGetMember();
+  const t = document.getElementById('sdMemberBtnText');
+  if (t) t.textContent = m ? (m.name || 'สมาชิก') : 'เข้าสู่ระบบ';
+}
+function sdMemberClick(){
+  const ret = encodeURIComponent(location.href);
+  location.href = APP_URL + '?member=1&return=' + ret;   // login กลางที่ app แล้วเด้งกลับ
+}
+
+/* ── Supabase + save + payment (Phase 3) ── */
+const SUPABASE_URL  = 'https://vopercafgleteuahwvkf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvcGVyY2FmZ2xldGV1YWh3dmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODczMTQsImV4cCI6MjA5NTQ2MzMxNH0.vsMqOTFc1kMuw1ZwQt9tlvlIcn9SpifAJo4VUzxy2_c';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+window.contractRowId = localStorage.getItem('signdee_sale_row_id') || null;
+let _payPI = null, _payPoll = null;
+
+/* สถานที่ทำสัญญา = ประกอบจากข้อมูลห้องชุด (ไม่ต้องกรอกซ้ำ) */
+function _salePlaceMade(g) {
+  const parts = [];
+  const unit = g('f_unitNo');   if (unit)  parts.push('ห้องชุดเลขที่ ' + unit);
+  const condo = g('f_condoName'); if (condo) parts.push(condo);
+  const sub = g('f_subdistrict'), dist = g('f_district'), prov = g('f_province');
+  const bkk = /กรุงเทพ|กทม/.test(prov);
+  if (sub)  parts.push((bkk ? 'แขวง' : 'ตำบล') + sub);
+  if (dist) parts.push((bkk ? 'เขต' : 'อำเภอ') + dist);
+  if (prov) parts.push(bkk ? prov : 'จังหวัด' + prov);
+  return parts.join(' ');
+}
+
+/* ═══════════ รับมัดจำ: บัญชีธนาคาร + บัตรเครดิต (Stripe Connect) ═══════════ */
+window._sellerBank  = window._sellerBank  || { bank:'', no:'', name:'' };
+window._depositCard = window._depositCard || { enabled:false, stripe_account:'', charges_enabled:false };
+
+function _renderDepositChannels() {
+  const box = document.getElementById('depositChannelBox'); if (!box) return;
+  // ดึงสถานะบัตรจาก Stripe ครั้งแรกที่เข้าขั้นนี้ (กัน _depositCard ว่างหลัง reload → เขียน account เป็น null)
+  const _m0 = (typeof sdGetMember === 'function') ? sdGetMember() : null;
+  if (_m0 && _m0.uid && !window._cardStatusChecked) { window._cardStatusChecked = true; _refreshCardStatus(); }
+  const b = window._sellerBank, card = window._depositCard;
+  const inp = (k, ph) => '<input type="text" value="'+String(b[k]||'').replace(/"/g,'&quot;')+'" placeholder="'+ph+'" oninput="_sellerBankEdit(\''+k+'\',this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:9px;font-family:inherit;font-size:13.5px;box-sizing:border-box;margin-top:6px;">';
+  let cardInner;
+  if (!SALE_LIFF_ID && !card.stripe_account && !card.enabled) cardInner = '';   // ยังไม่พร้อมใช้
+  if (card.charges_enabled) {
+    cardInner = '<div style="display:flex;align-items:center;gap:8px;background:rgba(6,199,85,.08);border-radius:10px;padding:9px 11px;margin-top:8px;">'
+      + '<span style="color:var(--green);font-weight:700;">✓</span>'
+      + '<span style="font-size:12.5px;color:var(--green);">เปิดรับชำระด้วยบัตรเครดิตแล้ว</span></div>'
+      + '<div style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.7;">ผู้ซื้อจ่ายด้วยบัตร → คุณได้รับยอดมัดจำเต็ม (ค่าธรรมเนียมบัตรผู้ซื้อรับผิดชอบ)<br>เงินมัดจำจะโอนเข้าบัญชีผู้ขายผ่านระบบของ Stripe (ภายใน 7–14 วันนับแต่วันที่ตัดบัตรสำเร็จ)</div>';
+  } else if (card.stripe_account) {
+    cardInner = '<div style="font-size:12.5px;color:var(--text2);margin-top:8px;">กำลังตรวจสอบข้อมูล — <a href="#" onclick="_startCardOnboard();return false;" style="color:var(--accent);">ทำต่อ/ตรวจสอบสถานะ</a></div>';
+  } else {
+    cardInner = '<button type="button" onclick="_startCardOnboard()" style="width:100%;margin-top:8px;padding:12px;border:none;border-radius:10px;background:var(--accent);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;">เปิดรับชำระด้วยบัตร (ตั้งค่าครั้งเดียว)</button>'
+      + '<div style="font-size:11.5px;color:var(--text3);margin-top:6px;line-height:1.6;">ยืนยันตัวตน + บัญชีธนาคารผ่านระบบชำระเงินปลอดภัย ~2–3 นาที</div>';
+  }
+  box.innerHTML =
+    '<div style="font-weight:700;font-size:14px;margin-bottom:8px;">รับเงินมัดจำจากผู้ซื้อ</div>'
+    + '<div style="border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--white);margin-bottom:10px;">'
+    +   '<div style="font-weight:600;font-size:13.5px;">โอนเข้าบัญชีของฉัน <span style="color:var(--green);font-size:11.5px;">ฟรี</span></div>'
+    +   '<div class="row" style="gap:8px;">'+inp('bank','ธนาคาร')+inp('no','เลขบัญชี')+'</div>'+inp('name','ชื่อบัญชี')
+    + '</div>'
+    + '<div style="border:1px solid var(--border);border-radius:12px;padding:13px;background:var(--white);">'
+    +   '<div style="font-weight:600;font-size:13.5px;">เปิดให้ผู้ซื้อจ่ายด้วยบัตรเครดิต</div>'
+    +   cardInner
+    + '</div>';
+}
+function _sellerBankEdit(k, v) { window._sellerBank[k] = v; try { autoSave(); } catch(_){} }
+
+async function _startCardOnboard() {
+  const m = (typeof sdGetMember === 'function') ? sdGetMember() : null;
+  if (!m || !m.uid) { alert('กรุณาเข้าสู่ระบบ (มุมขวาบน) ก่อนเปิดรับชำระด้วยบัตร'); return; }
+  try {
+    const back = location.origin + location.pathname + '?connect=done';
+    const r = await fetch(SALE_API+'/api/create-payment-intent', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'connect_onboard', member_uid:m.uid, email:m.email||null, line_user_id:m.line_user_id||null, return_url:back, refresh_url:back })
+    });
+    const j = await r.json();
+    if (j.url) { window._depositCard.stripe_account = j.stripe_account_id || ''; location.href = j.url; }
+    else alert('เปิดรับชำระไม่สำเร็จ: ' + (j.error||''));
+  } catch(e) { alert('เปิดรับชำระไม่สำเร็จ'); }
+}
+async function _refreshCardStatus() {
+  const m = (typeof sdGetMember === 'function') ? sdGetMember() : null;
+  if (!m || !m.uid) return;
+  try {
+    const r = await fetch(SALE_API+'/api/create-payment-intent', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'connect_status', member_uid:m.uid })
+    });
+    const j = await r.json();
+    window._depositCard = {
+      enabled: !!j.charges_enabled,
+      stripe_account: j.stripe_account_id || '',
+      charges_enabled: !!j.charges_enabled,
+    };
+    _renderDepositChannels();
+    // ถ้ามีสัญญาบันทึกแล้ว + บัตรพร้อม → อัปเดต account ลง row ทันที (กันกรณีสร้าง row ก่อน onboard)
+    if (j.charges_enabled && j.stripe_account_id && window.contractRowId) {
+      try { await sb.from('sale_contracts').update({ deposit_stripe_account: j.stripe_account_id }).eq('id', window.contractRowId); } catch(_){}
+    }
+  } catch(_){}
+}
+
+function collectPayload() {
+  const g = id => (document.getElementById(id)?.value||'').trim();
+  const num = id => { const v = parseFloat(g(id)); return isNaN(v) ? null : v; };
+  const int = id => { const v = parseInt(g(id)); return isNaN(v) ? null : v; };
+  const _m = (typeof sdGetMember === 'function') ? sdGetMember() : null;
+  return {
+    creator_role: window._creatorRole,
+    creator_member_uid: _m ? _m.uid : null,
+    creator_line_user_id: (_m && _m.line_user_id) ? _m.line_user_id : null,
+    condo_name:g('f_condoName'), unit_no:g('f_unitNo'), floor:g('f_floor'), building:g('f_building'),
+    area:num('f_area'), units:int('f_units')||1, deed_no:g('f_deedNo'),
+    subdistrict:g('f_subdistrict'), district:g('f_district'), province:g('f_province'),
+    place_made:_salePlaceMade(g), contract_date:g('f_contractDate')||null,
+    s_name:g('f_sName'), s_age:int('f_sAge'), s_id:g('f_sId'), s_addr:g('f_sAddr'), s_phone:g('f_sPhone'),
+    b_name:g('f_bName'), b_age:int('f_bAge'), b_id:g('f_bId'), b_addr:g('f_bAddr'), b_phone:g('f_bPhone'),
+    total_price:num('f_totalPrice'), deposit_amt:num('f_depositAmt'), deposit_date:g('f_depositDate')||null,
+    deposit_method:g('f_depositMethod'), remaining:num('f_remaining'),
+    seller_bank_account: (window._sellerBank && (window._sellerBank.no||window._sellerBank.bank)) ? window._sellerBank : null,
+    deposit_stripe_account: (window._depositCard && window._depositCard.charges_enabled) ? window._depositCard.stripe_account : null,
+    deposit_channels: { transfer: true, card: !!(window._depositCard && window._depositCard.charges_enabled) },
+    transfer_deadline:g('f_transferDeadline')||null, fee_transfer:window._fee.Transfer, fee_mortgage:window._fee.Mortgage,
+    deposit_slip: window._depositSlip ? { dataUrl: window._depositSlip } : null,
+    unit_photos: (window._unitPhotos && window._unitPhotos.length) ? window._unitPhotos : null,
+    s_card: window._sCardCopy ? { dataUrl: window._sCardCopy } : null,
+    b_card: window._bCardCopy ? { dataUrl: window._bCardCopy } : null,
+  };
+}
+async function saveToSupabase() {
+  const payload = collectPayload();
+  try {
+    if (window.contractRowId) {
+      const { error } = await sb.from('sale_contracts').update(payload).eq('id', window.contractRowId);
+      if (error) throw error;
+      return window.contractRowId;
+    }
+    // สร้าง id ฝั่ง client → ไม่ต้อง .select() กลับ (ปิด anon SELECT ได้ตาม RLS hardening)
+    const _newId = (self.crypto && self.crypto.randomUUID) ? self.crypto.randomUUID() : null;
+    if (_newId) {
+      payload.id = _newId;
+      const { error } = await sb.from('sale_contracts').insert(payload);
+      if (error) throw error;
+      window.contractRowId = _newId;
+      try { localStorage.setItem('signdee_sale_row_id', _newId); } catch(_){}
+      return _newId;
+    }
+    const { data, error } = await sb.from('sale_contracts').insert(payload).select('id').single();
+    if (error) throw error;
+    window.contractRowId = data.id;
+    try { localStorage.setItem('signdee_sale_row_id', data.id); } catch(_){}
+    return data.id;
+  } catch(e) { console.error('saveToSupabase failed:', e); return null; }
+}
+
+async function startPayment() {
+  const btn = document.getElementById('payBtn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
+  const rid = await saveToSupabase();
+  if (!rid) { alert('บันทึกข้อมูลไม่สำเร็จ กรุณาลองใหม่'); btn.disabled=false; btn.textContent='ชำระ ฿790 ผ่าน PromptPay'; return; }
+  btn.textContent = 'กำลังสร้าง QR…';
+  try {
+    const r = await fetch(SALE_API+'/api/create-payment-intent', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contract_id: rid, product:'sale', gateway: PAY_GATEWAY, email:'support@signdee.com', idempotency_key:'sale_'+rid+'_'+Date.now() })
+    });
+    const d = await r.json();
+    const chargeId = d.charge_id || d.payment_intent_id;          // beam → charge_id · stripe → payment_intent_id
+    if (!chargeId || !d.qr_image_png) throw new Error(d.error || 'ไม่ได้รับ QR');
+    _payPI = chargeId;
+    document.getElementById('qrImg').src = d.qr_image_png;
+    document.getElementById('payBox').style.display = 'none';
+    document.getElementById('qrBox').style.display = 'block';
+    pollPayment(rid);
+  } catch(e) {
+    alert('สร้าง QR ไม่สำเร็จ: ' + e.message);
+    btn.disabled = false; btn.textContent = 'ชำระ ฿790 ผ่าน PromptPay';
+  }
+}
+function pollPayment(rid) {
+  clearInterval(_payPoll);
+  _payPoll = setInterval(async () => {
+    try {
+      const r = await fetch(SALE_API+'/api/verify-payment-intent', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ payment_intent_id:_payPI, contract_id:rid, product:'sale', gateway: PAY_GATEWAY })
+      });
+      const d = await r.json();
+      if (d.paid) {
+        clearInterval(_payPoll);
+        document.getElementById('qrBox').style.display = 'none';
+        document.getElementById('paidBox').style.display = 'block';
+        try { localStorage.setItem('signdee_sale_paid','1'); } catch(_){}
+      }
+    } catch(_){}
+  }, 3000);
+}
+
+/* ── DEV skip (?dev=<secret> — ตรวจที่ backend/env) ── */
+function _isDev() {
+  try {
+    const d = new URLSearchParams(location.search).get('dev');
+    if (d === 'off') { try { localStorage.removeItem('signdee_sale_dev'); } catch(_){} }
+    else if (d)     { try { localStorage.setItem('signdee_sale_dev', d); } catch(_){} } // เก็บ secret ที่พิมพ์ (ไม่ hardcode)
+    return !!localStorage.getItem('signdee_sale_dev');
+  } catch { return false; }
+}
+function _saleDevSecret(){ try { return localStorage.getItem('signdee_sale_dev') || ''; } catch(_){ return ''; } }
+async function devSkipPayment() {
+  const btn = document.getElementById('devSkipPayBtn');
+  btn.disabled = true; btn.textContent = 'กำลังข้าม…';
+  const rid = await saveToSupabase();
+  if (!rid) { alert('บันทึกไม่สำเร็จ'); btn.disabled=false; btn.textContent='⚡ ข้ามการชำระเงิน (DEV)'; return; }
+  let devOk = false;
+  try {
+    const r = await fetch(SALE_API+'/api/create-payment-intent', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'dev_skip', kind:'sale', contract_id: rid, secret: _saleDevSecret() })
+    });
+    const j = await r.json().catch(()=>({}));
+    devOk = !!j.ok;
+    if (!devOk) throw new Error(j.error || 'secret ไม่ถูกต้อง');
+  } catch(e) {
+    console.error('dev_mark_sale_paid failed:', e);
+    const msg = (e && (e.message || e.hint || e.details)) ? (e.message || '') + (e.hint ? '\nhint: '+e.hint : '') : String(e);
+    alert('ข้ามไม่สำเร็จ\n\nError จาก Supabase:\n' + msg + '\n\nถ้าเพิ่งรัน SQL: ให้รัน  NOTIFY pgrst, \'reload schema\';  แล้วลองใหม่');
+    btn.disabled = false; btn.textContent = '⚡ ข้ามการชำระเงิน (DEV)';
+    return;
+  }
+  if (!devOk) { alert('ข้ามไม่สำเร็จ (secret ไม่ถูกต้อง)'); btn.disabled=false; btn.textContent='⚡ ข้ามการชำระเงิน (DEV)'; return; }
+  document.getElementById('payBox').style.display = 'none';
+  document.getElementById('paidBox').style.display = 'block';
+}
+function _devFill() {
+  const set = (id,v) => { const el=document.getElementById(id); if(el){ el.value=v; } };
+  set('f_condoName','คอนโดลุมพินี วิลล์ นครอินทร์-ริเวอร์วิว'); set('f_unitNo','94/19'); set('f_floor','3'); set('f_building','บี');
+  set('f_area','22.92'); set('f_units','1'); set('f_deedNo','3218');
+  set('f_subdistrict','ตลาดขวัญ'); set('f_district','เมืองนนทบุรี'); set('f_province','นนทบุรี');
+  set('f_contractDate','2026-07-11');
+  set('f_sName','นายปุลวิชญ์ ลิ้มเจริญ'); set('f_sAge','35'); set('f_sId','1529900248582'); set('f_sAddr','9/14 หมู่ 4 ตำบลบางตลาด อำเภอปากเกร็ด จังหวัดนนทบุรี 11130'); set('f_sPhone','081-922-8243');
+  set('f_bName','นางสาวปิยธิดา ผิวเกลี้ยง'); set('f_bAge','38'); set('f_bId','1100200028151'); set('f_bAddr','121/40 หมู่ 5 ตำบลโสนลอย อำเภอบางบัวทอง จังหวัดนนทบุรี 11110'); set('f_bPhone','095-956-5051');
+  set('f_totalPrice','1190000'); set('f_depositAmt','10000'); set('f_depositDate','2026-07-11'); set('f_depositMethod','โอนเข้าบัญชี');
+  _applyTransferDeadline('2026-08');
+  const sid=document.getElementById('f_sId'); if(sid) formatThaiID(sid);
+  const bid=document.getElementById('f_bId'); if(bid) formatThaiID(bid);
+  if (typeof recalc==='function') recalc();
+  autoSave();
+  alert('กรอกข้อมูลตัวอย่างแล้ว ✓');
+}
+
+/* ── STEP 11: อ่านและยอมรับสัญญา ── */
+let _acceptPoll = null, _rvOpened = new Set();
+function _saleClauses(d) {
+  const money = n => '฿'+(Number(n)||0).toLocaleString('th-TH');
+  const thDate = v => v ? new Date(v).toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}) : '..........';
+  const thMonth = v => v ? new Date(v+'-01').toLocaleDateString('th-TH',{month:'long',year:'numeric'}) : '..........';
+  const dash = v => (v||v===0) ? String(v) : '—';
+  const total = Number(d.total)||0, dep = Number(d.dep)||0, remain = Math.max(0,total-dep);
+  return [
+    { num:1, tag:'important', title:'รายละเอียดห้องชุดที่จะซื้อจะขาย',
+      body:'ผู้จะขายตกลงจะขาย ผู้จะซื้อตกลงจะซื้อห้องชุดเลขที่ <b>'+dash(d.unit)+'</b> ชั้นที่ <b>'+dash(d.floor)+'</b> อาคาร '+dash(d.bld)+' ชื่ออาคารชุด <b>'+dash(d.condo)+'</b> เนื้อที่ <b>'+dash(d.area)+' ตารางเมตร</b> จำนวน '+dash(d.units)+' ห้องชุด ตั้งอยู่บนที่ดินโฉนดเลขที่ '+dash(d.deed)+' ตำบล'+dash(d.sub)+' อำเภอ'+dash(d.dist)+' จังหวัด'+dash(d.prov) },
+    { num:2, tag:'standard', title:'กรรมสิทธิ์ร่วมในทรัพย์ส่วนกลาง',
+      body:'นอกจากกรรมสิทธิ์ห้องชุดตามข้อ 1 แล้ว ผู้จะซื้อยังมีกรรมสิทธิ์ร่วมในทรัพย์ส่วนกลางตามที่กำหนดไว้ใน<b>พระราชบัญญัติอาคารชุด พ.ศ. 2522</b> ด้วย' },
+    { num:3, tag:'important', title:'ราคาและการชำระเงิน',
+      body:'ราคาซื้อขาย <b>'+money(total)+'</b> ('+bahtText(total)+') เป็นการซื้อขายตามเนื้อที่ที่ปรากฏในหน้าโฉนด<br><br>'
+        + '<b>(1) เงินมัดจำ</b> ชำระวันที่ '+thDate(d.depDate)+' จำนวน <b>'+money(dep)+'</b> ('+bahtText(dep)+') ด้วยวิธี '+dash(d.depMethod)+' — ผู้จะขายได้รับไว้เรียบร้อยแล้ว ถือเป็นส่วนหนึ่งของการชำระเงินตามสัญญานี้<br><br>'
+        + '<b>(2) เงินส่วนที่เหลือ</b> จำนวน <b>'+money(remain)+'</b> ('+bahtText(remain)+') ผู้จะซื้อจะชำระในวันจดทะเบียนโอนกรรมสิทธิ์' },
+    { num:4, tag:'important', title:'การจดทะเบียนโอนกรรมสิทธิ์และค่าใช้จ่าย',
+      body:'ผู้จะขายตกลงจะไปจดทะเบียนโอนกรรมสิทธิ์ให้แก่ผู้จะซื้อภายในเดือน <b>'+thMonth(d.deadline)+'</b> ณ สำนักงานที่ดิน โดยผู้จะซื้อชำระเงินส่วนที่เหลือตามข้อ 3<br><br>'
+        + '<b>'+dash(d.feeT)+'</b> เป็นผู้ชำระค่าใช้จ่าย ณ วันโอน (เช่น ค่าธรรมเนียมการโอน ภาษีเงินได้ ภาษีธุรกิจเฉพาะ ค่าอากรแสตมป์ ค่าพยาน เป็นต้น)<br>'
+        + '<b>'+dash(d.feeM)+'</b> เป็นผู้ชำระค่าจดจำนอง (กรณีผู้ซื้อใช้สินเชื่อธนาคาร)' },
+    { num:5, tag:'important', title:'คำรับรองของผู้จะขาย',
+      body:'ผู้จะขายขอรับรองว่าห้องชุดที่จะซื้อขายนี้<b>ไม่มีภาระผูกพันใด ๆ</b> แก่นิติบุคคล และจะไม่นำห้องชุดนี้ไปก่อภาระผูกพันใด ๆ ทั้งสิ้นก่อนการโอนกรรมสิทธิ์' },
+    { num:6, tag:'important', title:'กรณีผิดสัญญา',
+      body:'<b>หากผู้จะซื้อผิดสัญญา</b> ไม่ไปจดทะเบียนรับโอนกรรมสิทธิ์และชำระเงินส่วนที่เหลือ ให้สัญญานี้เป็นอันเลิกกัน ผู้จะขายมีสิทธิ<b>ริบเงินมัดจำ</b>ที่ได้รับไว้ทั้งหมด รวมถึงเรียกร้องค่าเสียหายประการอื่นได้<br><br>'
+        + '<b>หากผู้จะขายผิดสัญญา</b> ไม่ไปจดทะเบียนโอนกรรมสิทธิ์ ผู้จะซื้อมีสิทธิ<b>ฟ้องบังคับให้ปฏิบัติตามสัญญา</b> รวมถึงเรียกร้องค่าเสียหายประการอื่นได้' },
+  ];
+}
+function _renderClauses(d) {
+  const tagHTML = t => t==='important'
+    ? '<span class="clause-tag important">สำคัญ</span>'
+    : '<span class="clause-tag standard">มาตรฐาน</span>';
+  const list = document.getElementById('rvClauseList');
+  if (!list) return;
+  list.innerHTML = _saleClauses(d).map(c =>
+    '<div class="clause-card" id="rvClause'+c.num+'">'
+    + '<div class="clause-card-header" onclick="rvToggleClause('+c.num+')">'
+      + '<div class="clause-num-badge">'+c.num+'</div>'
+      + '<div class="clause-title-text">'+c.title+tagHTML(c.tag)+'</div>'
+      + '<div class="clause-chevron">▾</div>'
+    + '</div>'
+    + '<div class="clause-body"><div class="clause-body-inner">'+c.body+'</div></div>'
+    + '</div>').join('');
+  _rvOpened = new Set();
+  _rvProgress();
+  setTimeout(() => { const c1=document.getElementById('rvClause1'); if(c1){ c1.classList.add('open'); _rvOpened.add(1); _rvProgress(); } }, 400);
+}
+function rvToggleClause(n) {
+  const card = document.getElementById('rvClause'+n);
+  if (!card) return;
+  const wasOpen = card.classList.contains('open');
+  document.querySelectorAll('#rvClauseList .clause-card.open').forEach(el => el.classList.remove('open'));
+  if (!wasOpen) { card.classList.add('open'); _rvOpened.add(n); _rvProgress(); }
+}
+function _rvProgress() {
+  const opened = _rvOpened.size, total = 6;
+  const c = document.getElementById('rvReadCount'), p = document.getElementById('rvReadProgress');
+  if (c) c.textContent = opened+'/'+total;
+  if (p) p.textContent = opened===0 ? 'ยังไม่ได้เปิดอ่านข้อใด — แตะที่หัวข้อเพื่ออ่าน'
+    : opened<total ? 'อ่านแล้ว '+opened+' ข้อ — ยังเหลืออีก '+(total-opened)+' ข้อ'
+    : 'อ่านครบทุกข้อแล้ว ✓ กรุณาติ๊กยืนยันด้านล่าง';
+  const box = document.getElementById('rvAgreeBox');
+  if (box) {
+    const unlocked = opened >= total;
+    box.style.opacity = unlocked ? '1' : '.5';
+    box.style.pointerEvents = unlocked ? 'auto' : 'none';
+    box.style.borderColor = unlocked ? 'rgba(26,127,90,.4)' : 'var(--border)';
+  }
+}
+function _initReadAccept() {
+  const rid = window.contractRowId;
+  if (!rid) return;
+  renderSignDispatch(rid);
+  const d = _saleData();
+  const thDate = v => v ? new Date(v).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'numeric'}) : '—';
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  set('rvMeta', (d.place||d.condo||'—') + ' · ทำสัญญา ' + thDate(d.cdate));
+  set('rvSName', d.sName||'—');
+  set('rvSInfo', 'บัตรประชาชน ' + (d.sId||'—') + (d.sPhone ? ' · โทร '+d.sPhone : ''));
+  set('rvBName', d.bName||'—');
+  set('rvBInfo', 'บัตรประชาชน ' + (d.bId||'—') + (d.bPhone ? ' · โทร '+d.bPhone : ''));
+  _renderClauses(d);
+  const role = window._creatorRole;
+  const isParty = (role === 'seller' || role === 'buyer');
+  const wrap = document.getElementById('rvAgreeWrap');
+  const note = document.getElementById('rvAgentNote');
+  if (wrap) wrap.style.display = isParty ? 'block' : 'none';
+  if (note) note.style.display = isParty ? 'none' : 'block';
+  _pollAcceptStatus(rid);
+}
+function _rvAgreeChanged() {
+  const chk = document.getElementById('rvAgreeCheck');
+  const btn = document.getElementById('rvSignBtn');
+  if (!btn) return;
+  const ok = chk && chk.checked;
+  btn.disabled = !ok;
+  btn.style.opacity = ok ? '1' : '.5';
+}
+function _pollAcceptStatus(rid) {
+  clearInterval(_acceptPoll);
+  _acceptPoll = setInterval(async () => {
+    try {
+      const { data } = await sb.rpc('check_sale_signatures', { p_token: 'rs_' + rid });
+      if (!data) return;
+      _setSignBadge('seller', data.s_signed);
+      _setSignBadge('buyer',  data.b_signed);
+      if (data.fully_signed) {
+        clearInterval(_acceptPoll);
+        const el = document.getElementById('signDispatch');
+        if (el && !document.getElementById('saleDoneBox')) {
+          const done = document.createElement('div');
+          done.id = 'saleDoneBox';
+          done.style.cssText = 'margin-top:16px;padding:20px;border:1px solid var(--green);border-radius:14px;background:rgba(26,127,90,.07);text-align:center;';
+          done.innerHTML = '<div style="font-size:34px;">🎉</div><div style="font-weight:700;font-size:16px;margin:6px 0 4px;">ลงนามครบทุกฝ่ายแล้ว!</div>'
+            + '<div style="font-size:13px;color:var(--text2);margin-bottom:12px;">สัญญาสมบูรณ์ · ดาวน์โหลดฉบับเต็มพร้อมใบรับรองได้เลย</div>'
+            + '<button class="btn-next" onclick="downloadSalePDFByRow()">📄 ดาวน์โหลดสัญญาฉบับสมบูรณ์ (PDF)</button>'
+            + _saleCreatorLineHtml() + _saleOaInviteHtml();
+          _saleNotifySigned(rid);
+          el.appendChild(done);
+        }
+      }
+    } catch(_){}
+  }, 3000);
+}
+function _setSignBadge(party, signed) {
+  const el = document.getElementById('badge_' + party);
+  if (!el) return;
+  el.textContent = signed ? '✅ ลงนามแล้ว' : '⏳ รอลงนาม';
+  el.style.color = signed ? 'var(--green)' : 'var(--text3)';
+  el.style.background = signed ? 'rgba(26,127,90,.1)' : 'var(--surf2)';
+}
+async function downloadSalePDFByRow() {
+  try {
+    const { data } = await sb.rpc('get_sale_contract_for_read', { p_token: 'rs_' + window.contractRowId });
+    if (data) await generateSalePDF(data);
+  } catch(e) { alert('โหลดข้อมูลสัญญาไม่สำเร็จ'); }
+}
+
+/* กู้สัญญาจากลิงก์ ?reload=<rowId>&autodownload=1 — ใช้โดยการ์ด Flex ที่ส่งทาง LINE
+   ถ้าไม่มีตัวจัดการนี้ ผู้ใช้จะถูกพาเข้า wizard ร่างสัญญาใหม่ */
+async function _saleReloadBoot(rid, auto) {
+  const rc = document.getElementById('roleChoice'); if (rc) rc.classList.remove('active');
+  const wz = document.getElementById('wizard');    if (wz) wz.style.display = 'none';
+  const host = document.getElementById('signPage') || document.body;
+  const box = document.createElement('div');
+  box.style.cssText = 'max-width:640px;margin:0 auto;padding:60px 20px;text-align:center;';
+  box.innerHTML = '<div style="font-size:44px;">📄</div>'
+    + '<div style="font-family:Anuphan,sans-serif;font-size:22px;font-weight:700;margin:10px 0 6px;">สัญญาจะซื้อจะขายอาคารชุด</div>'
+    + '<div id="reloadMsg" style="color:var(--text2);font-size:14px;">กำลังเตรียมไฟล์…</div>'
+    + '<div id="reloadBtns" style="margin-top:18px;"></div>';
+  document.body.appendChild(box);
+  try {
+    const { data } = await sb.rpc('get_sale_contract_for_read', { p_token: 'rs_' + rid });
+    if (!data) { document.getElementById('reloadMsg').textContent = 'ไม่พบสัญญา หรือถูกลบไปแล้ว (ระบบเก็บไว้ 60 วัน)'; return; }
+    window._reloadSaleData = data;
+    document.getElementById('reloadMsg').textContent = 'พร้อมดาวน์โหลดแล้ว';
+    document.getElementById('reloadBtns').innerHTML =
+      '<button class="btn-next" onclick="_saleReloadDownload()">📄 ดาวน์โหลดสัญญาฉบับสมบูรณ์ (PDF)</button>'
+      + (_inLineClient() ? '<div style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.6;">แอป LINE ดาวน์โหลดไฟล์ไม่ได้ — ระบบจะพาไปเปิดในเบราว์เซอร์ให้</div>' : '');
+    if (auto) _saleReloadDownload();
+  } catch(e) {
+    document.getElementById('reloadMsg').textContent = 'โหลดข้อมูลสัญญาไม่สำเร็จ';
+  }
+}
+async function _saleReloadDownload() {
+  if (_inLineClient()) {
+    if (confirm('แอป LINE ไม่รองรับการดาวน์โหลดไฟล์\n\nกด "ตกลง" เพื่อเปิดในเบราว์เซอร์ แล้วกดดาวน์โหลดอีกครั้ง')) {
+      if (_openExternalForDownload()) return;
+    }
+  }
+  if (window._reloadSaleData) await generateSalePDF(window._reloadSaleData);
+}
+
+/* ── STEP 12: คนกรอกลงลายมือชื่อในแอป ── */
+let _ownCtx=null, _ownDrawn=false;
+function _initOwnSign() {
+  const role = window._creatorRole;
+  const label = role==='seller' ? 'ผู้จะขาย' : 'ผู้จะซื้อ';
+  const sub = document.getElementById('ws12Sub');
+  if (sub) sub.textContent = 'ลงลายมือชื่อในฐานะ ' + label + ' — ลงในกรอบด้านล่าง';
+  const cv = document.getElementById('ownPad');
+  if (!cv || _ownCtx) return;
+  const ctx = cv.getContext('2d'); _ownCtx = ctx;
+  ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#14171F';
+  let drawing=false;
+  const pos = e => { const r=cv.getBoundingClientRect(); const t=(e.touches&&e.touches[0])?e.touches[0]:e;
+    return { x:(t.clientX-r.left)*(cv.width/r.width), y:(t.clientY-r.top)*(cv.height/r.height) }; };
+  const start = e => { e.preventDefault(); drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+0.1,p.y+0.1); ctx.stroke(); _ownDrawn=true; };
+  const move  = e => { if(!drawing)return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); _ownDrawn=true; };
+  const end   = () => { drawing=false; };
+  if (window.PointerEvent) {
+    cv.addEventListener('pointerdown',start); cv.addEventListener('pointermove',move);
+    window.addEventListener('pointerup',end); cv.addEventListener('pointerleave',end);
+  } else {
+    cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
+    cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); window.addEventListener('touchend',end);
+  }
+}
+function clearOwnPad() { if(!_ownCtx)return; const cv=document.getElementById('ownPad'); _ownCtx.clearRect(0,0,cv.width,cv.height); _ownDrawn=false; }
+async function submitOwnSignature() {
+  if (!_ownDrawn) { alert('กรุณาลงลายมือชื่อก่อน'); return; }
+  const btn = document.getElementById('ownSignBtn');
+  btn.disabled = true; btn.textContent = 'กำลังบันทึกลายเซ็น…';
+  const rid = window.contractRowId;
+  const role = window._creatorRole;
+  const token = (role==='seller' ? 'rs_' : 'rb_') + rid;
+  const rpc   = role==='seller' ? 'submit_seller_signature' : 'submit_buyer_signature';
+  const sig = document.getElementById('ownPad').toDataURL('image/png');
+  let ip=null;
+  try { const r = await fetch(SALE_API+'/api/myip'); const j = await r.json(); ip = j && j.ip ? j.ip : null; } catch(_){}
+  const device = (navigator.userAgent||'').slice(0,300);
+  try {
+    const { data, error } = await sb.rpc(rpc, { p_token:token, p_sig:sig, p_line:null, p_ip:ip, p_device:device });
+    if (error) throw error;
+    if (!data || !data.ok) throw new Error((data && data.error) || 'failed');
+  } catch(e) {
+    console.error('own sign failed:', e);
+    alert('บันทึกลายเซ็นไม่สำเร็จ: ' + (e.message||e));
+    btn.disabled=false; btn.textContent='✍️ ยืนยันลงนามสัญญา';
+    return;
+  }
+  document.getElementById('ownSignWrap').style.display='none';
+  document.getElementById('ownSignDone').style.display='block';
+  _pollOwnDone(rid);
+}
+/* รายการสถานะลงนามรายฝ่าย (แบบเดียวกับ NDA) */
+function _renderOwnStatus(d) {
+  const box = document.getElementById('ownStatusList');
+  if (!box) return;
+  const nm = id => (document.getElementById(id)?.value || '').trim();
+  const row = (label, name, done) =>
+    '<div style="display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px;">' +
+      '<span style="flex:1;min-width:0;">' + label + (name ? ' — <span style="color:var(--text2);">'+name+'</span>' : '') + '</span>' +
+      (done
+        ? '<span style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(26,127,90,.10);color:var(--green);">✓ ลงนามแล้ว</span>'
+        : '<span style="font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--surf2);color:var(--text3);">⏳ รอลงนาม</span>') +
+    '</div>';
+  box.innerHTML =
+    row('ผู้จะขาย', nm('f_sName'), !!(d && d.s_signed)) +
+    row('ผู้จะซื้อ', nm('f_bName'), !!(d && d.b_signed));
+}
+function _pollOwnDone(rid) {
+  const tick = async () => {
+    try {
+      const { data } = await sb.rpc('check_sale_signatures', { p_token:'rs_'+rid });
+      _renderOwnStatus(data);
+      if (data && data.fully_signed) {
+        clearInterval(iv);
+        document.getElementById('ownSignSub').textContent = 'ลงนามครบทุกฝ่ายแล้ว — สัญญาสมบูรณ์';
+        document.getElementById('ownSignDone').querySelector('div').textContent = '🎉';
+        document.getElementById('ownDoneExtra').innerHTML =
+          '<button class="btn-next" onclick="downloadSalePDFByRow()">📄 ดาวน์โหลดสัญญาฉบับสมบูรณ์ (PDF)</button>'
+          + _saleCreatorLineHtml() + _saleOaInviteHtml();
+        _saleNotifySigned(rid);
+      }
+    } catch(_){}
+  };
+  const iv = setInterval(tick, 3000); tick();
+}
+
+/* ── 4c: ส่งลิงก์ให้ผู้ขาย/ผู้ซื้อเซ็น (QR + LINE) ── */
+/* LIFF ส่ง query มาในรูป ?liff.state=%3Fkey%3Dvalue (ไม่ใช่ ?key=value ตรง ๆ)
+   และ SDK จะแกะคืนตอน liff.init() ซึ่งช้ากว่าโค้ด init ของหน้า → ต้องอ่านเองด้วย */
+function _urlParam(name){
+  try {
+    const p = new URLSearchParams(location.search);
+    const v = p.get(name);
+    if (v) return v;
+    let st = p.get('liff.state');
+    if (st) {
+      try { st = decodeURIComponent(st); } catch(_){}
+      const q = new URLSearchParams(String(st).replace(/^[?#]/,''));
+      const v2 = q.get(name);
+      if (v2) return v2;
+    }
+    if (location.hash) {
+      const h = new URLSearchParams(location.hash.replace(/^#/,''));
+      const v3 = h.get(name); if (v3) return v3;
+    }
+  } catch(_){}
+  return null;
+}
+function _saleSignUrl(token) { return location.origin + location.pathname + '?saleRead=' + token; }
+function renderSignDispatch(rid) {
+  const sellerUrl = _saleSignUrl('rs_' + rid);
+  const buyerUrl  = _saleSignUrl('rb_' + rid);
+  const card = (party, label, url, qrId) =>
+    '<div style="border:1px solid var(--border);border-radius:14px;padding:18px;background:var(--white);box-shadow:var(--shadow);margin-bottom:14px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">' +
+        '<div style="font-weight:700;font-size:15px;">'+label+'</div>' +
+        '<div id="badge_'+party+'" style="font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:20px;background:var(--surf2);color:var(--text3);">⏳ รอลงนาม</div>' +
+      '</div>' +
+      '<div style="font-size:12px;word-break:break-all;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px;color:var(--text2);">'+url+'</div>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;">' +
+        '<button class="btn-ghost" style="flex:1;margin:0;" onclick="copySaleSignLink(\''+url+'\')">🔗 คัดลอกลิงก์</button>' +
+        '<button style="flex:1;padding:14px;border:none;border-radius:99px;background:#06c755;color:#fff;font-family:\'Anuphan\',sans-serif;font-size:14px;font-weight:600;cursor:pointer;" onclick="sendSaleSignLine(\''+party+'\',\''+url+'\')">💬 ส่งผ่าน LINE</button>' +
+      '</div>' +
+    '</div>';
+  const role = window._creatorRole;                       // seller | buyer | agent
+  const showSeller = role !== 'seller';                   // ถ้าคนกรอกเป็นผู้ขาย → ไม่ต้องส่ง QR ให้ตัวเอง
+  const showBuyer  = role !== 'buyer';
+  const heading = (role === 'agent')
+    ? 'ส่งลิงก์ให้คู่สัญญาทั้งสองฝ่ายลงนาม'
+    : 'ส่งลิงก์ให้คู่สัญญาอีกฝ่ายลงนาม';
+  document.getElementById('signDispatch').innerHTML =
+    '<div style="font-weight:700;font-size:15px;margin:6px 0 14px;">'+heading+'</div>' +
+    (showSeller ? card('seller','🧑‍💼 ผู้จะขาย', sellerUrl, 'qrSeller') : '') +
+    (showBuyer  ? card('buyer','🧑 ผู้จะซื้อ',  buyerUrl,  'qrBuyer')  : '');
+}
+function _drawQR(id, url, tries) {
+  tries = tries || 0;
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  // ── วิธีเดียวกับ app.signdee.com: davidshimjs qrcodejs วาดแบบ synchronous (ไวกว่า qrcode@1.5.3 มาก) ──
+  if (window.QRCode && QRCode.CorrectLevel) {
+    try {
+      const QR_SIZE = 170;
+      const ctx = canvas.getContext('2d');
+      canvas.width = QR_SIZE; canvas.height = QR_SIZE;
+      const tempDiv = document.createElement('div');
+      tempDiv.style.display = 'none';
+      document.body.appendChild(tempDiv);
+      new QRCode(tempDiv, {
+        text: url, width: QR_SIZE, height: QR_SIZE,
+        colorDark: '#14171F', colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.L
+      });
+      setTimeout(() => {
+        const img = tempDiv.querySelector('img');
+        const qc  = tempDiv.querySelector('canvas');
+        if (img) {
+          const show = () => ctx.drawImage(img, 0, 0, QR_SIZE, QR_SIZE);
+          img.onload = show;
+          if (img.complete) show();
+        } else if (qc) {
+          ctx.drawImage(qc, 0, 0, QR_SIZE, QR_SIZE);
+        }
+        document.body.removeChild(tempDiv);
+      }, 60);
+      return;
+    } catch(e) { console.warn('QR gen failed:', e); }
+  }
+  // lib ยังโหลดไม่เสร็จ (เช่น CDN หลักถูกบล็อก กำลังโหลด fallback) — รอสั้นๆ แล้วลองใหม่
+  if (tries < 25) { setTimeout(() => _drawQR(id, url, tries+1), 120); return; }
+  _qrFallback(id, url);
+}
+function _qrFallback(id, url) {
+  const el = document.getElementById(id); if (!el) return;
+  const box = document.createElement('div');
+  box.style.cssText = 'padding:14px;border:1px dashed var(--border2);border-radius:10px;font-size:11.5px;word-break:break-all;color:var(--text2);background:var(--surf2);';
+  box.textContent = url;
+  el.replaceWith(box);
+}
+function copySaleSignLink(url) {
+  try { navigator.clipboard.writeText(url); alert('📋 คัดลอกลิงก์แล้ว'); }
+  catch(_) { prompt('คัดลอกลิงก์นี้:', url); }
+}
+/* แปลงลิงก์เซ็นปกติ → LIFF URL เพื่อให้เปิดในแอป LINE แล้วยืนยันตัวตนอัตโนมัติ */
+function _saleLiffUrl(url) {
+  if (!SALE_LIFF_ID) return url;
+  try {
+    const t = new URL(url, location.href).searchParams.get('saleRead');
+    if (t) return 'https://liff.line.me/' + SALE_LIFF_ID + '?saleRead=' + encodeURIComponent(t);
+  } catch(_){}
+  return url;
+}
+function _saleIsMobileUA(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||''); }
+async function _saleCopy(t){
+  try { if (navigator.clipboard && navigator.clipboard.writeText) { await navigator.clipboard.writeText(t); return true; } } catch(_){}
+  try { const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); return true; } catch(_){}
+  return false;
+}
+function sendSaleSignLine(party, url) {
+  const label = party==='seller' ? 'ผู้จะขาย' : 'ผู้จะซื้อ';
+  const liffUrl = _saleLiffUrl(url);
+  const msg = '📄 กรุณาเซ็นสัญญาจะซื้อจะขายห้องชุด ('+label+')\nกดลิงก์เพื่ออ่านและลงลายมือชื่อ:\n'+liffUrl;
+  // 1) อยู่ในแอป LINE + เปิดสิทธิ์ chat_message.write → เลือกแชตปลายทางได้เลย
+  try {
+    if (typeof liff!=='undefined' && SALE_LIFF_ID && liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
+      liff.shareTargetPicker([{ type:'text', text:msg }])
+        .then(r => alert(r ? 'ส่งลิงก์ทาง LINE แล้ว' : 'ยกเลิกการส่ง'))
+        .catch(() => _saleShareFallback(msg, liffUrl, label));
+      return;
+    }
+  } catch(_){}
+  _saleShareFallback(msg, liffUrl, label);
+}
+async function _saleShareFallback(msg, url, label) {
+  if (_saleIsMobileUA()) {
+    await _saleCopy(url);
+    window.open('https://line.me/R/msg/text/?' + encodeURIComponent(msg), '_blank');
+    return;
+  }
+  // เดสก์ท็อป: line.me/R/msg/text/ จะเด้งไปหน้า share ที่เอา URL ของหน้าปัจจุบันมาแทนลิงก์จริง
+  // → คัดลอกข้อความเต็มให้ผู้ใช้วางในแชตเอง
+  const ok = await _saleCopy(msg);
+  alert(ok
+    ? 'คัดลอกข้อความพร้อมลิงก์แล้ว\n\nเปิดแชต LINE ของ' + label + ' แล้ววาง (Ctrl+V) ได้เลย\n\n(บนคอม LINE ไม่รองรับการส่งข้อความอัตโนมัติ ถ้ากดส่งตรงจะได้ลิงก์ผิด)'
+    : 'คัดลอกไม่สำเร็จ กรุณาคัดลอกลิงก์เอง');
+}
+
+/* ── slip upload (optional) ── */
+async function onSlipPick(e) {
+  const f = e.target.files && e.target.files[0]; if (!f) return;
+
+  /* เดิมเก็บไฟล์ดิบโดยไม่บีบอัดเลย — สลิปจากมือถือจึงบวมและถ้าเป็น HEIC ก็เปิดไม่ขึ้น */
+  const res = await SignDeeImg.process(f, { maxEdge: 1200, quality: 0.7 });
+  if (!res.ok) { SignDeeImg.explainFailure([{ name: f.name, kind: res.kind }]); return; }
+
+  window._depositSlip = res.dataUrl;
+  document.getElementById('depSlipImg').src = res.dataUrl;
+  document.getElementById('depSlipPreview').style.display = 'block';
+  document.getElementById('depSlipBox').style.display = 'none';
+  try { localStorage.setItem('signdee_sale_slip', res.dataUrl); } catch(_){}
+}
+function clearSlip() {
+  window._depositSlip = null;
+  document.getElementById('depSlipPreview').style.display = 'none';
+  document.getElementById('depSlipBox').style.display = 'block';
+  const inp = document.getElementById('f_depSlipInput'); if (inp) inp.value = '';
+  try { localStorage.removeItem('signdee_sale_slip'); } catch(_){}
+}
+function _restoreSlip() {
+  try {
+    const slip = localStorage.getItem('signdee_sale_slip');
+    if (slip) {
+      window._depositSlip = slip;
+      document.getElementById('depSlipImg').src = slip;
+      document.getElementById('depSlipPreview').style.display = 'block';
+      document.getElementById('depSlipBox').style.display = 'none';
+    }
+  } catch(_){}
+}
+
+/* ── Thai baht text ── */
+function bahtText(num) {
+  num = Math.round(Number(num)||0);
+  if (num === 0) return 'ศูนย์บาทถ้วน';
+  const d = ['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+  const p = ['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+  function readGroup(n) {
+    const str = String(n); const len = str.length; let s = '';
+    for (let i=0;i<len;i++) {
+      const dig = parseInt(str[i]); const pos = len-1-i;
+      if (dig===0) continue;
+      if (pos===0 && dig===1 && len>1) s+='เอ็ด';
+      else if (pos===1 && dig===2) s+='ยี่สิบ';
+      else if (pos===1 && dig===1) s+='สิบ';
+      else s += d[dig]+p[pos];
+    }
+    return s;
+  }
+  const millions = Math.floor(num/1000000);
+  const rest = num % 1000000;
+  let out = '';
+  if (millions>0) out += readGroup(millions)+'ล้าน';
+  if (rest>0) out += readGroup(rest);
+  return out+'บาทถ้วน';
+}
+
+/* ── autosave ── */
+/* ── กำหนดวันโอน: dropdown เดือนภาษาไทย + ปี พ.ศ. (เก็บค่าเป็น "YYYY-MM" เหมือนเดิม) ── */
+const _TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function _initTransferDeadline() {
+  const mSel = document.getElementById('f_tdMonth');
+  const ySel = document.getElementById('f_tdYear');
+  if (mSel && !mSel.options.length) {
+    mSel.innerHTML = '<option value="">— เดือน —</option>' +
+      _TH_MONTHS.map((n,i) => '<option value="'+String(i+1).padStart(2,'0')+'">'+n+'</option>').join('');
+  }
+  if (ySel && !ySel.options.length) {
+    const nowY = new Date().getFullYear();
+    let opt = '<option value="">— ปี —</option>';
+    for (let y = nowY; y <= nowY + 10; y++) opt += '<option value="'+y+'">พ.ศ. '+(y + 543)+'</option>';
+    ySel.innerHTML = opt;
+  }
+}
+function _syncTransferDeadline() {   // dropdown → hidden "YYYY-MM"
+  const m = document.getElementById('f_tdMonth')?.value || '';
+  const y = document.getElementById('f_tdYear')?.value || '';
+  const hid = document.getElementById('f_transferDeadline');
+  if (hid) hid.value = (y && m) ? (y + '-' + m) : '';
+  autoSave();
+}
+function _applyTransferDeadline(v) {  // "YYYY-MM" → hidden + dropdown (ใช้ตอน restore / prefill)
+  _initTransferDeadline();
+  const hid = document.getElementById('f_transferDeadline');
+  if (hid) hid.value = v || '';
+  const y = v ? v.split('-')[0] : '';
+  const m = v ? v.split('-')[1] : '';
+  const mSel = document.getElementById('f_tdMonth');
+  const ySel = document.getElementById('f_tdYear');
+  if (mSel) mSel.value = m;
+  if (ySel) ySel.value = y;
+}
+function autoSave() {
+  const data = { role:window._creatorRole, fee:window._fee, seller_bank_account:window._sellerBank };
+  document.querySelectorAll('input,select,textarea').forEach(el => { if (el.id) data[el.id]=el.value; });
+  try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch(e){}
+}
+function loadDraft() {
+  try {
+    const data = JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}');
+    if (data.role) window._creatorRole = data.role;
+    if (data.fee) window._fee = data.fee;
+    Object.keys(data).forEach(k => { const el=document.getElementById(k); if (el) el.value=data[k]; });
+    _applyTransferDeadline(document.getElementById('f_transferDeadline')?.value || '');
+    ['Transfer','Mortgage'].forEach(kind=>{
+      const seg = document.getElementById('seg'+kind);
+      if (seg && window._fee[kind]) seg.querySelectorAll('.seg-opt').forEach(o=>o.classList.toggle('active', o.dataset.v===window._fee[kind]));
+    });
+    recalc();
+    _restoreSlip();
+    _restoreUnitPhotos();
+    _restoreCards();
+    if (data.seller_bank_account) window._sellerBank = data.seller_bank_account;
+  } catch(e){}
+}
+
+/* ── contract builder (6 clauses) ── */
+function _saleContractHTML(d) {
+  const thDate = v => v ? new Date(v).toLocaleDateString('th-TH',{day:'numeric',month:'long',year:'numeric'}) : '..........';
+  const thMonth = v => v ? new Date(v+'-01').toLocaleDateString('th-TH',{month:'long',year:'numeric'}) : '..........';
+  const dash = v => (v || v===0) ? String(v) : '..........';
+  const money = n => '฿'+(Number(n)||0).toLocaleString('th-TH');
+  const total = Number(d.total)||0, dep = Number(d.dep)||0, remain = Math.max(0, total-dep);
+  const loc = `ตำบล${dash(d.sub)} อำเภอ${dash(d.dist)} จังหวัด${dash(d.prov)}`;
+  const bldTxt   = (d.bld   && String(d.bld).trim())   ? ` อาคาร ${d.bld}`   : '';
+  const floorTxt = (d.floor && String(d.floor).trim()) ? ` ชั้นที่ ${d.floor}` : '';
+  const condoTxt = (d.condo && String(d.condo).trim()) ? ` ชื่ออาคารชุด ${d.condo}` : '';
+  const sigCell = (sig, label, name) => sig
+    ? `<div style="text-align:center;"><img src="${sig}" style="max-width:240px;max-height:120px;display:block;margin:0 auto 6px;"><div>( ${dash(name)} )</div><div>${label}</div></div>`
+    : `<div style="text-align:center;"><div style="height:96px;"></div>ลงชื่อ ........................<br>( ${dash(name)} )<br>${label}</div>`;
+  return `
+    <h2>สัญญาจะซื้อจะขายอาคารชุด "ห้องชุด"</h2>
+    <div class="doc-sub">ทำที่ ${dash(d.place)}<br>วันที่ ${thDate(d.cdate)}</div>
+
+    <div class="clause">ในหนังสือสัญญานี้ <b>"ผู้จะขาย"</b> ให้หมายถึง ${dash(d.sName)} อายุ ${dash(d.sAge)} ปี บัตรประจำตัวประชาชนเลขที่ ${dash(d.sId)} อยู่บ้านเลขที่ ${dash(d.sAddr)} หมายเลขโทรศัพท์ ${dash(d.sPhone)}</div>
+    <div class="clause"><b>"ผู้จะซื้อ"</b> ให้หมายถึง ${dash(d.bName)} อายุ ${dash(d.bAge)} ปี บัตรประจำตัวประชาชนเลขที่ ${dash(d.bId)} อยู่บ้านเลขที่ ${dash(d.bAddr)} หมายเลขโทรศัพท์ ${dash(d.bPhone)}</div>
+    <div class="clause">ผู้จะขายและผู้จะซื้อตกลงทำสัญญาจะซื้อจะขายกันดังมีข้อความต่อไปนี้</div>
+
+    <div class="clause"><span class="clause-no">ข้อ 1.</span> ผู้จะขายตกลงจะขาย ผู้จะซื้อตกลงจะซื้อห้องชุดเลขที่ ${dash(d.unit)}${floorTxt}${bldTxt}${condoTxt} เนื้อที่ ${dash(d.area)} ตารางเมตร จำนวน ${dash(d.units)} ห้องชุด ซึ่งตั้งอยู่บนเนื้อที่ดินโฉนดเลขที่ ${dash(d.deed)} ${loc}</div>
+
+    <div class="clause"><span class="clause-no">ข้อ 2.</span> นอกจากการซื้อกรรมสิทธิ์ห้องชุดดังกล่าวในข้อ 1. แล้ว ผู้จะซื้อยังมีกรรมสิทธิ์ร่วมในทรัพย์ส่วนกลางตามที่กำหนดไว้ในพระราชบัญญัติอาคารชุด พ.ศ. 2522 ด้วย</div>
+
+    <div class="clause"><span class="clause-no">ข้อ 3. การชำระเงิน</span><br>
+      คู่สัญญาตกลงจะซื้อจะขายห้องชุดในข้อ 1. ในราคา ${money(total)} บาท (${bahtText(total)}) ราคาซื้อขายนี้เป็นการซื้อขายตามเนื้อที่ที่ปรากฏในหน้าโฉนด<br>
+      (1) ชำระมัดจำในวันที่ ${thDate(d.depDate)} จำนวน ${money(dep)} บาท (${bahtText(dep)}) โดยชำระให้แก่ผู้จะขายด้วยวิธี ${dash(d.depMethod)} และผู้จะขายได้รับไว้เรียบร้อยแล้ว โดยถือเป็นเงินมัดจำและเป็นส่วนหนึ่งของการชำระเงินตามสัญญานี้<br>
+      (2) เงินส่วนที่เหลือจำนวน ${money(remain)} บาท (${bahtText(remain)}) ผู้จะซื้อจะชำระในวันที่ทำการจดทะเบียนโอนกรรมสิทธิ์</div>
+
+    <div class="clause"><span class="clause-no">ข้อ 4. การจดทะเบียนโอนกรรมสิทธิ์</span><br>
+      ผู้จะขายตกลงจะไปจดทะเบียนโอนกรรมสิทธิ์ห้องชุดดังกล่าวให้แก่ผู้จะซื้อภายในเดือน ${thMonth(d.deadline)} โดยผู้จะซื้อต้องชำระเงินส่วนที่เหลือตามข้อ 3 ณ สำนักงานที่ดิน ทั้งนี้ <b>${dash(d.feeT)}</b> เป็นผู้ชำระค่าใช้จ่าย ณ วันโอน (เช่น ค่าธรรมเนียมการโอน ภาษีเงินได้ ภาษีธุรกิจเฉพาะ ค่าอากรแสตมป์ ค่าพยาน เป็นต้น) และ <b>${dash(d.feeM)}</b> เป็นผู้ชำระค่าจดจำนอง (กรณีผู้ซื้อใช้สินเชื่อธนาคาร)</div>
+
+    <div class="clause"><span class="clause-no">ข้อ 5. คำรับรองของผู้จะขาย</span><br>
+      ผู้จะขายขอรับรองว่าห้องชุดที่จะซื้อขายนี้ไม่มีภาระผูกพันใด ๆ แก่นิติบุคคล และจะไม่นำห้องชุดนี้ไปก่อภาระผูกพันใด ๆ ทั้งสิ้นก่อนการโอนกรรมสิทธิ์</div>
+
+    <div class="clause"><span class="clause-no">ข้อ 6. กรณีผิดสัญญา</span><br>
+      ในกรณีที่ผู้จะซื้อผิดสัญญาไม่ไปจดทะเบียนรับโอนกรรมสิทธิ์และชำระเงินส่วนที่เหลือ ให้สัญญานี้เป็นอันเลิกกัน ผู้จะขายมีสิทธิริบเงินมัดจำที่ได้รับไว้ทั้งหมด รวมถึงเรียกร้องค่าเสียหายประการอื่นได้<br>
+      ในทำนองเดียวกัน หากผู้จะขายผิดสัญญาไม่ไปจดทะเบียนโอนกรรมสิทธิ์ให้แก่ผู้จะซื้อ ผู้จะซื้อมีสิทธิฟ้องบังคับให้ปฏิบัติตามสัญญา รวมถึงเรียกร้องค่าเสียหายประการอื่นได้</div>
+
+    <div class="clause">สัญญานี้ทำขึ้นเป็นสองฉบับ มีข้อความถูกต้องตรงกัน ทั้งสองฝ่ายได้อ่านและเข้าใจข้อความโดยตลอดแล้วเห็นว่าถูกต้องตรงตามเจตนา จึงได้ลงลายมือชื่อไว้เป็นสำคัญ</div>
+
+    <div class="sig-row">
+      ${sigCell(d.sSig,'ผู้จะขาย',d.sName)}
+      ${sigCell(d.bSig,'ผู้จะซื้อ',d.bName)}
+    </div>
+`;
+}
+function _saleData() {
+  const g = id => (document.getElementById(id)?.value||'').trim();
+  return {
+    condo:g('f_condoName'), unit:g('f_unitNo'), floor:g('f_floor'), bld:g('f_building'),
+    area:g('f_area'), units:g('f_units')||'1', deed:g('f_deedNo'),
+    sub:g('f_subdistrict'), dist:g('f_district'), prov:g('f_province'),
+    place:_salePlaceMade(g), cdate:g('f_contractDate'),
+    sName:g('f_sName'), sAge:g('f_sAge'), sId:g('f_sId'), sAddr:g('f_sAddr'), sPhone:g('f_sPhone'),
+    bName:g('f_bName'), bAge:g('f_bAge'), bId:g('f_bId'), bAddr:g('f_bAddr'), bPhone:g('f_bPhone'),
+    total:parseInt(g('f_totalPrice'))||0, dep:parseInt(g('f_depositAmt'))||0,
+    depMethod:g('f_depositMethod'), depDate:g('f_depositDate'),
+    deadline:g('f_transferDeadline'), feeT:window._fee.Transfer, feeM:window._fee.Mortgage,
+    slip: window._depositSlip || null,
+    photos: window._unitPhotos || [],
+    sCard: window._sCardCopy || null,
+    bCard: window._bCardCopy || null,
+  };
+}
+function buildContract() {
+  document.getElementById('contractDoc').innerHTML = _saleContractHTML(_saleData());
+}
+function _toggleFullContract() {
+  const el = document.getElementById('contractDoc');
+  if (el.style.display === 'none') { buildContract(); el.style.display='block'; setTimeout(()=>window.print(), 200); }
+  else { window.print(); }
+}
+
+/* ── สำเนาบัตร (ภาคผนวก ก) ── */
+async function onCardCopy(e, who) {
+  const f = e.target.files && e.target.files[0]; e.target.value='';
+  if (!f || !f.type.startsWith('image/')) return;
+
+  // ส่ง File ตรง ๆ ให้ createImageBitmap ถอดรหัสได้กว้างกว่าการแปลงเป็น dataURL ก่อน
+  const kind  = await _sniffImageType(f);
+  const small = await _compressPhoto(f);
+
+  if (!small) {
+    _showPhotoError([{ name: f.name || 'รูปบัตรประชาชน', kind: kind }]);
+    return;
+  }
+
+  window['_' + who + 'CardCopy'] = small;
+  document.getElementById(who+'CardImg').src = small;
+  document.getElementById(who+'CardPreview').style.display = 'block';
+  document.getElementById(who+'CardBox').style.display = 'none';
+  const _nt = document.getElementById(who+'CardAutoNote'); if (_nt) _nt.style.display = 'none';
+  try { localStorage.setItem('signdee_sale_'+who+'card', small); } catch(_){}
+  autoSave();
+}
+function clearCardCopy(who) {
+  window['_' + who + 'CardCopy'] = null;
+  document.getElementById(who+'CardPreview').style.display='none';
+  document.getElementById(who+'CardBox').style.display='block';
+  const _nt = document.getElementById(who+'CardAutoNote'); if (_nt) _nt.style.display='none';
+  try { localStorage.removeItem('signdee_sale_'+who+'card'); } catch(_){}
+}
+function _restoreCards() {
+  ['s','b'].forEach(who => {
+    try {
+      const v = localStorage.getItem('signdee_sale_'+who+'card');
+      if (v) {
+        window['_' + who + 'CardCopy'] = v;
+        const img=document.getElementById(who+'CardImg'); if(img) img.src=v;
+        const pv=document.getElementById(who+'CardPreview'); if(pv) pv.style.display='block';
+        const bx=document.getElementById(who+'CardBox'); if(bx) bx.style.display='none';
+      }
+    } catch(_){}
+  });
+}
+
+/* ── สภาพห้องชุด (photos) ── */
+window._unitPhotos = window._unitPhotos || [];
+
+const PHOTO_MAX_EDGE  = 1000;
+const PHOTO_QUALITY   = 0.62;
+const PHOTO_MAX_BYTES = 600 * 1024;   // ขนาด dataURL ที่ยอมรับต่อรูป
+
+/* ใช้ตัวจัดการรูปกลาง /img-safe.js เหมือนผลิตภัณฑ์อื่น
+   เดิมไฟล์นี้มีโค้ดของตัวเอง ซึ่งเป็นต้นเหตุที่ทำให้แต่ละผลิตภัณฑ์
+   พลาดคนละแบบและแก้ไม่ครบ — คงชื่อฟังก์ชันเดิมไว้เพื่อไม่ต้องแก้จุดเรียก */
+async function _sniffImageType(file) { return await SignDeeImg.sniff(file); }
+function _showPhotoError(list)       { return SignDeeImg.explainFailure(list); }
+
+/* ย่อ + แปลงเป็น JPEG
+   คืน null ถ้าถอดรหัสไม่ได้ — ห้ามคืนไฟล์ต้นฉบับเด็ดขาด
+   ของเดิม img.onerror คืน dataUrl เดิม ทำให้ HEIC ดิบ ~1.9 MB หลุดเข้า DB
+   และเปิดไม่ขึ้นทั้งบนเว็บและใน PDF โดยไม่มี error ให้ใครเห็น */
+async function _compressPhoto(input, opts) {
+  return await SignDeeImg.toJpeg(input, Object.assign({ maxEdge: PHOTO_MAX_EDGE, quality: PHOTO_QUALITY, maxBytes: PHOTO_MAX_BYTES }, opts || {}));
+}
+
+async function onUnitPhotos(e) {
+  const files = Array.from(e.target.files || []);
+  e.target.value = '';
+  const rejected = [];
+
+  for (let i = 0; i < files.length; i++) {
+    if (window._unitPhotos.length >= 20) break;
+
+    const f    = files[i];
+    const kind = await _sniffImageType(f);
+    const small = await _compressPhoto(f);
+
+    if (!small) { rejected.push({ name: f.name || 'ไฟล์รูป', kind: kind }); continue; }
+
+    window._unitPhotos.push(small);
+    renderPhotoGrid(); _saveUnitPhotos();
+  }
+
+  if (rejected.length) _showPhotoError(rejected);
+}
+
+function renderPhotoGrid() {
+  const grid = document.getElementById('photoGrid'); if(!grid) return;
+  const cnt = document.getElementById('photoCount'); if(cnt) cnt.textContent = window._unitPhotos.length;
+  grid.innerHTML = window._unitPhotos.map((p,i) =>
+    '<div style="position:relative;"><img src="'+p+'" style="width:100%;height:90px;object-fit:cover;border-radius:8px;border:1px solid var(--border);"><button onclick="removePhoto('+i+')" style="position:absolute;top:3px;right:3px;width:22px;height:22px;border:none;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;font-size:14px;line-height:1;cursor:pointer;">×</button></div>'
+  ).join('');
+}
+function removePhoto(i) { window._unitPhotos.splice(i,1); renderPhotoGrid(); _saveUnitPhotos(); }
+function _saveUnitPhotos() { try { localStorage.setItem('signdee_sale_photos', JSON.stringify(window._unitPhotos)); } catch(_){} }
+function _restoreUnitPhotos() { try { const p=localStorage.getItem('signdee_sale_photos'); if(p){ window._unitPhotos=JSON.parse(p)||[]; renderPhotoGrid(); } } catch(_){} }
+
+/* ── สรุปข้อมูลก่อนสร้างสัญญา ── */
+function buildSummary() {
+  const d = _saleData();
+  const money = n => '฿'+(Number(n)||0).toLocaleString('th-TH');
+  const dash = v => (v||v===0) ? String(v) : '—';
+  const card = (icon,title,step,rows) =>
+    '<div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px;"><div style="font-weight:700;font-size:15px;">'+icon+' '+title+'</div><a onclick="showStep('+step+')" style="color:var(--accent);font-size:13.5px;font-weight:600;cursor:pointer;">แก้ไข</a></div>'
+    + rows.map(([l,v])=>'<div style="display:flex;justify-content:space-between;gap:12px;padding:5px 0;font-size:13.5px;"><span style="color:var(--text2);">'+l+'</span><span style="font-weight:600;text-align:right;">'+dash(v)+'</span></div>').join('')
+    + '</div>';
+  const photos = window._unitPhotos || [];
+  const photoCard =
+    '<div style="background:var(--white);border:1px solid var(--border);border-radius:16px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px;"><div style="font-weight:700;font-size:15px;">📷 สภาพห้องชุด</div><a onclick="showStep(8)" style="color:var(--accent);font-size:13.5px;font-weight:600;cursor:pointer;">แก้ไข</a></div>'
+    + (photos.length
+        ? '<div style="font-size:13px;color:var(--text2);margin-bottom:10px;">แนบรูปแล้ว <b style="color:var(--text);">'+photos.length+'</b> รูป — จะปรากฏเป็นเอกสารแนบท้ายสัญญา</div>'
+          + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">'
+          + photos.map(p=>'<img src="'+p+'" style="width:100%;height:70px;object-fit:cover;border-radius:8px;border:1px solid var(--border);">').join('')
+          + '</div>'
+        : '<div style="font-size:13px;color:var(--text3);">ยังไม่ได้แนบรูป — แนะนำให้ถ่ายรูปสภาพห้องเพื่อป้องกันข้อพิพาท</div>')
+    + '</div>';
+
+  document.getElementById('reviewSummary').innerHTML =
+    card('🏢','ข้อมูลห้องชุด',1,[['โครงการ',d.condo],['ห้อง / ชั้น',(d.unit||'—')+' / '+(d.floor||'—')],['เนื้อที่',d.area?d.area+' ตร.ม.':'—'],['โฉนดเลขที่',d.deed]]) +
+    card('🧑‍💼','ผู้จะขาย',2,[['ชื่อ',d.sName],['เลขบัตร',d.sId],['โทร',d.sPhone],['สำเนาบัตร', window._sCardCopy ? 'แนบแล้ว ✓' : 'ยังไม่แนบ']]) +
+    card('🧑','ผู้จะซื้อ',4,[['ชื่อ',d.bName],['เลขบัตร',d.bId],['โทร',d.bPhone],['สำเนาบัตร', window._bCardCopy ? 'แนบแล้ว ✓' : 'ยังไม่แนบ']]) +
+    card('💰','การชำระเงิน',6,[['ราคารวม',money(d.total)],['เงินมัดจำ',money(d.dep)],['คงเหลือวันโอน',money(Math.max(0,(Number(d.total)||0)-(Number(d.dep)||0)))]]) +
+    card('📋','การโอนกรรมสิทธิ์',7,[['กำหนดโอน',d.deadline||'—'],['ค่าใช้จ่ายวันโอน',d.feeT],['ค่าจดจำนอง',d.feeM]]) +
+    photoCard;
+}
+
+/* ── หน้าเซ็นสัญญา (remote sign) ── */
+let _signToken=null, _signParty=null, _signCtx=null, _signDrawn=false;
+
+/* ═══════════ LINE LOGIN / LIFF (พอร์ตจาก index-nda.html) ═══════════ */
+let _saleLine = null;
+async function _initSaleLiff(){
+  if (typeof liff==='undefined' || !SALE_LIFF_ID) { console.log('[LIFF] ปิดใช้งาน (ยังไม่ตั้ง SALE_LIFF_ID)'); return; }
+  try {
+    await liff.init({ liffId: SALE_LIFF_ID });
+    const inClient = liff.isInClient();
+    if (inClient && !liff.isLoggedIn()) { liff.login(); return; }
+    if (liff.isLoggedIn()) {
+      const pf = await liff.getProfile();
+      _saleLine = { userId: pf.userId, name: pf.displayName||'', pic: pf.pictureUrl||'', at: new Date().toISOString() };
+      console.log('[LIFF] verified as', _saleLine.name);
+    }
+  } catch(e){ console.warn('[LIFF] init error:', e.message); }
+  _renderSaleLineBox();
+}
+function _saleLineVerified(){ return !!(_saleLine && _saleLine.userId); }
+function _saleLiffLogin(){
+  if (typeof liff==='undefined' || !SALE_LIFF_ID) return;
+  try { liff.login({ redirectUri: location.href }); } catch(e){ console.warn(e); }
+}
+function _renderSaleLineBox(){
+  const box = document.getElementById('saleLineBox'); if (!box) return;
+  if (!SALE_LIFF_ID) { box.innerHTML=''; return; }
+  if (_saleLineVerified()) {
+    const pic = _saleLine.pic
+      ? `<img src="${_saleLine.pic}" alt="" style="width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 auto;">`
+      : '<div style="width:42px;height:42px;border-radius:50%;background:#06C755;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto;">L</div>';
+    box.innerHTML = `<div style="display:flex;align-items:center;gap:12px;border:1px solid #06C755;background:rgba(6,199,85,.06);border-radius:14px;padding:13px 15px;">
+        ${pic}<div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:14.5px;">${_saleLine.name||'บัญชี LINE'}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:1px;">✓ ยืนยันตัวตนด้วยบัญชี LINE แล้ว</div></div></div>`;
+  } else {
+    box.innerHTML = `<button type="button" onclick="_saleLiffLogin()" style="width:100%;padding:13px;border:none;border-radius:99px;background:#06C755;color:#fff;font-family:'Anuphan',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">ยืนยันตัวตนด้วย LINE</button>`;
+  }
+}
+/* แจ้ง server ให้ push สัญญาทาง LINE เมื่อลงนามครบ (server กันส่งซ้ำด้วย line_notified_at) */
+async function _saleNotifySigned(rowId, onlyUid){
+  if (!rowId) return;
+  try {
+    const payload = { action:'signed_notify', product:'sale', row_id: rowId };
+    if (onlyUid) payload.only_uid = onlyUid;
+    const r = await fetch(SALE_API+'/api/myip', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+    console.log('[sale signed_notify]', await r.json().catch(()=>({})));
+  } catch(e){ console.warn('[sale signed_notify] ล้มเหลว:', e.message); }
+}
+
+/* ── ผู้จัดทำสัญญาผูกบัญชี LINE เพื่อรับสัญญาด้วย ── */
+function _saleCreatorLineHtml(){
+  if (!SALE_LIFF_ID) return '';
+  if (window._saleCreatorLinked) {
+    return `<div style="display:flex;align-items:center;gap:12px;border:1px solid #06C755;background:rgba(6,199,85,.06);border-radius:14px;padding:13px 15px;margin-top:12px;text-align:left;">
+      <div style="width:42px;height:42px;border-radius:50%;background:#06C755;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto;">✓</div>
+      <div style="flex:1;min-width:0;"><div style="font-weight:700;font-size:14.5px;">${(_saleLine&&_saleLine.name)||'บัญชี LINE'}</div>
+      <div style="font-size:12px;color:var(--text3);">ผูกบัญชีแล้ว — ระบบจะส่งสัญญาให้ทาง LINE</div></div></div>`;
+  }
+  return `<button type="button" onclick="_linkSaleCreatorLine()" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:99px;background:#06C755;color:#fff;font-family:'Anuphan',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">รับสัญญาทาง LINE ของฉัน</button>`;
+}
+async function _linkSaleCreatorLine(){
+  const rid = window.contractRowId || (function(){ try{ return localStorage.getItem('sale_contract_row_id'); }catch(_){ return null; } })();
+  if (!rid) { alert('ไม่พบสัญญา'); return; }
+  if (typeof liff==='undefined' || !SALE_LIFF_ID) { alert('ยังไม่ได้เปิดใช้ LINE Login'); return; }
+  if (!_saleLineVerified()) {
+    try { liff.login({ redirectUri: location.href }); } catch(e){ alert('เปิด LINE Login ไม่สำเร็จ'); }
+    return;
+  }
+  try {
+    const { error } = await sb.from('sale_contracts').update({
+      creator_line_user_id: _saleLine.userId,
+      creator_line_name: _saleLine.name,
+      creator_line_verified_at: new Date().toISOString(),
+    }).eq('id', rid);
+    if (error) { alert('ผูกบัญชีไม่สำเร็จ: ' + error.message); return; }
+    window._saleCreatorLinked = true;
+    const box = document.getElementById('ownDoneExtra') || document.getElementById('saleDoneBox');
+    if (box) box.insertAdjacentHTML('beforeend', _saleCreatorLineHtml());
+    await _saleNotifySigned(rid, _saleLine.userId);
+  } catch(e){ alert('ผูกบัญชีไม่สำเร็จ'); }
+}
+
+/* การ์ดชวนเพิ่มเพื่อน OA */
+function _saleOaInviteHtml(){
+  return `<div style="border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--white);box-shadow:var(--shadow);margin-top:18px;text-align:left;">
+      <div style="font-family:'Anuphan',sans-serif;font-weight:700;font-size:15px;">รับสัญญาทาง LINE</div>
+      <div style="font-size:12.5px;color:var(--text3);margin-top:5px;line-height:1.6;">เพิ่ม SignDee เป็นเพื่อน เพื่อรับสัญญาฉบับสมบูรณ์และการแจ้งเตือนสถานะเข้าแชตของคุณ</div>
+      <button type="button" onclick="_saleAddOaFriend()" style="width:100%;margin-top:12px;padding:14px;border:none;border-radius:99px;background:#06C755;color:#fff;font-family:'Anuphan',sans-serif;font-size:15px;font-weight:700;cursor:pointer;">เพิ่มเพื่อน SignDee</button>
+    </div>`;
+}
+function _saleAddOaFriend(){
+  try { if (typeof liff!=='undefined' && SALE_LIFF_ID && liff.isInClient && liff.isInClient()) { liff.openWindow({ url: LINE_OA_URL, external:false }); return; } } catch(_){}
+  window.open(LINE_OA_URL, '_blank');
+}
+function _rpcToSaleData(c) {
+  const rawPhotos = Array.isArray(c.unit_photos) ? c.unit_photos : [];
+  const photos = rawPhotos.filter(p => typeof p === 'string' && p.startsWith('data:image'));
+  if (rawPhotos.length && !photos.length) console.warn('unit_photos present but not valid dataURLs', rawPhotos[0] && String(rawPhotos[0]).slice(0,40));
+  return {
+    condo:c.condo_name, unit:c.unit_no, floor:c.floor, bld:c.building,
+    area:c.area, units:c.units||'1', deed:c.deed_no,
+    sub:c.subdistrict, dist:c.district, prov:c.province,
+    place:c.place_made||c.condo_name, cdate:c.contract_date,
+    sName:c.s_name, sAge:c.s_age, sId:c.s_id, sAddr:c.s_addr, sPhone:c.s_phone,
+    bName:c.b_name, bAge:c.b_age, bId:c.b_id, bAddr:c.b_addr, bPhone:c.b_phone,
+    total:c.total_price, dep:c.deposit_amt, depMethod:c.deposit_method, depDate:c.deposit_date,
+    deadline:c.transfer_deadline, feeT:c.fee_transfer, feeM:c.fee_mortgage,
+    slip: c.deposit_slip && c.deposit_slip.dataUrl ? c.deposit_slip.dataUrl : null,
+    photos: photos,
+    sCard: (c.s_card && c.s_card.dataUrl) ? c.s_card.dataUrl : null,
+    bCard: (c.b_card && c.b_card.dataUrl) ? c.b_card.dataUrl : null,
+    sSig: c.s_signature, bSig: c.b_signature,
+  };
+}
+async function _saleSignBoot(token) {
+  _signToken = token;
+  document.getElementById('roleChoice').classList.remove('active');
+  document.getElementById('wizard').style.display = 'none';
+  document.getElementById('saleSignPage').style.display = 'block';
+  window._saleContractId = null;
+  const _depSess = _urlParam('deposit_session');
+  let c;
+  try { const { data, error } = await sb.rpc('get_sale_contract_for_read', { p_token: token }); if (error) throw error; c = data; }
+  catch(e) { c = null; }
+  document.getElementById('signLoading').style.display = 'none';
+  if (!c) { document.getElementById('signError').style.display='block'; return; }
+  _signParty = c.party; // 'seller' | 'buyer'
+  const label = c.party==='seller' ? 'ผู้จะขาย' : 'ผู้จะซื้อ';
+  const name  = c.party==='seller' ? c.s_name : c.b_name;
+  document.getElementById('signContent').style.display='block';
+  document.getElementById('signPartyName').textContent = name || label;
+  document.getElementById('signPartyLabel').textContent = label;
+  try {
+    const _d = _rpcToSaleData(c);
+    // แสดงสัญญา + ภาคผนวก ก/ข/ค  (ใบรับรองการลงนามไม่แสดง — ออกให้ตอนดาวน์โหลด PDF เท่านั้น)
+    document.getElementById('signDoc').innerHTML =
+      _saleContractHTML(_d)
+      + [_apxCards(c,_d), _apxSlip(c,_d), _apxPhotos(c,_d)]
+          .filter(x => x && x.trim())
+          .map(x => '<div style="margin-top:26px;padding-top:22px;border-top:1px solid var(--border);">'
+                    + x.replace(/page-break-before:always;?/g,'') + '</div>')
+          .join('');
+  } catch(e) {
+    console.error('render contract failed:', e);
+    document.getElementById('signDoc').innerHTML = '<div style="color:var(--red);">แสดงสัญญาไม่สำเร็จ แต่ยังลงนามได้ตามปกติ</div>';
+  }
+
+  if (!c.payment_completed) {
+    _showSignStatus('⏳', 'สัญญายังไม่พร้อมให้เซ็น', 'ผู้จัดทำยังชำระค่าบริการไม่เสร็จ — กรุณาลองใหม่ภายหลัง');
+    return;
+  }
+  const alreadySigned = c.party==='seller' ? c.s_signed : c.b_signed;
+  if (alreadySigned) { _onSigned(c); return; }
+  window._saleContractId = c.id;
+  // ── ผู้ซื้อต้องวางมัดจำก่อนเซ็น (ถ้ามีมัดจำ + ยังไม่จ่าย) ──
+  if (_buyerNeedsDeposit(c) && !(_depSess)) {
+    _renderBuyerDepositGate(c);
+    return;
+  }
+  if (_depSess) {   // กลับจาก Stripe Checkout → ยืนยันมัดจำ แล้วค่อยเซ็น
+    const okDep = await _verifyBuyerDeposit(c.id, _depSess);
+    if (!okDep) { _renderBuyerDepositGate(c, 'การชำระยังไม่สำเร็จ ลองใหม่'); return; }
+    window._depositJustPaid = true;
+  }
+  _startSalePad();
+}
+function _startSalePad() {
+  const gate = document.getElementById('buyerDepositGate');
+  if (gate) gate.innerHTML = window._depositJustPaid
+    ? '<div style="display:flex;gap:10px;align-items:flex-start;border:1px solid var(--green);background:rgba(26,127,90,.07);border-radius:12px;padding:12px 14px;">'
+      + '<span style="color:var(--green);font-size:20px;">✓</span>'
+      + '<div style="font-size:12.5px;color:var(--text2);line-height:1.7;"><b style="color:var(--green);">ชำระมัดจำสำเร็จ</b><br>'
+      + 'เงินอยู่ระหว่างโอนเข้าบัญชีผู้ขาย (~7–14 วันสำหรับรอบแรก) · มัดจำถือว่าชำระแล้ว ลงนามต่อได้เลย</div></div>'
+    : '';
+  document.getElementById('signPadWrap').style.display = 'block';
+  _initSignPad();
+  _renderSaleLineBox();
+  _initSaleLiff();
+}
+function _buyerNeedsDeposit(c) {
+  return c.party === 'buyer' && Number(c.deposit_amt || 0) > 0 && !c.deposit_paid_at;
+}
+function _renderBuyerDepositGate(c, errMsg) {
+  document.getElementById('signPadWrap').style.display = 'none';
+  const box = document.getElementById('buyerDepositGate'); if (!box) return;
+  const dep = Number(c.deposit_amt || 0);
+  const bank = c.seller_bank_account || null;
+  const cardOn = !!c.deposit_stripe_account;
+  const money = n => '฿' + (Number(n)||0).toLocaleString('th-TH');
+  let html = '<div style="border:1px solid var(--accent2);border-radius:14px;background:var(--accent-d);padding:16px;">'
+    + '<div style="text-align:center;margin-bottom:6px;"><div style="font-size:13px;color:var(--text2);">ชำระเงินมัดจำก่อนลงนาม</div>'
+    + '<div style="font-size:24px;font-weight:700;">'+money(dep)+'</div></div>';
+  if (errMsg) html += '<div style="color:var(--red);font-size:12.5px;text-align:center;margin-bottom:8px;">'+errMsg+'</div>';
+
+  html += '<div style="border:1px solid var(--border);border-radius:12px;background:var(--white);padding:13px;margin-top:10px;">'
+    + '<div style="font-weight:600;font-size:13.5px;">โอนเงินเอง <span style="color:var(--green);font-size:11.5px;">ฟรี</span></div>';
+  if (bank && (bank.no||bank.bank)) {
+    html += '<div style="font-size:12.5px;color:var(--text2);line-height:1.8;margin-top:6px;">'
+      + (bank.bank||'') + ' ' + (bank.no||'') + '<br>' + (bank.name||'') + '</div>';
+  } else {
+    html += '<div style="font-size:12.5px;color:var(--text3);margin-top:6px;">โอนตามที่ตกลงกับผู้ขาย</div>';
+  }
+  html += '<button type="button" onclick="_buyerDepositTransfer()" class="btn-ghost" style="margin-top:8px;width:100%;">โอนแล้ว ดำเนินการต่อ</button></div>';
+
+  if (cardOn) {
+    const m = _saleDepMath(dep);
+    html += '<div style="border:2px solid var(--accent);border-radius:12px;background:var(--white);padding:13px;margin-top:10px;">'
+      + '<div style="font-weight:600;font-size:13.5px;">บัตรเครดิต</div>'
+      + '<div style="font-size:12.5px;color:var(--text2);line-height:1.8;margin-top:6px;">ยอดชำระ <b>'+money(m.buyer)+'</b><br>'
+      + '<span style="font-size:11.5px;color:var(--text3);">รวมค่าธรรมเนียม '+money(m.buyer-dep)+' · ผู้ขายได้รับ '+money(dep)+' เต็ม</span></div>'
+      + '<button type="button" onclick="_buyerDepositCard()" class="btn-next" style="margin-top:8px;">ชำระด้วยบัตร →</button></div>';
+  }
+  html += '</div>';
+  box.innerHTML = html;
+}
+// สูตรฝั่ง client (โชว์ตัวเลข) — ยอดจริงคำนวณซ้ำที่ server
+function _saleDepMath(depBaht) {
+  const D = depBaht*100, A = Math.round((D*1.015 + 1000)/(1-0.0365));
+  return { buyer: A/100 };
+}
+async function _buyerDepositTransfer() {
+  // โอนเอง = offline (ผู้ขายยืนยันนอกระบบ) → ไปเซ็นได้เลย
+  _startSalePad();
+}
+async function _buyerDepositCard() {
+  const rid = window._saleContractId; if (!rid) return;
+  try {
+    const back = location.origin + location.pathname + '?saleRead=' + encodeURIComponent(_signToken);
+    const r = await fetch(SALE_API+'/api/create-payment-intent', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'create_deposit', contract_id:rid, return_base:back })
+    });
+    const j = await r.json();
+    if (j.checkout_url) location.href = j.checkout_url;
+    else alert('สร้างรายการชำระไม่สำเร็จ: ' + (j.error||''));
+  } catch(e) { alert('สร้างรายการชำระไม่สำเร็จ'); }
+}
+async function _verifyBuyerDeposit(rid, sessionId) {
+  try {
+    const r = await fetch(SALE_API+'/api/create-payment-intent', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ action:'verify_deposit', contract_id:rid, session_id:sessionId })
+    });
+    const j = await r.json();
+    return !!j.paid;
+  } catch(_) { return false; }
+}
+function _initSignPad() {
+  const cv = document.getElementById('signPad');
+  if (!cv) return;
+  const ctx = cv.getContext('2d'); _signCtx = ctx;
+  ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#14171F';
+  let drawing=false;
+  const pos = e => {
+    const r = cv.getBoundingClientRect();
+    const t = (e.touches && e.touches[0]) ? e.touches[0] : e;
+    return { x:(t.clientX-r.left)*(cv.width/r.width), y:(t.clientY-r.top)*(cv.height/r.height) };
+  };
+  const start = e => { e.preventDefault(); drawing=true; const p=pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p.x+0.1,p.y+0.1); ctx.stroke(); _signDrawn=true; };
+  const move  = e => { if(!drawing) return; e.preventDefault(); const p=pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); _signDrawn=true; };
+  const end   = () => { drawing=false; };
+  // pointer (หลัก) + mouse/touch (fallback เผื่อบางเบราว์เซอร์)
+  if (window.PointerEvent) {
+    cv.addEventListener('pointerdown', start);
+    cv.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end);
+    cv.addEventListener('pointerleave', end);
+  } else {
+    cv.addEventListener('mousedown', start);
+    cv.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+    cv.addEventListener('touchstart', start, {passive:false});
+    cv.addEventListener('touchmove', move, {passive:false});
+    window.addEventListener('touchend', end);
+  }
+}
+function clearSignPad() {
+  if(!_signCtx)return; const cv=document.getElementById('signPad');
+  _signCtx.clearRect(0,0,cv.width,cv.height); _signDrawn=false;
+}
+async function submitSaleSignature() {
+  if (!_signDrawn) { alert('กรุณาลงลายมือชื่อก่อน'); return; }
+  const btn = document.getElementById('signSubmitBtn');
+  btn.disabled=true; btn.textContent='กำลังบันทึกลายเซ็น…';
+  const sig = document.getElementById('signPad').toDataURL('image/png');
+  const rpc = _signParty==='seller' ? 'submit_seller_signature' : 'submit_buyer_signature';
+  // เก็บ IP + อุปกรณ์ เพื่อออกใบรับรอง (audit trail)
+  let ip = null;
+  try { const r = await fetch(SALE_API+'/api/myip'); const j = await r.json(); ip = j && j.ip ? j.ip : null; } catch(_){}
+  const device = (navigator.userAgent||'').slice(0,300);
+  let ok=false, res=null;
+  try { const { data, error } = await sb.rpc(rpc, { p_token:_signToken, p_sig:sig, p_line:(_saleLineVerified()?_saleLine.userId:null), p_ip:ip, p_device:device }); if(error)throw error; res=data; ok = data && data.ok; }
+  catch(e){ ok=false; console.error('sign failed:', e); }
+  if (!ok) { alert('บันทึกลายเซ็นไม่สำเร็จ กรุณาลองใหม่'); btn.disabled=false; btn.textContent='✍️ ยืนยันลงนามสัญญา'; return; }
+  // แจ้ง backend เช็ก "เซ็นครบ" → แจ้งอีกฝ่าย + PDF (Phase 4d)
+  // /api/sign-reminder ไม่รองรับ product=sale (อ่านแต่ตาราง contracts ของสัญญาเช่า) → ใช้ signed_notify แทน
+  _saleNotifySigned(_signToken.replace(/^(rs_|rb_)/,''));
+  _onSigned(null);
+}
+function _onSigned(c) {
+  document.getElementById('signPadWrap').style.display='none';
+  _showSignStatus('✅', 'ลงนามเรียบร้อยแล้ว!', 'ลายมือชื่อของคุณถูกบันทึกอย่างปลอดภัย เมื่อครบทุกฝ่าย ระบบจะสร้างสัญญาฉบับสมบูรณ์ให้ดาวน์โหลด');
+  const st = document.getElementById('signStatus');
+  if (st && SALE_LIFF_ID && !/_saleAddOaFriend/.test(st.innerHTML)) st.insertAdjacentHTML('beforeend', _saleOaInviteHtml());
+  _saleSignPoll();
+}
+
+/* ── 4d: PDF + ใบรับรอง (client-side) ── */
+async function _sha256(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+/* ── geo lookup สำหรับใบรับรอง (ipwho.is เหมือนสัญญาเช่า) ── */
+window._certGeo = {};
+async function _loadGeo(ips) {
+  const uniq = [...new Set((ips||[]).filter(Boolean).map(x=>String(x).trim()).filter(Boolean))];
+  await Promise.all(uniq.map(async ip => {
+    if (window._certGeo[ip]) return;
+    try {
+      const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), 3500);
+      const r = await fetch('https://ipwho.is/'+encodeURIComponent(ip)+'?fields=success,city,country', { signal: ctrl.signal });
+      clearTimeout(t);
+      const j = await r.json();
+      if (j && j.success !== false) window._certGeo[ip] = [j.city, j.country].filter(Boolean).join(', ');
+    } catch(_){}
+  }));
+}
+function _geo(ip) { return (ip && window._certGeo[String(ip).trim()]) || '—'; }
+function _tzLoc() {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    const map = { 'Asia/Bangkok':'Bangkok, Thailand','Asia/Tokyo':'Tokyo, Japan','Asia/Singapore':'Singapore' };
+    return map[tz] || tz || '—';
+  } catch(e){ return '—'; }
+}
+
+/* ── ภาคผนวก ก/ข/ค (แยกหน้า เหมือนสัญญาเช่า) ── */
+function _apxHead(title, sub, meta) {
+  return '<div style="border-bottom:2px solid #14171F;padding-bottom:10px;margin-bottom:18px;">'
+    + '<div style="font-family:Anuphan,sans-serif;font-size:19px;font-weight:700;color:#14171F;">'+title+'</div>'
+    + '<div style="font-size:12px;color:#5B6270;margin-top:3px;">'+sub+'</div>'
+    + (meta ? '<div style="font-size:10.5px;color:#8E95A3;margin-top:4px;">'+meta+'</div>' : '')
+    + '</div>';
+}
+function _apxCards(c, d) {
+  if (!d.sCard && !d.bCard) return '';
+  // ลายน้ำคาดทับสำเนาบัตร กันนำไปใช้ต่อ (รูปแบบเดียวกับสัญญาเช่า/NDA)
+  const wmText = 'ใช้ประกอบสัญญาจะซื้อจะขายห้องชุด' + (c.unit_no ? ' เลขที่ '+c.unit_no : '') + ' เท่านั้น';
+  const stamped = img =>
+    '<div style="position:relative;display:block;overflow:hidden;border-radius:6px;">'
+    + '<img src="'+img+'" style="width:100%;border-radius:6px;display:block;">'
+    + '<div style="position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden;">'
+    + '<span style="transform:rotate(-16deg);font-size:10px;font-weight:700;line-height:1.35;color:rgba(190,30,30,.72);'
+    + 'background:rgba(255,255,255,.55);border-top:1.5px solid rgba(190,30,30,.5);border-bottom:1.5px solid rgba(190,30,30,.5);'
+    + 'padding:5px 8px;text-align:center;width:118%;display:block;">'+wmText+'</span></div></div>';
+  const cell = (label, name, id, img) =>
+    '<div style="flex:1;">'
+    + '<div style="font-size:11px;font-weight:700;color:#14171F;letter-spacing:.04em;margin-bottom:6px;">'+label+'</div>'
+    + '<div style="border:1px solid #E6E4DC;border-radius:10px;padding:10px;background:#FFFFFF;">'
+    + '<div style="font-size:10px;color:#5B6270;margin-bottom:6px;">บัตรประชาชน — '+(name||'—')+(id?' | เลขที่ '+id:'')+'</div>'
+    + (img ? stamped(img) : '<div style="font-size:10px;color:#8E95A3;padding:20px 0;text-align:center;">ไม่ได้แนบ</div>')
+    + '</div></div>';
+  return '<div style="page-break-before:always;padding-top:24px;">'
+    + _apxHead('ภาคผนวก ก — สำเนาบัตรประชาชนคู่สัญญา', 'ID Card Copy — Seller &amp; Buyer Identity Verification', 'รหัสสัญญา: '+c.id)
+    + '<div style="display:flex;gap:14px;">' + cell('ผู้จะขาย — SELLER', d.sName, d.sId, d.sCard) + cell('ผู้จะซื้อ — BUYER', d.bName, d.bId, d.bCard) + '</div>'
+    + '<div style="font-size:10px;color:#8E95A3;margin-top:14px;text-align:right;">สำเนาบัตรประชาชนใช้เพื่อยืนยันตัวตนคู่สัญญาเท่านั้น</div>'
+    + '</div>';
+}
+function _apxSlip(c, d) {
+  if (!d.slip) return '';
+  return '<div style="page-break-before:always;padding-top:24px;">'
+    + _apxHead('ภาคผนวก ข — หลักฐานการโอนเงินมัดจำ', 'Deposit Payment Slip', 'ผู้จะขาย: '+(d.sName||'—')+' | ผู้จะซื้อ: '+(d.bName||'—')+' | รหัสสัญญา: '+c.id)
+    + '<div style="text-align:center;"><img src="'+d.slip+'" style="max-width:78%;border:1px solid #E6E4DC;border-radius:10px;"></div>'
+    + '<div style="font-size:10px;color:#8E95A3;margin-top:12px;text-align:right;">หลักฐานชำระเงินมัดจำ ณ วันทำสัญญา</div>'
+    + '</div>';
+}
+function _apxPhotos(c, d) {
+  if (!d.photos || !d.photos.length) return '';
+  const grid = d.photos.map((p,i) =>
+    '<div style="width:31.5%;"><img src="'+p+'" style="width:100%;height:120px;object-fit:cover;border-radius:8px;border:1px solid #E6E4DC;">'
+    + '<div style="font-size:9px;color:#8E95A3;text-align:center;margin-top:3px;">ภาพที่ '+(i+1)+'</div></div>').join('');
+  const sig = (s, name, role) => '<div style="flex:1;text-align:center;">'
+    + (s ? '<img src="'+s+'" style="max-width:150px;max-height:62px;">' : '<div style="height:62px;"></div>')
+    + '<div style="border-top:1px solid #14171F;margin:0 22px;padding-top:6px;font-size:11px;">( '+(name||'—')+' )</div>'
+    + '<div style="font-size:10px;color:#5B6270;">'+role+' — ยืนยันสภาพห้อง</div></div>';
+  return '<div style="page-break-before:always;padding-top:24px;">'
+    + _apxHead('ภาคผนวก ค — บันทึกสภาพห้องชุด', 'Unit Condition Record — ก่อนโอนกรรมสิทธิ์',
+        'ห้อง: '+(d.unit||'—')+' | โครงการ: '+(d.condo||'—')+' | รวม: '+d.photos.length+' รูป')
+    + '<div style="display:flex;flex-wrap:wrap;gap:8px;">'+grid+'</div>'
+    + '<div style="display:flex;gap:20px;margin-top:26px;border-top:1px solid #E6E4DC;padding-top:18px;">'
+      + sig(d.sSig, d.sName, 'ผู้จะขาย') + sig(d.bSig, d.bName, 'ผู้จะซื้อ')
+    + '</div></div>';
+}
+
+function _certNo(id) {
+  const y = new Date().getFullYear();
+  return 'SD-SALE-' + y + '-' + String(id||'').replace(/-/g,'').slice(0,8).toUpperCase();
+}
+function _fmtLocal(ts){ if(!ts) return '—'; try{ return new Date(ts).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'}); }catch(e){ return '—'; } }
+function _fmtUTC(ts){ if(!ts) return '—'; try{ return new Date(ts).toISOString().replace('T',' ').slice(0,19)+' UTC'; }catch(e){ return '—'; } }
+function _shortDev(ua) {
+  if (!ua) return '—';
+  const s = String(ua);
+  let os = /Windows/i.test(s)?'Windows' : /Android/i.test(s)?'Android' : /iPhone|iPad|iOS/i.test(s)?'iOS' : /Mac OS/i.test(s)?'macOS' : /Linux/i.test(s)?'Linux' : 'อื่นๆ';
+  let br = /Edg\//i.test(s)?'Edge' : /Chrome\//i.test(s)?'Chrome' : /Safari\//i.test(s)&&!/Chrome/i.test(s)?'Safari' : /Firefox\//i.test(s)?'Firefox' : /Line\//i.test(s)?'LINE' : 'เบราว์เซอร์';
+  return os + ' · ' + br;
+}
+function _certHTML(c, hash) {
+  const e = v => String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const issuedL = _fmtLocal(new Date().toISOString()), issuedU = _fmtUTC(new Date().toISOString());
+  const tz = (()=>{ try{ return Intl.DateTimeFormat().resolvedOptions().timeZone || '—'; }catch(e){ return '—'; } })();
+
+  const signer = (role,name,at,ip,dev) =>
+    '<tr><td>'+e(role)+'</td><td>'+e(name||'—')+'</td>'
+    + '<td>'+e(_fmtLocal(at))+'<div style="font-size:9px;color:#8E95A3;">'+e(_fmtUTC(at))+'</div></td>'
+    + '<td>'+e(ip||'—')+'<div style="font-size:9px;color:#8E95A3;">'+e(_geo(ip))+'</div></td><td>'+e(_shortDev(dev))+'</td></tr>';
+
+  // audit trail เรียงตามเวลา
+  const evs = [];
+  if (c.s_signed_at) evs.push({l:'ผู้จะขายลงลายมือชื่ออิเล็กทรอนิกส์', at:c.s_signed_at, ip:c.s_sign_ip, d:c.s_sign_device});
+  if (c.b_signed_at) evs.push({l:'ผู้จะซื้อลงลายมือชื่ออิเล็กทรอนิกส์', at:c.b_signed_at, ip:c.b_sign_ip, d:c.b_sign_device});
+  try { evs.sort((a,b)=> new Date(a.at)-new Date(b.at)); } catch(_){}
+  const audit = evs.map((v,i) =>
+    '<tr><td>'+(i+1)+'</td><td>'+e(_fmtLocal(v.at))+'<div style="font-size:9px;color:#8E95A3;">'+e(_fmtUTC(v.at))+'</div></td>'
+    + '<td>'+e(v.l)+'</td><td>'+e(v.ip||'—')+' · '+e(_geo(v.ip))+'<div style="font-size:9px;color:#8E95A3;">'+e(_shortDev(v.d))+'</div></td></tr>').join('');
+
+  const th = 'padding:6px 8px;background:#EAE8DF;border:1px solid #D2D0C6;font-size:10px;text-align:left;font-weight:700;';
+  const td = 'padding:6px 8px;border:1px solid #E6E4DC;font-size:10.5px;vertical-align:top;';
+  const kv = (k,v) => '<tr><td style="'+td+'width:38%;color:#5B6270;">'+e(k)+'</td><td style="'+td+'font-weight:600;">'+e(v)+'</td></tr>';
+
+  return '<div style="page-break-before:always;padding-top:24px;">'
+    + '<div style="text-align:center;border-bottom:2px solid #2E86C6;padding-bottom:12px;margin-bottom:16px;">'
+      + '<div style="font-family:Anuphan,sans-serif;font-size:21px;font-weight:700;color:#14171F;">ใบรับรองการลงนามอิเล็กทรอนิกส์</div>'
+      + '<div style="font-size:12px;color:#2E86C6;font-weight:600;letter-spacing:.04em;">Certificate of Electronic Signing</div>'
+      + '<div style="font-size:10px;color:#8E95A3;margin-top:5px;">บันทึกหลักฐานการลงนามตาม พ.ร.บ. ว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544</div>'
+    + '</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">'
+      + kv('เลขที่ใบรับรอง (Certificate No.)', _certNo(c.id))
+      + kv('รหัสสัญญา (Contract ID)', c.id)
+      + kv('ประเภทเอกสาร (Document Type)', 'สัญญาจะซื้อจะขายอาคารชุด (ห้องชุด)')
+      + kv('ทรัพย์สิน (Property)', (c.condo_name||'—') + (c.unit_no ? ' · ห้อง '+c.unit_no : ''))
+      + kv('รหัสธุรกรรม (Transaction ID)', c.id)
+      + kv('ออกใบรับรองเมื่อ (Issued)', issuedL + '  ·  ' + issuedU)
+      + kv('ตำแหน่งออกใบรับรอง (Location)', _tzLoc())
+      + kv('เขตเวลา (Time Zone)', tz)
+    + '</table>'
+    + '<div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:#14171F;">รายละเอียดผู้ลงนาม (Signers)</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">'
+      + '<tr><th style="'+th+'">ผู้ลงนาม</th><th style="'+th+'">ชื่อ</th><th style="'+th+'">วันเวลาที่ลงนาม (Local · UTC)</th><th style="'+th+'">IP Address</th><th style="'+th+'">อุปกรณ์</th></tr>'
+      + signer('ผู้จะขาย', c.s_name, c.s_signed_at, c.s_sign_ip, c.s_sign_device)
+      + signer('ผู้จะซื้อ', c.b_name, c.b_signed_at, c.b_sign_ip, c.b_sign_device)
+    + '</table>'
+    + (audit ? '<div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:#14171F;">บันทึกเหตุการณ์ (Audit Trail)</div>'
+      + '<table style="width:100%;border-collapse:collapse;margin-bottom:16px;">'
+      + '<tr><th style="'+th+'width:6%;">#</th><th style="'+th+'width:28%;">วันเวลา</th><th style="'+th+'">เหตุการณ์</th><th style="'+th+'width:26%;">IP · อุปกรณ์</th></tr>'
+      + audit + '</table>' : '')
+    + '<div style="font-weight:700;font-size:12.5px;margin-bottom:6px;color:#14171F;">ความสมบูรณ์ของเอกสาร (Document Integrity)</div>'
+    + '<table style="width:100%;border-collapse:collapse;margin-bottom:14px;">'
+      + '<tr><td style="'+td+'width:38%;color:#5B6270;">ลายนิ้วมือดิจิทัล (SHA-256)</td><td style="'+td+'font-family:monospace;font-size:9px;word-break:break-all;">'+e(hash)+'</td></tr>'
+      + kv('อัลกอริทึม (Algorithm)', 'SHA-256')
+    + '</table>'
+    + '<div style="font-weight:700;font-size:12.5px;margin:14px 0 6px;color:#14171F;">ข้อความรับรองทางกฎหมาย (Legal Disclaimer / Evidence Statement)</div>'
+    + '<div style="background:#F1F0EA;border:1px solid #E6E4DC;border-radius:8px;padding:12px;font-size:10px;color:#5B6270;line-height:1.8;">'
+      + 'ใบรับรองนี้ยืนยันว่าข้อมูลการลงนาม วันเวลา (อ้างอิงเวลาเซิร์ฟเวอร์ / UTC) ระบบยืนยันตัวตน (IP · อุปกรณ์ · ตำแหน่งโดยประมาณ) '
+      + 'และค่าความสมบูรณ์ของเอกสาร (SHA-256) ถูกบันทึกโดยอัตโนมัติผ่านระบบ SignDee ณ เวลาที่แต่ละฝ่ายลงนาม '
+      + 'เพื่อใช้เป็นหลักฐานทางอิเล็กทรอนิกส์ตามพระราชบัญญัติว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544 และที่แก้ไขเพิ่มเติม '
+      + 'ทั้งนี้หากมีการแก้ไขเนื้อหาสัญญาภายหลัง ค่า Hash ข้างต้นจะไม่ตรงกัน ซึ่งสามารถใช้ตรวจสอบความถูกต้องแท้จริงของเอกสารได้'
+    + '</div>'
+    + '<div style="font-size:9px;color:#8E95A3;margin-top:8px;">ออกโดยระบบ SignDee · ตำแหน่งโดยประมาณอ้างอิงจากหมายเลข IP ขณะลงนาม อาจคลาดเคลื่อนได้ตามผู้ให้บริการเครือข่าย</div>'
+    + '</div>';
+}
+async function generateSalePDF(c) {
+  if (!window._libsReady) {} else { try { await window._libsReady; } catch(_){} }
+  if (!window.html2canvas || !window.jspdf) { alert('ไลบรารี PDF ยังโหลดไม่เสร็จ ลองใหม่อีกครั้ง'); return; }
+  const d = _rpcToSaleData(c);
+  const hash = await _sha256(JSON.stringify({ id:c.id, s:c.s_id, b:c.b_id, total:c.total_price, unit:c.unit_no, sigS:!!c.s_signature, sigB:!!c.b_signature }));
+  await _loadGeo([c.s_sign_ip, c.b_sign_ip]);
+
+  // แต่ละ section = ขึ้นหน้าใหม่เสมอ (สัญญา / ใบรับรอง / ภาคผนวก ก / ข / ค)
+  const sections = [
+    '<div class="doc" style="box-shadow:none;border:none;padding:0;background:#FFFFFF;">' + _saleContractHTML(d) + '</div>',
+    _certHTML(c, hash),
+    _apxCards(c, d),
+    _apxSlip(c, d),
+    _apxPhotos(c, d),
+  ].filter(x => x && x.trim());
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p','mm','a4');
+  const PW = 210, PH = 297, M = 10;              // A4 + ขอบ
+  const availW = PW - M*2, availH = PH - M*2;
+
+  for (let i = 0; i < sections.length; i++) {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:fixed;left:-99999px;top:0;width:760px;background:#fff;padding:0;box-sizing:border-box;';
+    // ตัด page-break ออก (เราคุมหน้าเองแล้ว)
+    // บังคับพื้นหลังขาวล้วน — ธีมหน้าเว็บใช้ครีม (#F1F0EA / #FEFEFC) ซึ่งติดไปในภาพ html2canvas
+    wrap.innerHTML = sections[i]
+      .replace(/page-break-before:always;?/g, '')
+      .replace(/#FEFEFC/gi, '#FFFFFF')
+      .replace(/#F1F0EA/gi, '#FFFFFF')
+      .replace(/var\(--white\)/g, '#FFFFFF')
+      .replace(/var\(--bg\)/g, '#FFFFFF')
+      .replace(/var\(--surf\)/g, '#FFFFFF');
+    document.body.appendChild(wrap);
+    // เก็บตำแหน่งขอบบนของแต่ละบล็อก (ข้อสัญญา/ลายเซ็น) ไว้ตัดหน้าไม่ให้คร่อมกลางข้อ
+    const wrapW = wrap.offsetWidth || 760;
+    const blockTops = [...wrap.querySelectorAll('.clause, .sig-row')].map(el => el.offsetTop).filter(v => v > 0);
+    let canvas;
+    try {
+      canvas = await html2canvas(wrap, { scale:2, backgroundColor:'#fff', useCORS:true });
+    } catch(e) { document.body.removeChild(wrap); continue; }
+    document.body.removeChild(wrap);
+
+    const ratio = canvas.height / canvas.width;
+    let w = availW, h = w * ratio;
+    const img = canvas.toDataURL('image/jpeg', 0.9);
+
+    if (i > 0) pdf.addPage();
+
+    if (h <= availH) {
+      pdf.addImage(img, 'JPEG', M, M, w, h);                   // พอดีหน้าเดียว
+    } else if (h <= availH * 1.35) {
+      // สูงเกินเล็กน้อย (เช่น สัญญา + ลายเซ็น) → ย่อให้พอดี 1 หน้า กันลายเซ็นตกหน้า
+      const scale = availH / h;
+      w = w * scale; h = availH;
+      pdf.addImage(img, 'JPEG', M + (availW - w)/2, M, w, h);
+    } else {
+      // ยาวเกิน 1 หน้า → แบ่งหน้าที่ขอบข้อสัญญา ไม่ตัดคร่อมกลางข้อ (เช่น ข้อ 3 การชำระเงิน)
+      const pxToMm = w / wrapW;
+      const bmm = blockTops.map(v => v * pxToMm).filter(v => v > 1);
+      let start = 0, firstPg = true;
+      while (start < h - 0.5) {
+        const maxEnd = start + availH;
+        let end;
+        const cand = bmm.filter(v => v > start + 6 && v <= maxEnd);   // ขอบข้อที่พอดีหน้านี้
+        end = cand.length ? cand[cand.length - 1] : Math.min(maxEnd, h);
+        if (end >= h - 0.5) end = h;
+        if (!firstPg) pdf.addPage();
+        pdf.addImage(img, 'JPEG', M, M - start, w, h);
+        pdf.setFillColor(255,255,255);
+        pdf.rect(0, 0, PW, M, 'F');                             // ครอบด้านบน (เนื้อหาหน้าก่อน)
+        pdf.rect(0, M + (end - start), PW, PH, 'F');            // ครอบด้านล่าง (เนื้อหาหน้าถัดไป)
+        start = end; firstPg = false;
+      }
+    }
+  }
+  pdf.save(((_certNo(c.id) || 'SALE').replace(/^SD-/, '')) + '_evidence.pdf');
+}
+
+/* in-app browser ของ LINE (LIFF) บล็อกการดาวน์โหลดไฟล์ — jsPDF.save() จะเงียบไปเฉย ๆ
+   → ถ้าอยู่ในแอป LINE ให้เด้งไปเปิดในเบราว์เซอร์ภายนอกแทน */
+function _inLineClient() {
+  try { if (typeof liff!=='undefined' && liff.isInClient && liff.isInClient()) return true; } catch(_){}
+  return /\bLine\//i.test(navigator.userAgent||'');
+}
+function _openExternalForDownload() {
+  const url = location.href;
+  try {
+    if (typeof liff!=='undefined' && liff.openWindow) { liff.openWindow({ url, external:true }); return true; }
+  } catch(_){}
+  try { window.open(url, '_blank'); return true; } catch(_){}
+  return false;
+}
+async function downloadSalePDF() {
+  if (_inLineClient()) {
+    if (confirm('แอป LINE ไม่รองรับการดาวน์โหลดไฟล์\n\nกด "ตกลง" เพื่อเปิดในเบราว์เซอร์ แล้วกดดาวน์โหลดอีกครั้ง')) {
+      if (_openExternalForDownload()) return;
+    }
+  }
+  try { const { data } = await sb.rpc('get_sale_contract_for_read', { p_token:_signToken }); if (data) await generateSalePDF(data); }
+  catch(e) { alert('โหลดข้อมูลสัญญาไม่สำเร็จ'); }
+}
+function _showSignStatus(icon, title, sub) {
+  const el = document.getElementById('signStatus');
+  el.style.display='block';
+  el.innerHTML = '<div style="font-size:52px;margin-bottom:10px;">'+icon+'</div><div style="font-family:\'Anuphan\',sans-serif;font-size:22px;font-weight:700;margin-bottom:6px;">'+title+'</div><div style="color:var(--text2);font-size:14px;line-height:1.6;max-width:400px;margin:0 auto;">'+sub+'</div><div id="signProgress" style="margin-top:16px;font-size:13px;color:var(--text3);"></div>';
+}
+let _signPoll=null;
+function _saleSignPoll() {
+  clearInterval(_signPoll);
+  _signPoll = setInterval(async () => {
+    try {
+      const { data } = await sb.rpc('check_sale_signatures', { p_token:_signToken });
+      if (!data) return;
+      const prog = document.getElementById('signProgress');
+      const nSigned = (data.s_signed?1:0)+(data.b_signed?1:0);
+      if (prog) prog.textContent = 'ลงนามแล้ว '+nSigned+'/2 ฝ่าย'+(data.fully_signed?' — ครบทุกฝ่าย ✓':'');
+      if (data.fully_signed) {
+        clearInterval(_signPoll);
+        if (prog) prog.innerHTML = 'ลงนามครบทุกฝ่าย ✓<br><button class="btn-next" style="margin-top:12px;" onclick="downloadSalePDF()">📄 ดาวน์โหลดสัญญาฉบับสมบูรณ์ (PDF)</button>'
+          + (_inLineClient() ? '<div style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.6;">แอป LINE ดาวน์โหลดไฟล์ไม่ได้ — ระบบจะพาไปเปิดในเบราว์เซอร์ให้</div>' : '');
+      }
+    } catch(_){}
+  }, 3000);
+}
+
+
+/* ── init ── */
+window.addEventListener('DOMContentLoaded', () => {
+  sdRenderMember();
+  const params = new URLSearchParams(location.search);
+  if (_isDev()) {
+    const bar = document.getElementById('devBar'); if (bar) bar.style.display='block';
+    const sk = document.getElementById('devSkipPayBtn'); if (sk) sk.style.display='block';
+  }
+  const saleRead = _urlParam('saleRead');
+  if (saleRead) { _saleSignBoot(saleRead); return; }   // หน้าเซ็น — ไม่เข้า wizard
+  const reloadId = _urlParam('reload');
+  if (reloadId) { _saleReloadBoot(reloadId, _urlParam('autodownload') === '1'); return; }
+  _initTransferDeadline();
+  loadDraft();
+  // กลับจาก Stripe Connect onboarding → เข้าขั้นชำระเงินแล้วเช็คสถานะบัตร
+  if (params.get('connect') === 'done' || params.get('connect') === 'refresh') {
+    document.getElementById('roleChoice').classList.remove('active');
+    document.getElementById('wizard').style.display = 'block';
+    showStep(6);
+    setTimeout(() => { try { _refreshCardStatus(); } catch(_){} }, 300);
+  }
+  // role picker เป็นประตูหน้า — โชว์หน้าเลือกบทบาท "เสมอ" (แม้เคยเลือก role/มี draft)
+  //   draft ถูก loadDraft() ไว้แล้วด้านบน → เลือก role แล้วทำต่อได้ ข้อมูลไม่หาย
+  //   (ยกเว้น deep-link: saleRead / reload / connect=done ที่จัดการไปก่อนหน้าแล้ว)
+});
+</script>
+<script>
+/* ── SignDee — Thai Address (แยกบรรทัด + autocomplete) ── */
+(function(){
+  const SRC = [
+    'https://cdn.jsdelivr.net/gh/earthchie/jquery.Thailand.js@master/jquery.Thailand.js/database/raw_database/raw_database.json',
+    'https://cdn.jsdelivr.net/npm/thai-address-database@0.4.0/database/raw_database.json'
+  ];
+  let DB = null, loading = null;
+  async function loadDB(){
+    if (DB) return DB;
+    if (loading) return loading;
+    loading = (async () => {
+      for (const url of SRC){
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(()=>ctrl.abort(), 9000);
+          const r = await fetch(url, { signal: ctrl.signal });
+          clearTimeout(t);
+          if (!r.ok) continue;
+          const j = await r.json();
+          if (Array.isArray(j) && j.length){
+            DB = j.map(x => ({
+              sub:  x.district || x.subdistrict || '',
+              dist: x.amphoe   || '',
+              prov: x.province || '',
+              zip:  String(x.zipcode || x.zip_code || '')
+            })).filter(x => x.sub && x.prov);
+            return DB;
+          }
+        } catch(e){}
+      }
+      DB = [];
+      return DB;
+    })();
+    return loading;
+  }
+  function search(q, limit){
+    limit = limit || 7;
+    if (!DB || !DB.length || !q || q.length < 2) return [];
+    const s = q.trim(), starts = [], contains = [];
+    for (const r of DB){
+      if (starts.length >= limit) break;
+      if (r.sub.indexOf(s) === 0 || r.zip.indexOf(s) === 0) starts.push(r);
+      else if (contains.length < limit && (r.sub.includes(s) || r.dist.includes(s) || r.prov.includes(s))) contains.push(r);
+    }
+    return starts.concat(contains).slice(0, limit);
+  }
+  function dropdown(input){
+    const box = document.createElement('div');
+    box.style.cssText = 'display:none;position:absolute;z-index:9999;left:0;right:0;top:100%;margin-top:6px;background:var(--white,#fff);border:1px solid var(--border,#E6E4DC);border-radius:14px;box-shadow:0 12px 32px -10px rgba(11,18,32,.25);overflow:hidden;max-height:250px;overflow-y:auto;';
+    const holder = input.parentNode;
+    if (getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
+    holder.appendChild(box);
+    return box;
+  }
+  function fill(box, items, onPick){
+    box.innerHTML = items.map(r =>
+      '<div style="padding:11px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--border,#eee);line-height:1.5;">'
+      + '<b style="color:var(--text,#14171F);">'+r.sub+'</b>'
+      + '<span style="color:var(--text3,#8E95A3);"> &gt; '+r.dist+' &gt; '+r.prov+' &gt; '+r.zip+'</span></div>').join('');
+    box.style.display = items.length ? 'block' : 'none';
+    Array.from(box.children).forEach((el,i) => {
+      el.onmouseenter = () => el.style.background = 'var(--accent-d,rgba(46,134,198,.08))';
+      el.onmouseleave = () => el.style.background = 'transparent';
+      el.onmousedown = e => { e.preventDefault(); onPick(items[i]); box.style.display = 'none'; };
+    });
+  }
+  function wireAuto(subEl, onPick){
+    const box = dropdown(subEl);
+    subEl.setAttribute('autocomplete','off');
+    subEl.addEventListener('focus', () => loadDB());
+    subEl.addEventListener('input', async () => {
+      await loadDB();
+      fill(box, search(subEl.value.trim()), onPick);
+    });
+    subEl.addEventListener('blur', () => setTimeout(()=>{ box.style.display='none'; }, 160));
+  }
+  function parseAddr(v){
+    const o = { house:'', road:'', sub:'', dist:'', prov:'', zip:'' };
+    if (!v) return o;
+    let s = String(v).trim();
+    const mz = s.match(/(\d{5})\s*$/);            if (mz){ o.zip = mz[1]; s = s.slice(0, mz.index).trim(); }
+    // รองรับทั้งคำเต็มและตัวย่อ (บัตร ปชช. ส่วนใหญ่ใช้ ต. อ. จ.)
+    const mp = s.match(/(?:จังหวัด|จ\.)\s*(\S+)|กรุงเทพมหานคร/); if (mp){ o.prov = mp[1] || 'กรุงเทพมหานคร'; s = s.replace(mp[0],'').trim(); }
+    const md = s.match(/(?:อำเภอ|เขต|อ\.)\s*(\S+)/);   if (md){ o.dist = md[1]; s = s.replace(md[0],'').trim(); }
+    const ms = s.match(/(?:ตำบล|แขวง|ต\.)\s*(\S+)/);   if (ms){ o.sub = ms[1];  s = s.replace(ms[0],'').trim(); }
+    const mr = s.match(/(?:ถนน|ถ\.)\s*\S+|อาคาร\s*\S+/); if (mr){ o.road = mr[0]; s = s.replace(mr[0],'').trim(); }
+    o.house = s.trim();
+    return o;
+  }
+  window.sdAddrSplitField = function(id){
+    const orig = document.getElementById(id);
+    if (!orig || orig.dataset.sdSplit) return;
+    orig.dataset.sdSplit = '1';
+    const cur = parseAddr(orig.value);
+    orig.style.display = 'none';
+    const box = document.createElement('div');
+    box.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+    const mk = (key, ph, half) => {
+      const w = document.createElement('div');
+      w.style.cssText = 'position:relative;' + (half ? 'flex:1;min-width:0;' : '');
+      const i = document.createElement('input');
+      i.type='text'; i.placeholder=ph; i.value=cur[key]||''; i.id=id+'__'+key;
+      i.setAttribute('autocomplete','off');
+      i.className = orig.className;                      // ใช้สไตล์เดียวกับช่องเดิมของแอป
+      if (orig.getAttribute('inputmode')) i.setAttribute('inputmode', orig.getAttribute('inputmode'));
+      i.style.width = '100%';
+      i.style.boxSizing = 'border-box';
+      w.appendChild(i);
+      return { w, i };
+    };
+    const house = mk('house','บ้านเลขที่ / หมู่');
+    const road  = mk('road','ถนน (ถ้ามี)');
+    const sub   = mk('sub','แขวง / ตำบล');
+    const dist  = mk('dist','เขต / อำเภอ', true);
+    const prov  = mk('prov','จังหวัด', true);
+    const zip   = mk('zip','รหัสไปรษณีย์');
+    zip.i.setAttribute('inputmode','numeric'); zip.i.maxLength = 5;
+    zip.w.style.maxWidth = '190px';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:9px;';
+    row.appendChild(dist.w); row.appendChild(prov.w);
+    box.appendChild(house.w); box.appendChild(road.w); box.appendChild(sub.w); box.appendChild(row); box.appendChild(zip.w);
+    orig.parentNode.insertBefore(box, orig.nextSibling);
+    function compose(){
+      const bkk = /กรุงเทพ/.test(prov.i.value);
+      const p = [];
+      const h=house.i.value.trim(); if(h) p.push(h);
+      const r=road.i.value.trim();  if(r) p.push(r);
+      const s=sub.i.value.trim();   if(s) p.push((bkk?'แขวง':'ตำบล')+s);
+      const d=dist.i.value.trim();  if(d) p.push((bkk?'เขต':'อำเภอ')+d);
+      const v=prov.i.value.trim();  if(v) p.push(bkk ? v : 'จังหวัด'+v);
+      const z=zip.i.value.trim();   if(z) p.push(z);
+      orig.value = p.join(' ');
+      orig.dispatchEvent(new Event('input', { bubbles:true }));
+    }
+    [house.i, road.i, sub.i, dist.i, prov.i, zip.i].forEach(el => el.addEventListener('input', compose));
+    wireAuto(sub.i, r => { sub.i.value=r.sub; dist.i.value=r.dist; prov.i.value=r.prov; zip.i.value=r.zip; compose(); });
+    compose();
+  };
+  /* เซ็ตที่อยู่จากภายนอก (เช่น OCR) — แตกลงช่องย่อยที่ผู้ใช้เห็นจริง ไม่ใช่แค่ textarea ที่ถูกซ่อน */
+  window.sdAddrSetValue = function(id, value){
+    const orig = document.getElementById(id);
+    if (!orig) return false;
+    orig.value = value || '';
+    const o = parseAddr(orig.value);
+    let touched = false;
+    ['house','road','sub','dist','prov','zip'].forEach(k => {
+      const el = document.getElementById(id + '__' + k);
+      if (el) { el.value = o[k] || ''; touched = true; }
+    });
+    // ยิง input เพื่อให้ compose() ประกอบกลับเข้า textarea เดิม + autoSave ทำงาน
+    const first = document.getElementById(id + '__house') || orig;
+    try { first.dispatchEvent(new Event('input', { bubbles:true })); } catch(_){}
+    return touched;
+  };
+  window.sdAddrAttachSplit = function(subId, distId, provId, zipId){
+    const sub = document.getElementById(subId);
+    if (!sub || sub.dataset.sdAddr) return;
+    sub.dataset.sdAddr = '1';
+    wireAuto(sub, r => {
+      sub.value=r.sub; sub.dispatchEvent(new Event('input',{bubbles:true}));
+      const d=document.getElementById(distId); if(d){ d.value=r.dist; d.dispatchEvent(new Event('input',{bubbles:true})); }
+      const p=document.getElementById(provId); if(p){ p.value=r.prov; p.dispatchEvent(new Event('input',{bubbles:true})); }
+      const z=zipId?document.getElementById(zipId):null; if(z){ z.value=r.zip; z.dispatchEvent(new Event('input',{bubbles:true})); }
+    });
+  };
+})();
+
+/* ผูกช่องที่อยู่ → แยกบรรทัด + autocomplete */
+(function(){
+  function bind(){
+    if (typeof sdAddrSplitField === 'function'){ sdAddrSplitField('f_sAddr'); sdAddrSplitField('f_bAddr'); }
+    if (typeof sdAddrAttachSplit === 'function') sdAddrAttachSplit('f_subdistrict','f_district','f_province');
+  }
+  if (document.readyState !== 'loading') setTimeout(bind, 350);
+  else document.addEventListener('DOMContentLoaded', () => setTimeout(bind, 350));
+  const _os = window.showStep;
+  if (typeof _os === 'function') window.showStep = function(){ const r=_os.apply(this,arguments); setTimeout(bind,120); return r; };
+})();
+</script>
+<!-- Turnstile (กันบอท) -->
+<div id="cfTurnstile" style="display:none;"></div>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=_cfTurnstileOnload" async defer></script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignDee — แดชบอร์ด</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Anuphan:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#F1F0EA; --white:#FEFEFC; --surf:#FEFEFC; --surf2:#EAE8DF;
+  --border:#E6E4DC; --border2:#D2D0C6;
+  --text:#14171F; --text2:#5B6270; --text3:#8E95A3;
+  --primary:#0B1220; --accent:#2E86C6; --accent2:#6EC3EA; --accent-d:rgba(46,134,198,0.10);
+  --green:#1a7f5a; --green-l:rgba(26,127,90,0.08);
+  --amber:#C4913A; --amber-l:rgba(196,145,58,0.10);
+  --red:#c0392b; --red-l:rgba(192,57,43,0.08);
+  --r:16px; --r-lg:24px;
+  --shadow:0 2px 10px rgba(11,18,32,0.06), 0 1px 3px rgba(11,18,32,0.04);
+  --shadow-lg:0 20px 48px -18px rgba(11,18,32,0.24), 0 2px 8px rgba(11,18,32,0.06);
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:'Sarabun',sans-serif; background:var(--bg); color:var(--text); font-size:14px; -webkit-font-smoothing:antialiased; }
+h1,h2,h3,.anu { font-family:'Anuphan',sans-serif; }
+
+/* ── LOGIN ── */
+#login { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.login-card { background:var(--white); border:1px solid var(--border); border-radius:var(--r-lg); box-shadow:var(--shadow-lg); padding:40px; width:100%; max-width:390px; }
+.brand { display:flex; align-items:center; gap:11px; margin-bottom:26px; }
+.brand-mark { width:40px; height:40px; border-radius:11px; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Anuphan'; font-weight:700; font-size:19px; }
+.brand-name { font-family:'Anuphan'; font-weight:700; font-size:20px; letter-spacing:-.02em; }
+.brand-name span { color:var(--accent); }
+input, select { width:100%; padding:13px 15px; border:1px solid var(--border); border-radius:12px; font-family:'Sarabun'; font-size:14px; background:var(--white); color:var(--text); outline:none; transition:.15s; }
+input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-d); }
+.btn { width:100%; padding:13px; border:none; border-radius:99px; background:var(--primary); color:#fff; font-family:'Anuphan'; font-weight:600; font-size:15px; cursor:pointer; transition:.15s; }
+.btn:hover { opacity:.9; }
+.btn-accent { background:var(--accent); }
+.btn-sm { width:auto; padding:8px 16px; font-size:13px; border-radius:99px; }
+.btn-out { background:transparent; border:1px solid var(--border2); color:var(--text); }
+.err { color:var(--red); font-size:12.5px; margin-top:10px; min-height:16px; }
+
+/* ── SHELL ── */
+#app { display:none; min-height:100vh; }
+.shell { display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
+.side { background:var(--white); border-right:1px solid var(--border); padding:22px 14px; display:flex; flex-direction:column; }
+.side .brand { padding:0 8px; margin-bottom:28px; }
+.nav-item { display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:12px; cursor:pointer; color:var(--text2); font-weight:500; font-size:14px; margin-bottom:3px; transition:.14s; }
+.nav-item:hover { background:var(--surf2); color:var(--text); }
+.nav-item.active { background:var(--accent-d); color:var(--accent); font-weight:700; }
+.nav-icon { width:18px; text-align:center; font-size:14px; }
+.nav-badge { margin-left:auto; font-size:11px; font-weight:700; background:var(--red-l); color:var(--red); padding:1px 7px; border-radius:20px; }
+.side-foot { margin-top:auto; padding:14px; background:var(--surf2); border-radius:var(--r); text-align:center; }
+
+.main { padding:26px 30px 40px; overflow-x:hidden; }
+.top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+.eyebrow { font-size:11.5px; color:var(--text3); font-weight:600; letter-spacing:.04em; margin-bottom:5px; }
+.page-title { font-size:26px; font-weight:700; letter-spacing:-.02em; }
+.top-actions { display:flex; gap:8px; }
+
+/* ── CARDS ── */
+.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+.card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:17px 18px; box-shadow:var(--shadow); }
+.card-label { font-size:12px; color:var(--text3); font-weight:600; margin-bottom:7px; }
+.card-value { font-family:'Anuphan'; font-size:24px; font-weight:700; letter-spacing:-.02em; }
+.card-sub { font-size:11.5px; color:var(--text3); margin-top:3px; }
+
+/* ── PANELS ── */
+.grid3 { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:14px; align-items:start; }
+.panel { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
+.panel-head { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid var(--border); }
+.panel-title { font-family:'Anuphan'; font-weight:700; font-size:15px; }
+.panel-body { padding:16px 18px; }
+.pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; background:var(--surf2); color:var(--text3); }
+.pill.green { background:var(--green-l); color:var(--green); }
+.pill.amber { background:var(--amber-l); color:var(--amber); }
+.pill.red { background:var(--red-l); color:var(--red); }
+.pill.blue { background:var(--accent-d); color:var(--accent); }
+
+/* ── PROGRESS ── */
+.prog-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; }
+.prog-bar { flex:1; min-width:160px; height:6px; background:var(--surf2); border-radius:20px; overflow:hidden; }
+.prog-fill { height:100%; background:var(--green); border-radius:20px; transition:width .4s; }
+
+/* ── TASK (สิ่งที่ต้องทำต่อ) ── */
+.task { border:1px solid var(--border); border-radius:14px; margin-bottom:11px; overflow:hidden; }
+.task-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:14px 15px; }
+.task-name { font-weight:700; font-size:14px; }
+.task-meta { font-size:12px; color:var(--text3); margin-top:4px; }
+.task-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px solid var(--border); background:var(--bg); padding:11px 15px; font-size:12.5px; color:var(--text2); }
+
+/* ── TIMELINE (หลักฐานและเหตุการณ์) ── */
+.tl { display:flex; gap:11px; padding:12px 0; border-bottom:1px solid var(--border); }
+.tl:last-child { border-bottom:none; }
+.tl-dot { flex:0 0 26px; width:26px; height:26px; border-radius:9px; background:var(--surf2); display:flex; align-items:center; justify-content:center; font-size:12px; }
+.tl-dot.done { background:var(--green-l); color:var(--green); }
+.tl-dot.blue { background:var(--accent-d); color:var(--accent); }
+.tl-title { font-weight:700; font-size:13px; }
+.tl-desc { font-size:12px; color:var(--text2); margin-top:2px; line-height:1.5; }
+.tl-time { font-size:11px; color:var(--text3); margin-top:3px; }
+
+/* ── DEADLINE ── */
+.dl-box { background:var(--amber-l); border:1px solid rgba(196,145,58,.25); border-radius:12px; padding:13px 15px; margin-bottom:14px; }
+.dl-row { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:4px 0; }
+.dl-row b { color:var(--red); white-space:nowrap; }
+.cal-row { display:flex; align-items:center; gap:10px; font-size:12.5px; padding:6px 0; color:var(--text2); }
+.cal-date { flex:0 0 62px; color:var(--text3); font-size:12px; }
+.cal-dot { width:7px; height:7px; border-radius:50%; flex:0 0 7px; }
+
+/* ── TABLE ── */
+table { width:100%; border-collapse:collapse; }
+th { text-align:left; font-size:11.5px; color:var(--text3); font-weight:700; padding:11px 14px; border-bottom:1px solid var(--border); background:var(--bg); white-space:nowrap; }
+td { padding:12px 14px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; }
+tr:last-child td { border-bottom:none; }
+tr.clickable { cursor:pointer; transition:.13s; }
+tr.clickable:hover { background:var(--accent-d); }
+.who { font-weight:600; }
+.who small { display:block; color:var(--text3); font-weight:400; font-size:11.5px; margin-top:2px; }
+.amt { font-family:'Anuphan'; font-weight:700; }
+.empty { text-align:center; padding:40px 20px; color:var(--text3); font-size:13.5px; }
+
+.search { max-width:290px; }
+.toast { position:fixed; bottom:22px; right:22px; background:var(--primary); color:#fff; padding:12px 18px; border-radius:12px; font-size:13px; box-shadow:var(--shadow-lg); opacity:0; transform:translateY(8px); transition:.25s; z-index:99; }
+.toast.show { opacity:1; transform:none; }
+.hidden { display:none !important; }
+.link { color:var(--accent); font-weight:600; cursor:pointer; font-size:12.5px; background:none; border:none; font-family:inherit; }
+.back { display:inline-flex; align-items:center; gap:6px; color:var(--text2); font-size:13px; cursor:pointer; background:none; border:none; font-family:inherit; margin-bottom:12px; }
+.back:hover { color:var(--accent); }
+@media (max-width:1100px){ .grid3{grid-template-columns:1fr;} .cards{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:760px){ .shell{grid-template-columns:1fr;} .side{display:none;} .main{padding:18px;} }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div><div class="brand-name">Sign<span>Dee</span></div><div style="font-size:11.5px;color:var(--text3);">แดชบอร์ดผู้ดูแลระบบ</div></div>
+    </div>
+    <input id="pw" type="password" placeholder="รหัสผ่านผู้ดูแล" onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="err" id="loginErr"></div>
+    <button class="btn" id="loginBtn" onclick="doLogin()" style="margin-top:6px;">เข้าสู่ระบบ</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-mark">S</div>
+      <div class="brand-name">Sign<span>Dee</span></div>
+    </div>
+    <div class="nav-item active" data-nav="home" onclick="setNav('home')"><span class="nav-icon">⌂</span> หน้าหลัก</div>
+    <div class="nav-item" data-nav="contracts" onclick="setNav('contracts')"><span class="nav-icon">▤</span> สัญญาทั้งหมด</div>
+    <div class="nav-item" data-nav="todo" onclick="setNav('todo')"><span class="nav-icon">✓</span> สิ่งที่ต้องทำต่อ <span class="nav-badge" id="navTodo">0</span></div>
+    <div class="nav-item" data-nav="unpaid" onclick="setNav('unpaid')"><span class="nav-icon">◇</span> ค้างชำระ <span class="nav-badge" id="navUnpaid">0</span></div>
+    <div class="side-foot">
+      <div style="font-size:22px;margin-bottom:5px;">🔒</div>
+      <div style="font-size:12px;font-weight:700;">ข้อมูลปลอดภัย</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5;">ทุกเหตุการณ์ถูกบันทึกเป็น Timeline</div>
+      <button class="btn btn-sm btn-out" style="margin-top:10px;width:100%;" onclick="logout()">ออกจากระบบ</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <!-- ══ OVERVIEW ══ -->
+    <section id="viewList">
+      <div class="top">
+        <div>
+          <div class="eyebrow" id="listEyebrow">ภาพรวมระบบ</div>
+          <h1 class="page-title" id="listTitle">แดชบอร์ด SignDee</h1>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-sm btn-out" onclick="loadData()">↻ รีเฟรช</button>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="card-label">สัญญาทั้งหมด</div><div class="card-value" id="cTotal">—</div><div class="card-sub" id="cTotalSub">ทุกสถานะ</div></div>
+        <div class="card"><div class="card-label">ลงนามครบแล้ว</div><div class="card-value" id="cDone" style="color:var(--green)">—</div><div class="card-sub">สัญญาสมบูรณ์</div></div>
+        <div class="card"><div class="card-label">รอดำเนินการ</div><div class="card-value" id="cPending" style="color:var(--amber)">—</div><div class="card-sub">ยังไม่ครบขั้นตอน</div></div>
+        <div class="card"><div class="card-label">รายได้รวม</div><div class="card-value" id="cRevenue" style="color:var(--accent)">—</div><div class="card-sub" id="cRevenueSub">จากสัญญาที่ชำระแล้ว</div></div>
+      </div>
+
+      <div class="grid3">
+        <!-- สิ่งที่ต้องทำต่อ -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">สิ่งที่ต้องทำต่อ</div>
+            <span class="pill" id="todoCount">0 งาน</span>
+          </div>
+          <div class="panel-body" id="todoList"></div>
+        </div>
+
+        <!-- กำหนดการ -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">กำหนดการ</div>
+            <span style="font-size:15px;">🔔</span>
+          </div>
+          <div class="panel-body">
+            <div class="dl-box" id="dlBox">
+              <div style="font-weight:700;font-size:13px;margin-bottom:7px;">ใกล้ถึงกำหนด</div>
+              <div id="dlRows"></div>
+            </div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;">สัญญาล่าสุด</div>
+            <div id="calRows"></div>
+          </div>
+        </div>
+
+        <!-- หลักฐานและเหตุการณ์ -->
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">หลักฐานและเหตุการณ์</div>
+            <span class="pill blue" id="evCount">0</span>
+          </div>
+          <div class="panel-body" id="evList" style="max-height:430px;overflow:auto;"></div>
+        </div>
+      </div>
+
+      <!-- ตารางสัญญา -->
+      <div class="panel" style="margin-top:14px;">
+        <div class="panel-head">
+          <div class="panel-title">สัญญาทั้งหมด <span class="pill" id="tblCount" style="margin-left:6px;">0</span></div>
+          <input class="search" id="searchBox" placeholder="ค้นหา ชื่อ / ทรัพย์สิน / ห้อง" oninput="renderTable()">
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>วันที่</th><th>คู่สัญญา</th><th>ทรัพย์สิน</th><th>สถานะ</th><th>ยอด</th><th></th></tr></thead>
+            <tbody id="tblBody"></tbody>
+          </table>
+          <div class="empty" id="tblEmpty" style="display:none;">ไม่พบสัญญาที่ตรงกับการค้นหา</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══ CONTRACT DETAIL ══ -->
+    <section id="viewDetail" class="hidden">
+      <button class="back" onclick="setNav('home')">← กลับไปหน้าแดชบอร์ด</button>
+      <div class="top">
+        <div>
+          <div class="eyebrow" id="dEyebrow">—</div>
+          <h1 class="page-title" id="dTitle">—</h1>
+          <div class="prog-row">
+            <span class="pill" id="dStatus">—</span>
+            <span style="font-size:13px;color:var(--text2);">สำเร็จ <b id="dStepDone">0</b> จาก <b id="dStepTotal">5</b> ขั้นตอน</span>
+            <div class="prog-bar" style="max-width:220px;"><div class="prog-fill" id="dProg" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button class="btn btn-sm btn-accent" id="dOpenBtn">ดูสัญญา</button>
+        </div>
+      </div>
+
+      <div class="cards">
+        <div class="card"><div class="card-label">ค่าบริการ</div><div class="card-value" id="dAmt">—</div></div>
+        <div class="card"><div class="card-label">ขั้นตอนถัดไป</div><div class="card-value" id="dNext" style="font-size:17px;">—</div></div>
+        <div class="card"><div class="card-label">สร้างเมื่อ</div><div class="card-value" id="dCreated" style="font-size:17px;">—</div></div>
+        <div class="card"><div class="card-label">หลักฐานทั้งหมด</div><div class="card-value" id="dEv">—</div><div class="card-sub">รายการ</div></div>
+      </div>
+
+      <div class="grid3">
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">สิ่งที่ต้องทำต่อ</div><span class="pill" id="dTodoCount">—</span></div>
+          <div class="panel-body" id="dTodoList"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">กำหนดการ</div><span style="font-size:15px;">🔔</span></div>
+          <div class="panel-body" id="dSchedule"></div>
+        </div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title">หลักฐานและเหตุการณ์</div><span class="pill blue" id="dEvCount">—</span></div>
+          <div class="panel-body" id="dEvList"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = 'https://justsign-api.vercel.app/api/admin-stats';
+const APP_BASE = 'https://app.signdee.com/';
+let DATA = null, NAV = 'home', CUR = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const baht = n => '฿' + (Number(n)||0).toLocaleString('th-TH');
+function fmtDate(iso){ if(!iso) return '—'; try{ return new Date(iso).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}); }catch(e){ return '—'; } }
+function fmtDateTime(iso){ if(!iso) return '—'; try{ return new Date(iso).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return '—'; } }
+function daysAgo(iso){ if(!iso) return 0; return Math.floor((Date.now()-new Date(iso))/86400000); }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+const getKey = () => { try{ return sessionStorage.getItem('signdee_admin_key'); }catch(e){ return null; } };
+const setKey = k => { try{ sessionStorage.setItem('signdee_admin_key',k); }catch(e){} };
+
+/* ── auth ── */
+async function fetchStats(key){
+  const r = await fetch(API,{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({key}) });
+  if (r.status===401) throw new Error('401');
+  if (!r.ok) throw new Error('เชื่อมต่อไม่สำเร็จ ('+r.status+')');
+  return r.json();
+}
+async function doLogin(){
+  const pw = $('pw').value.trim(); if(!pw) return;
+  $('loginBtn').textContent='กำลังเข้าสู่ระบบ...'; $('loginErr').textContent='';
+  try {
+    DATA = await fetchStats(pw); setKey(pw);
+    $('login').style.display='none'; $('app').style.display='block';
+    renderAll();
+  } catch(e){ $('loginErr').textContent = e.message==='401' ? 'รหัสผ่านไม่ถูกต้อง' : e.message; }
+  finally { $('loginBtn').textContent='เข้าสู่ระบบ'; }
+}
+function logout(){ try{ sessionStorage.removeItem('signdee_admin_key'); }catch(e){} location.reload(); }
+async function loadData(){
+  const key=getKey(); if(!key) return;
+  toast('🔄 กำลังโหลดข้อมูล…');
+  try { DATA = await fetchStats(key); renderAll(); toast('✅ อัปเดตแล้ว'); }
+  catch(e){ toast('❌ '+e.message); }
+}
+
+/* ── สถานะ → ขั้นตอน (derive จากข้อมูลที่ API ส่งมา) ── */
+const STEPS = ['สร้างสัญญา','ชำระค่าบริการ','ผู้ให้เช่าลงนาม','ผู้เช่าลงนาม','สัญญาสมบูรณ์'];
+function stepsOf(c){
+  const st = c.status_th || '';
+  const paid = c.payment_completed === true;
+  const done = /สมบูรณ์|ครบ|เสร็จ/.test(st);
+  const signing = /ลงนาม|รอเซ็น|รอลงนาม/.test(st);
+  if (done)    return 5;
+  if (signing) return paid ? 3 : 2;
+  if (paid)    return 2;
+  return 1;
+}
+function nextStepOf(c){
+  const n = stepsOf(c);
+  return n >= 5 ? 'เสร็จสมบูรณ์' : STEPS[n];
+}
+function statusPill(st){
+  const s = st || '';
+  if (/สมบูรณ์|ครบ|เสร็จ/.test(s))  return 'green';
+  if (/ค้างชำระ|ยังไม่จ่าย/.test(s)) return 'red';
+  if (/ลงนาม|รอ/.test(s))            return 'amber';
+  return '';
+}
+
+/* ── nav ── */
+function setNav(n){
+  NAV = n;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.nav===n));
+  if (n==='home' || n==='contracts' || n==='todo' || n==='unpaid') {
+    $('viewDetail').classList.add('hidden'); $('viewList').classList.remove('hidden');
+    const t = { home:['ภาพรวมระบบ','แดชบอร์ด SignDee'], contracts:['รายการทั้งหมด','สัญญาทั้งหมด'],
+                todo:['ต้องดำเนินการ','สิ่งที่ต้องทำต่อ'], unpaid:['การชำระเงิน','สัญญาค้างชำระ'] }[n];
+    $('listEyebrow').textContent=t[0]; $('listTitle').textContent=t[1];
+    renderTable();
+  }
+  window.scrollTo(0,0);
+}
+
+/* ── render overview ── */
+function renderAll(){
+  if (!DATA) return;
+  const cs = DATA.contracts || [];
+  const paid = cs.filter(c=>c.payment_completed===true);
+  const done = cs.filter(c=>stepsOf(c)>=5);
+  const pending = cs.filter(c=>stepsOf(c)<5);
+  const unpaid = cs.filter(c=>c.payment_completed!==true);
+
+  $('cTotal').textContent = cs.length;
+  $('cTotalSub').textContent = paid.length + ' ชำระแล้ว · ' + unpaid.length + ' ยังไม่ชำระ';
+  $('cDone').textContent = done.length;
+  $('cPending').textContent = pending.length;
+  $('cRevenue').textContent = baht((DATA.revenue!=null ? DATA.revenue : paid.length*790));
+  $('cRevenueSub').textContent = 'จาก ' + paid.length + ' สัญญา';
+  $('navUnpaid').textContent = unpaid.length;
+  $('navTodo').textContent = pending.length;
+
+  renderTodo(pending);
+  renderSchedule(cs);
+  renderEvents(cs);
+  renderTable();
+}
+
+function renderTodo(pending){
+  const list = pending.slice(0,6);
+  $('todoCount').textContent = pending.length + ' งาน';
+  $('todoList').innerHTML = list.length ? list.map(c=>{
+    const n = stepsOf(c), next = nextStepOf(c);
+    const cls = c.payment_completed ? 'amber' : 'red';
+    return '<div class="task">'
+      + '<div class="task-head"><div>'
+        + '<div class="task-name">'+esc(c.property||'—')+(c.room_no?' · ห้อง '+esc(c.room_no):'')+'</div>'
+        + '<div class="task-meta">'+esc(c.landlord_name||'—')+' → '+esc(c.tenant_name||'—')+' · สร้าง '+fmtDate(c.created_at)+'</div>'
+      + '</div><span class="pill '+cls+'">'+esc(next)+'</span></div>'
+      + '<div class="task-foot"><span>ขั้นตอน '+n+'/5</span>'
+        + '<button class="btn btn-sm btn-out" onclick="openContract(\''+c.id+'\')">ดูรายละเอียด</button></div>'
+      + '</div>';
+  }).join('') : '<div class="empty">ไม่มีงานค้าง ✓</div>';
+}
+
+function renderSchedule(cs){
+  const stale = cs.filter(c=>stepsOf(c)<5 && daysAgo(c.created_at)>=3)
+                  .sort((a,b)=>daysAgo(b.created_at)-daysAgo(a.created_at)).slice(0,4);
+  $('dlRows').innerHTML = stale.length ? stale.map(c=>
+    '<div class="dl-row"><span>'+esc(c.property||'—')+(c.room_no?' ห้อง '+esc(c.room_no):'')+'</span>'
+    + '<b>ค้าง '+daysAgo(c.created_at)+' วัน</b></div>').join('')
+    : '<div style="font-size:12.5px;color:var(--text2);">ไม่มีสัญญาค้างเกิน 3 วัน ✓</div>';
+
+  const recent = cs.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
+  $('calRows').innerHTML = recent.map(c=>{
+    const col = stepsOf(c)>=5 ? 'var(--green)' : (c.payment_completed ? 'var(--accent)' : 'var(--amber)');
+    return '<div class="cal-row"><span class="cal-date">'+fmtDate(c.created_at)+'</span>'
+      + '<span class="cal-dot" style="background:'+col+'"></span>'
+      + '<span style="flex:1;">'+esc(c.property||'—')+'</span></div>';
+  }).join('') || '<div class="empty">ยังไม่มีสัญญา</div>';
+}
+
+function renderEvents(cs){
+  const evs = cs.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,10).map(c=>{
+    const n = stepsOf(c);
+    const icon = n>=5 ? '✓' : (c.payment_completed ? '⇧' : '✎');
+    const cls  = n>=5 ? 'done' : (c.payment_completed ? 'blue' : '');
+    const title = n>=5 ? 'ลงนามครบทุกฝ่าย' : (c.payment_completed ? 'ชำระค่าบริการแล้ว' : 'สร้างร่างสัญญา');
+    return { icon, cls, title, desc: (c.property||'—') + (c.room_no?' ห้อง '+c.room_no:'') + ' · ' + (c.landlord_name||'—'), at:c.created_at };
+  });
+  $('evCount').textContent = evs.length;
+  $('evList').innerHTML = evs.length ? evs.map(e=>
+    '<div class="tl"><div class="tl-dot '+e.cls+'">'+e.icon+'</div><div>'
+    + '<div class="tl-title">'+esc(e.title)+'</div>'
+    + '<div class="tl-desc">'+esc(e.desc)+'</div>'
+    + '<div class="tl-time">'+fmtDateTime(e.at)+'</div>'
+    + '</div></div>').join('') : '<div class="empty">ยังไม่มีเหตุการณ์</div>';
+}
+
+function renderTable(){
+  if (!DATA) return;
+  const q = ($('searchBox').value||'').trim().toLowerCase();
+  let rows = (DATA.contracts||[]);
+  if (NAV==='unpaid') rows = rows.filter(c=>c.payment_completed!==true);
+  if (NAV==='todo')   rows = rows.filter(c=>stepsOf(c)<5);
+  if (q) rows = rows.filter(c=>[c.landlord_name,c.tenant_name,c.property,c.room_no].some(x=>(x||'').toLowerCase().includes(q)));
+  $('tblCount').textContent = rows.length;
+  $('tblEmpty').style.display = rows.length ? 'none' : 'block';
+  $('tblBody').innerHTML = rows.map(c=>{
+    const paid = c.payment_completed===true;
+    return '<tr class="clickable" onclick="openContract(\''+c.id+'\')">'
+      + '<td style="color:var(--text2);white-space:nowrap;">'+fmtDate(c.created_at)+'</td>'
+      + '<td><div class="who">'+esc(c.landlord_name||'—')+'<small>ผู้เช่า: '+esc(c.tenant_name||'—')+'</small></div></td>'
+      + '<td>'+esc(c.property||'—')+(c.room_no?'<br><small style="color:var(--text3)">ห้อง '+esc(c.room_no)+'</small>':'')+'</td>'
+      + '<td><span class="pill '+statusPill(c.status_th)+'">'+esc(c.status_th||'—')+'</span></td>'
+      + '<td class="amt">'+(paid?'฿790':'—')+'</td>'
+      + '<td><button class="link" onclick="event.stopPropagation();copyLink(\''+APP_BASE+'?reload='+c.id+'\')">📋 คัดลอกลิงก์</button></td>'
+      + '</tr>';
+  }).join('');
+}
+
+/* ── contract detail ── */
+function openContract(id){
+  const c = (DATA.contracts||[]).find(x=>String(x.id)===String(id));
+  if (!c) return;
+  CUR = c;
+  $('viewList').classList.add('hidden'); $('viewDetail').classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+
+  const n = stepsOf(c), paid = c.payment_completed===true;
+  $('dEyebrow').textContent = 'SD-' + String(c.id).slice(0,8).toUpperCase() + ' · สัญญาเช่า';
+  $('dTitle').textContent = (c.property||'สัญญาเช่า') + (c.room_no ? ' · ห้อง '+c.room_no : '');
+  $('dStatus').textContent = c.status_th || '—';
+  $('dStatus').className = 'pill ' + statusPill(c.status_th);
+  $('dStepDone').textContent = n; $('dStepTotal').textContent = 5;
+  $('dProg').style.width = (n/5*100) + '%';
+  $('dAmt').textContent = paid ? '฿790' : '—';
+  $('dNext').textContent = nextStepOf(c);
+  $('dCreated').textContent = fmtDate(c.created_at);
+  $('dOpenBtn').onclick = () => window.open(APP_BASE+'?reload='+c.id,'_blank');
+
+  // ขั้นตอนทั้งหมด (checklist)
+  const doneCount = n;
+  $('dTodoCount').textContent = Math.max(0, 5-doneCount) + ' งาน';
+  $('dTodoList').innerHTML = STEPS.map((s,i)=>{
+    const idx = i+1;
+    const isDone = idx <= doneCount;
+    const isNext = idx === doneCount+1;
+    const pill = isDone ? '<span class="pill green">เสร็จสิ้น</span>'
+               : isNext ? '<span class="pill amber">รอดำเนินการ</span>'
+                        : '<span class="pill">รอถึงกำหนด</span>';
+    return '<div class="task"><div class="task-head"><div>'
+      + '<div class="task-name">'+esc(s)+'</div>'
+      + '<div class="task-meta">ขั้นตอนที่ '+idx+' จาก 5</div>'
+      + '</div>'+pill+'</div></div>';
+  }).join('');
+
+  // กำหนดการ
+  const age = daysAgo(c.created_at);
+  const overdue = n<5 && age>=3;
+  $('dSchedule').innerHTML =
+    (overdue ? '<div class="dl-box"><div style="font-weight:700;font-size:13px;margin-bottom:6px;">ค้างดำเนินการ</div>'
+      + '<div class="dl-row"><span>'+esc(nextStepOf(c))+'</span><b>ค้าง '+age+' วัน</b></div></div>' : '')
+    + '<div style="font-weight:700;font-size:13px;margin-bottom:6px;">ไทม์ไลน์สัญญา</div>'
+    + '<div class="cal-row"><span class="cal-date">'+fmtDate(c.created_at)+'</span><span class="cal-dot" style="background:var(--accent)"></span><span>สร้างร่างสัญญา</span></div>'
+    + (paid ? '<div class="cal-row"><span class="cal-date">—</span><span class="cal-dot" style="background:var(--green)"></span><span>ชำระค่าบริการ ฿790</span></div>' : '')
+    + (n>=5 ? '<div class="cal-row"><span class="cal-date">—</span><span class="cal-dot" style="background:var(--green)"></span><span>ลงนามครบทุกฝ่าย</span></div>'
+            : '<div class="cal-row"><span class="cal-date">—</span><span class="cal-dot" style="background:var(--amber)"></span><span>'+esc(nextStepOf(c))+' (รอ)</span></div>');
+
+  // หลักฐาน/เหตุการณ์
+  const evs = [{icon:'✎', cls:'', title:'สร้างร่างสัญญา', desc:(c.landlord_name||'—')+' → '+(c.tenant_name||'—'), at:c.created_at}];
+  if (paid) evs.push({icon:'⇧', cls:'blue', title:'ชำระค่าบริการแล้ว', desc:'฿790 · ปลดล็อกการลงนาม', at:null});
+  if (n>=5) evs.push({icon:'✓', cls:'done', title:'ลงนามครบทุกฝ่าย', desc:'สัญญาสมบูรณ์ · PDF พร้อมใบรับรอง', at:null});
+  $('dEv').textContent = evs.length; $('dEvCount').textContent = evs.length;
+  $('dEvList').innerHTML = evs.map(e=>
+    '<div class="tl"><div class="tl-dot '+e.cls+'">'+e.icon+'</div><div>'
+    + '<div class="tl-title">'+esc(e.title)+'</div>'
+    + '<div class="tl-desc">'+esc(e.desc)+'</div>'
+    + (e.at ? '<div class="tl-time">'+fmtDateTime(e.at)+'</div>' : '')
+    + '</div></div>').join('');
+  window.scrollTo(0,0);
+}
+
+function copyLink(link){
+  try { navigator.clipboard.writeText(link); toast('✅ คัดลอกลิงก์แล้ว'); }
+  catch(e){ prompt('คัดลอกลิงก์:', link); }
+}
+
+/* ── boot ── */
+(async function(){
+  const key = getKey();
+  if (!key) return;
+  try {
+    DATA = await fetchStats(key);
+    $('login').style.display='none'; $('app').style.display='block';
+    renderAll();
+  } catch(e){ try{ sessionStorage.removeItem('signdee_admin_key'); }catch(_){} }
+})();
+</script>
+</body>
+</html>

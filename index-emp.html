@@ -1,0 +1,3008 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SignDee — หนังสือสัญญาจ้าง</title>
+<meta name="description" content="สร้างหนังสือสัญญาจ้างพร้อมเอกสารแนบท้ายรายละเอียดตำแหน่งงาน เซ็นออนไลน์ได้ใน 2 นาที">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="/img-safe.js"></script>
+<style>
+
+:root{
+  /* ── sale design tokens ── */
+  --bg:#F1F0EA; --white:#FEFEFC; --surf:#FEFEFC; --surf2:#EAE8DF;
+  --border:#E6E4DC; --border2:#D2D0C6;
+  --text:#14171F; --text2:#5B6270; --text3:#8E95A3;
+  --primary:#0B1220; --accent:#2E86C6; --accent2:#6EC3EA; --accent-d:rgba(46,134,198,0.10);
+  --green:#1a7f5a; --red:#c0392b; --blue:#2E86C6;
+  /* ── legacy aliases (NDA markup/JS ใช้อยู่ ห้ามลบ) ── */
+  --navy:#0B1220; --blue2:#6EC3EA; --muted:#5B6270; --line:#E6E4DC; --card:#FEFEFC;
+  --ok:#1a7f5a; --warn:#B4791F; --err:#c0392b;
+  --r:16px; --r-lg:24px;
+  --shadow:0 2px 10px rgba(11,18,32,0.06),0 1px 3px rgba(11,18,32,0.04);
+  --shadow-lg:0 20px 48px -18px rgba(11,18,32,0.24),0 2px 8px rgba(11,18,32,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:15px}
+h1,h2,h3,.q,.hd{font-family:'Anuphan',sans-serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* ── shell ── */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(241,240,234,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar-inner{max-width:640px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:12px}
+.back-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:16px;color:var(--text2);flex:0 0 auto}
+.progress-wrap{flex:1}
+.progress-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:5px}
+.progress-bar{height:4px;background:var(--surf2);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .35s}
+
+.wrap{max-width:640px;margin:0 auto;padding:20px 20px 110px}
+.phase{display:none}
+.phase.active{display:block;animation:fade .4s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* .card = flat section (sale ไม่มีกรอบการ์ดครอบ step) */
+.card{background:transparent;border:none;border-radius:0;box-shadow:none;padding:8px 0 0}
+
+/* ── stepper (group nav) ── */
+.wgn{padding:10px 0 14px}
+.wgn-track{display:flex;align-items:flex-start;justify-content:center;max-width:560px;margin:0 auto}
+.wgn-item{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;flex:1;position:relative;z-index:0}
+.wgn-item:not(:last-child)::after{content:'';position:absolute;top:16px;left:calc(50% + 22px);right:calc(-50% + 22px);height:2px;background:var(--border2);z-index:-1}
+.wgn-item.done:not(:last-child)::after{background:var(--accent)}
+.wgn-item.active:not(:last-child)::after{background:linear-gradient(90deg,var(--accent),var(--accent2),var(--accent),var(--border2));background-size:300% 100%;animation:wgnFlow 1.8s linear infinite}
+@keyframes wgnFlow{0%{background-position:0% 0}100%{background-position:-300% 0}}
+.wgn-dot{width:32px;height:32px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--primary);box-shadow:-4px -4px 8px rgba(255,255,255,.95),4px 4px 10px rgba(178,173,157,.5);transition:box-shadow .2s}
+.wgn-dot svg{width:16px;height:16px}
+.wgn-item.active .wgn-dot{box-shadow:0 0 0 2.5px var(--accent),-3px -3px 6px rgba(255,255,255,.9),3px 3px 8px rgba(178,173,157,.4)}
+.wgn-item.done .wgn-dot{background:var(--accent);color:#fff}
+.wgn-check{display:none;font-weight:800}
+.wgn-item.done .wgn-ico{display:none}
+.wgn-item.done .wgn-check{display:block}
+.wgn-label{font-size:10px;color:var(--text3);text-align:center;line-height:1.3;max-width:64px}
+.wgn-item.active .wgn-label{color:var(--text);font-weight:700}
+.wgn-item.done .wgn-label{color:var(--text2)}
+
+/* ── brand (landing) ── */
+.brand{display:flex;align-items:center;gap:10px;padding:26px 2px 8px}
+.brand-logo{width:38px;height:38px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--text);font-weight:800;font-family:'Anuphan';font-size:17px;box-shadow:inset 2px 2px 5px rgba(178,173,157,.4),inset -2px -2px 5px rgba(255,255,255,.9)}
+.brand-name{font-family:'Anuphan';font-weight:800;font-size:20px;letter-spacing:-.02em}
+.brand-tag{font-size:11.5px;margin-left:auto;background:var(--accent-d);color:var(--accent);padding:3px 10px;border-radius:20px;font-weight:600}
+
+/* ── headings ── */
+.dots{display:none}
+.q{font-family:'Anuphan';font-size:26px;font-weight:700;letter-spacing:-.02em;margin:2px 0 6px}
+.sub{color:var(--text2);font-size:15px;margin-bottom:22px}
+
+/* ── fields ── */
+label.fl{display:block;font-size:13.5px;font-weight:600;color:var(--text);margin:16px 0 6px}
+input[type=text],input[type=number],input[type=date],textarea,select{width:100%;padding:13px 14px;border:1px solid var(--border);border-radius:12px;font-family:'Sarabun',sans-serif;font-size:15px;color:var(--text);background:var(--white);outline:none;transition:.15s}
+input[type=text]:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:60px}
+input.bad{border-color:var(--red)}
+.row{display:flex;gap:12px}.row>*{flex:1}
+
+/* ── chips / pills ── */
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{padding:9px 15px;border:1px solid var(--border);border-radius:99px;background:var(--white);font-size:13.5px;cursor:pointer;color:var(--text2);font-family:'Sarabun',sans-serif;transition:.12s}
+.chip:active{transform:scale(.97)}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.pills{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.pill{text-align:center;padding:11px 6px;border:1px solid var(--border);border-radius:9px;font-size:13.5px;cursor:pointer;color:var(--text2);background:var(--white);transition:.12s}
+.pill.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+
+/* ── buttons ── */
+.btn{width:100%;padding:16px;border:none;border-radius:99px;background:var(--primary);color:#fff;font-family:'Anuphan',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);margin-top:24px;transition:.15s}
+.btn:active{transform:scale(.99)}
+.btn[disabled]{opacity:.4;cursor:not-allowed;box-shadow:none}
+.btn.ghost{background:var(--white);color:var(--accent);border:1px solid var(--border);font-size:15px;font-weight:600;padding:14px;box-shadow:none}
+.btn.sm{width:auto;padding:9px 16px;font-size:13.5px;margin-top:0}
+.btn.line{background:#06C755;color:#fff;box-shadow:0 4px 12px rgba(6,199,85,.25)}
+.lineid{display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:14px;padding:13px 15px;background:var(--white);box-shadow:var(--shadow);margin-top:8px}
+.lineid.ok{border-color:#06C755;background:rgba(6,199,85,.06)}
+.lineid img{width:42px;height:42px;border-radius:50%;object-fit:cover;flex:0 0 auto;background:var(--surf2)}
+.lineid .nm{font-weight:700;font-size:14.5px}
+.lineid .st{font-size:12px;color:var(--text3);margin-top:1px}
+.oa-card{border:1px solid var(--border);border-radius:16px;padding:18px;background:var(--white);box-shadow:var(--shadow);margin-top:18px;text-align:left}
+.btn-row{display:flex;gap:10px;margin-top:24px}
+.btn-row .btn{margin-top:0}
+
+/* ── upload / OCR ── */
+.drop{border:1.5px dashed var(--border2);border-radius:14px;padding:22px;text-align:center;cursor:pointer;transition:.15s;background:var(--white)}
+.drop:active{border-color:var(--accent);background:var(--accent-d)}
+.drop .ic{font-size:28px}
+.drop .t{font-weight:600;margin-top:6px;font-size:14px;color:var(--accent)}
+.drop .s{font-size:12px;color:var(--text3);margin-top:2px}
+.drop.has{border-style:solid;border-color:var(--green);background:rgba(26,127,90,.06)}
+.party-h{font-family:'Anuphan';font-weight:700;font-size:15px;margin:22px 0 8px}
+.party-h span{font-weight:400;color:var(--text3);font-size:13px;font-family:'Sarabun'}
+.thumb{max-width:100%;border-radius:12px;margin-top:10px;border:1px solid var(--border)}
+.ocrbox{margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:14px;background:var(--white);box-shadow:var(--shadow)}
+.ocrbox .fl{margin-top:12px}
+.ocrbox .fl:first-child{margin-top:0}
+.mini{font-size:12.5px;color:var(--text3)}
+.warnrow{font-size:12px;color:var(--red);margin-top:6px}
+.pdpa{display:flex;gap:10px;align-items:flex-start;margin-top:18px;font-size:13.5px;line-height:1.55;color:var(--text2);cursor:pointer;user-select:none}
+.pdpa input{margin-top:2px;width:19px;height:19px;flex:0 0 auto;accent-color:var(--accent);cursor:pointer}
+.pdpa a{color:var(--accent);text-decoration:none}
+.secnote{display:flex;gap:7px;align-items:center;font-size:12.5px;color:var(--text2);margin-top:16px;background:var(--accent-d);padding:11px 14px;border-radius:12px;line-height:1.55}
+
+/* ── processing ── */
+.proc-line{display:flex;align-items:center;gap:11px;padding:9px 2px;font-size:15px;color:var(--text3);transition:.3s}
+.proc-line.on{color:var(--text);font-weight:600}
+.proc-line.ok{color:var(--green)}
+.proc-ic{width:22px;height:22px;border-radius:50%;border:2px solid var(--border2);flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:12px}
+.proc-line.on .proc-ic{border-color:var(--accent);animation:pulse 1s infinite}
+.proc-line.ok .proc-ic{border-color:var(--green);background:var(--green);color:#fff}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(110,195,234,.5)}50%{box-shadow:0 0 0 6px rgba(110,195,234,0)}}
+
+/* ── contract doc ── */
+.doc{background:var(--white);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;font-size:14.5px;line-height:1.7}
+.doc-hd{text-align:center;padding:22px 20px;border-bottom:1px solid var(--border);background:var(--bg)}
+.doc-hd h2{margin:0;font-size:19px;font-weight:700}
+.doc-hd .no{font-size:12.5px;color:var(--text3);margin-top:5px}
+.doc-parties{padding:15px 20px;font-size:13.5px;border-bottom:1px solid var(--border);color:var(--text2)}
+.doc-parties b{font-family:'Anuphan';color:var(--text)}
+.clause{padding:15px 20px;border-bottom:1px solid var(--border);font-size:14px;color:var(--text2)}
+.clause .cl-para{text-align:justify;text-align-last:left;text-indent:2.5em;margin-bottom:11px}
+.clause .cl-para:last-child{margin-bottom:0}
+.clause .cl-sub{text-align:left;text-indent:0;padding-left:2.5em;margin:3px 0}
+.clause:last-child{border-bottom:none}
+.clause.locked{position:relative;user-select:none;color:transparent;text-shadow:0 0 9px rgba(20,23,31,.5);pointer-events:none;min-height:46px}
+.clause.locked::after{content:"🔒";position:absolute;right:16px;top:12px;filter:none;text-shadow:none;font-size:16px}
+
+/* ── paywall ── */
+.paywall{margin-top:20px;background:var(--bg);border:none;border-radius:26px;padding:28px 22px;text-align:center;box-shadow:-5px -5px 12px rgba(255,255,255,.9),5px 5px 14px rgba(178,173,157,.5)}
+.paywall .spark{font-size:22px}
+.paywall h3{margin:8px 0 4px;font-size:21px;font-weight:700}
+.paywall .price{font-family:'Anuphan';font-size:42px;font-weight:800;color:var(--accent);margin:14px 0 0;letter-spacing:-.02em}
+.paywall .btn{background:var(--accent);box-shadow:0 6px 18px rgba(46,134,198,.28)}
+.paywall .per{font-size:13px;color:var(--text3)}
+.feat{text-align:left;max-width:280px;margin:18px auto 0;font-size:14px;color:var(--text2)}
+.feat div{padding:4px 0}
+.feat b{color:var(--green)}
+
+/* ── payment ── */
+.qrbox{text-align:center;padding:10px}
+.qrbox img{width:220px;height:220px;border:1px solid var(--border);border-radius:14px;background:#fff}
+.pay-status{font-size:14px;color:var(--text2);margin-top:12px;text-align:center}
+
+/* ── signature ── */
+.sigwrap{border:1px solid var(--border);border-radius:14px;background:var(--white);margin-top:14px;overflow:hidden;box-shadow:var(--shadow)}
+#sigCanvas,#rmCanvas,.sigCanvas{display:block;width:100%;height:200px;touch-action:none;background:var(--white)}
+.sig-tools{display:flex;justify-content:space-between;align-items:center;padding:9px 12px;border-top:1px solid var(--border);font-size:13px;color:var(--text3)}
+.link-card{border:1px solid var(--border);border-radius:14px;padding:15px;margin-top:12px;background:var(--white);box-shadow:var(--shadow)}
+.link-card .lt{font-family:'Anuphan';font-weight:700;color:var(--text);font-size:14.5px}
+.link-url{font-size:12px;word-break:break-all;background:var(--bg);border:1px solid var(--border);border-radius:9px;padding:10px;margin-top:8px;color:var(--text2)}
+.status-row{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);font-size:14px}
+.status-row .badge{margin-left:auto;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px}
+.badge.wait{background:var(--surf2);color:var(--text3)}
+.badge.done{background:rgba(26,127,90,.10);color:var(--green)}
+
+/* ── toast / skip ── */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--primary);color:#fff;padding:12px 20px;border-radius:99px;font-size:14px;box-shadow:var(--shadow-lg);z-index:9999;opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1}
+.skip-fab{position:fixed;right:14px;bottom:14px;z-index:9998;background:var(--primary);color:#fff;border:none;border-radius:50%;width:52px;height:52px;font-size:22px;box-shadow:var(--shadow-lg);cursor:pointer}
+.skip-menu{position:fixed;right:14px;bottom:76px;z-index:9998;background:var(--white);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);padding:8px;display:none;max-height:60vh;overflow:auto}
+.skip-menu.open{display:block}
+.skip-menu button{display:flex;align-items:center;gap:8px;width:210px;text-align:left;background:none;border:none;padding:9px 10px;border-radius:10px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--text)}
+.skip-menu button:active{background:var(--bg)}
+.skip-num{width:20px;height:20px;border-radius:50%;background:var(--accent-d);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+.skip-hr{height:1px;background:var(--border);margin:6px 4px}
+
+#printDoc{position:fixed;left:-9999px;top:0;width:794px;background:#fff}
+#printDoc.pd-render{font-family:'Sarabun',sans-serif;color:#000}
+#printDoc.pd-render .pd-place{text-align:right;font-size:14px;line-height:1.9;margin:14px 0 0}
+#printDoc.pd-render .pd-date{text-align:center;font-size:14px;line-height:1.9;margin:0 0 22px}
+#printDoc.pd-render .pd-page{width:794px;min-height:1123px;padding:76px 76px 72px;box-sizing:border-box;page-break-after:always;position:relative}
+#printDoc.pd-render .pd-title{font-family:'Anuphan';font-size:23px;font-weight:700;text-align:center;margin-bottom:2px}
+#printDoc.pd-render .pd-no{text-align:center;font-size:13.5px;color:#000;margin-bottom:6px}
+#printDoc.pd-render .pd-clause{font-size:14px;line-height:1.72;margin-bottom:13px;color:#000}
+#printDoc.pd-render .pd-clause .pd-para{text-align:justify;text-align-last:left;text-indent:2.5em;margin-bottom:11px}
+#printDoc.pd-render .pd-clause .pd-para:last-child{margin-bottom:0}
+#printDoc.pd-render .pd-clause .pd-sub{padding-left:40px;text-align:left;text-align-last:left;margin:2px 0}
+#printDoc.pd-render .pd-sig{display:flex;gap:48px;margin-top:56px}
+#printDoc.pd-render .pd-sig .col{flex:1;text-align:center}
+#printDoc.pd-render .pd-sig-img{height:64px;display:flex;align-items:flex-end;justify-content:center}
+#printDoc.pd-render .pd-sig-img img{height:60px;object-fit:contain}
+#printDoc.pd-render .pd-sig-ln{border-top:1px solid #000;margin-top:4px;padding-top:8px;font-size:13.5px;color:#000}
+#printDoc.pd-render .pd-sig-nm{font-size:13.5px;margin-top:4px;color:#000}
+/* ── cert + ภาคผนวก (แบบ SignDee rental) ── */
+#printDoc.pd-render .ap-page-header{border-bottom:2px solid #000;padding-bottom:14px;margin-bottom:20px}
+#printDoc.pd-render .ap-page-title{font-family:'Anuphan';font-size:22px;font-weight:700}
+#printDoc.pd-render .ap-page-sub{font-size:15px;color:#444;margin-top:2px}
+#printDoc.pd-render .ap-page-meta{font-size:12.5px;color:#666;margin-top:4px}
+#printDoc.pd-render .cert-meta{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px}
+#printDoc.pd-render .cert-meta td{border:1px solid #ddd;padding:7px 10px;vertical-align:top}
+#printDoc.pd-render .cert-meta-k{background:#f7f6f2;font-weight:700;width:42%;color:#444}
+#printDoc.pd-render .cert-meta-v{word-break:break-all;font-family:'IBM Plex Mono';font-size:11.5px}
+#printDoc.pd-render .cert-sec-title{margin-top:22px;margin-bottom:6px;font-size:14px;font-weight:700;color:#333;border-left:4px solid #333;padding-left:10px;font-family:'Anuphan'}
+#printDoc.pd-render .cert-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12.5px}
+#printDoc.pd-render .cert-table th,#printDoc.pd-render .cert-table td{border:1px solid #999;padding:8px 9px;text-align:left;vertical-align:top}
+#printDoc.pd-render .cert-table th{background:#f0efe9;font-weight:700;font-size:12px}
+#printDoc.pd-render .cert-audit th,#printDoc.pd-render .cert-audit td{font-size:11.5px}
+#printDoc.pd-render .cert-utc{font-size:10px;color:#888;margin-top:2px;font-family:'IBM Plex Mono'}
+#printDoc.pd-render .cert-hash{margin-top:20px;padding:11px 14px;background:#f7f6f2;border:1px solid #ddd;border-radius:6px;font-size:11.5px;word-break:break-all;color:#333;font-family:'IBM Plex Mono'}
+#printDoc.pd-render .cert-legal{margin-top:20px;padding:14px;background:#f7f6f2;border:1px solid #e0ddd5;border-radius:6px;font-size:12px;line-height:1.65;color:#444}
+#printDoc.pd-render .cert-legal-title{font-weight:700;color:#333;margin-bottom:6px;font-size:12.5px;font-family:'Anuphan'}
+#printDoc.pd-render .cert-note{margin-top:16px;font-size:11.5px;color:#555;line-height:1.6}
+#printDoc.pd-render .ap-footer{margin-top:22px;font-size:11.5px;color:#888;text-align:right;border-top:1px solid #eee;padding-top:12px}
+#printDoc.pd-render .apc-grid{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:14px}
+#printDoc.pd-render .apc-role{font-size:12.5px;font-weight:700;color:#555;letter-spacing:.05em;margin-bottom:12px;text-transform:uppercase}
+#printDoc.pd-render .apc-card{border:1.5px solid #d0ccc4;border-radius:12px;overflow:hidden;background:#fff}
+#printDoc.pd-render .apc-hd{background:#f4f3f0;padding:9px 12px;font-size:11px;color:#888;border-bottom:1px solid #e0ddd8}
+#printDoc.pd-render .apc-img{padding:14px;text-align:center}
+#printDoc.pd-render .apc-wrap{position:relative;display:inline-block;max-width:100%}
+#printDoc.pd-render .apc-wrap img{max-width:100%;max-height:200px;object-fit:contain;border-radius:8px;display:block}
+#printDoc.pd-render .apc-wm{position:absolute;left:0;top:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;overflow:hidden;pointer-events:none}
+#printDoc.pd-render .apc-wm span{transform:rotate(-16deg);font-size:11px;font-weight:700;line-height:1.35;color:rgba(190,30,30,.72);background:rgba(255,255,255,.55);border-top:1.5px solid rgba(190,30,30,.5);border-bottom:1.5px solid rgba(190,30,30,.5);padding:5px 8px;text-align:center;width:118%;display:block}
+#printDoc.pd-render .apc-empty{border:1.5px dashed #d0ccc4;border-radius:12px;padding:28px;text-align:center;color:#aaa;font-size:13px}
+
+@media print{
+  #printDoc{position:static!important;left:0!important;width:auto!important}
+  .pd-page{page-break-after:always;padding:40px}
+  .pd-title,.cert-title{font-family:'Anuphan';font-weight:700;text-align:center}
+  .cert-row{display:flex;justify-content:space-between;border-bottom:1px solid #E6ECF2;padding:8px 0}
+  .cert-disc{font-size:11px;color:#5B6B7B;margin-top:20px}
+  .wrap,.skip-fab,.skip-menu,.topbar,.wgn{display:none!important}
+}
+
+/* ── Employment: เพิ่มใหม่ 5 class ── */
+.combo{position:relative}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;max-height:264px;overflow:auto;background:var(--white);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg)}
+.combo-opt{padding:13px 14px;font-size:15px;cursor:pointer;border-bottom:1px solid var(--border)}
+.combo-opt:last-child{border-bottom:none}
+.combo-opt:active,.combo-opt.hl{background:var(--accent-d)}
+.combo-opt .cat{display:block;font-size:12px;color:var(--text3);margin-top:2px}
+.jd-sec{margin-top:16px;padding:14px;background:var(--surf2);border-radius:var(--r)}
+.jd-sec>h4{font-size:13px;font-weight:700;color:var(--text2);letter-spacing:.04em;margin:0 0 10px}
+.jd-item{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px}
+.jd-item input{flex:1;min-height:44px;margin:0}
+.jd-item .x{width:36px;height:44px;flex:none;border:none;background:none;color:var(--text3);font-size:18px;cursor:pointer}
+.jd-skel{height:44px;border-radius:10px;background:linear-gradient(90deg,var(--surf2) 25%,#f3f2ec 50%,var(--surf2) 75%);background-size:200% 100%;animation:sh 1.2s infinite;margin-bottom:8px}
+@keyframes sh{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sumline{margin-top:16px;padding:13px 15px;background:var(--surf2);border-radius:var(--r);font-size:13.5px;line-height:1.75;color:var(--text2)}
+.sumline b{color:var(--text);font-family:'Anuphan'}
+.ap-sec{margin-top:14px}
+.ap-sec h4{font-size:13.5px;margin:0 0 6px;color:var(--text2);font-weight:700}
+.ap-sec ul{margin:0;padding-left:1.4em}
+.ap-sec li{margin-bottom:5px}
+.timepick{display:flex;align-items:center;gap:6px}
+.timepick select{margin:0;flex:1;min-width:0}
+.timepick span{color:var(--text3);font-size:15px}
+.timepick .hh{font-size:13px;flex:none}
+.jd-fixed{margin-bottom:14px}
+.jd-fixed label{display:block;font-size:12.5px;color:var(--text2);font-weight:600;margin:0 0 4px}
+.jd-fixed select{margin:0 0 10px}
+/* ── โมดูลประกันสังคม ── */
+.sso-tbl{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+.sso-tbl th{background:var(--surf2);padding:8px 6px;text-align:left;font-weight:700;font-size:12px;color:var(--text2);white-space:nowrap}
+.sso-tbl td{padding:5px 6px;border-bottom:1px solid var(--border)}
+.sso-tbl td input{margin:0;padding:7px 8px;font-size:13px;min-height:0;width:100%}
+.sso-tbl .num{text-align:right;font-family:'IBM Plex Mono';white-space:nowrap}
+.sso-tbl .rm{width:32px;text-align:center;color:var(--text3);cursor:pointer;border:none;background:none;font-size:16px}
+.sso-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -4px}
+.sso-sum{margin-top:14px;padding:14px;background:var(--surf2);border-radius:var(--r);font-size:14px}
+.sso-sum .r{display:flex;justify-content:space-between;padding:4px 0}
+.sso-sum .r.tot{border-top:1px solid var(--border2);margin-top:6px;padding-top:9px;font-weight:700;font-size:15.5px}
+.sso-sum .r .v{font-family:'IBM Plex Mono'}
+.sso-due{padding:12px 14px;border-radius:var(--r);font-size:13.5px;line-height:1.6;margin-top:14px}
+.sso-due.ok{background:rgba(26,127,90,.08);border:1px solid rgba(26,127,90,.25)}
+.sso-due.warn{background:rgba(180,121,31,.10);border:1px solid rgba(180,121,31,.3)}
+.sso-due.late{background:rgba(192,57,43,.09);border:1px solid rgba(192,57,43,.3)}
+.sso-bad{background:rgba(192,57,43,.08)}
+/* ── แดชบอร์ดนายจ้าง ── */
+.dash-kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px}
+.dash-kpi>div{background:var(--surf2);border-radius:var(--r);padding:13px 14px}
+.dash-kpi .k{font-size:12px;color:var(--text2)}
+.dash-kpi .v{font-family:'Anuphan';font-size:21px;font-weight:800;margin-top:3px;letter-spacing:-.01em}
+.dash-kpi .s{font-size:11.5px;color:var(--text3);margin-top:2px}
+.dash-sec{margin-top:22px}
+.dash-sec>h3{font-size:15.5px;font-weight:700;margin:0 0 4px}
+.dash-sec>.hint{font-size:12.5px;color:var(--text3);margin-bottom:8px}
+.dash-card{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:13px 14px;margin-bottom:9px}
+.dash-card .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.dash-card .nm{font-weight:700;font-size:14.5px}
+.dash-card .meta{font-size:12.5px;color:var(--text2);margin-top:3px;line-height:1.6}
+.badge2{font-size:11.5px;padding:3px 9px;border-radius:99px;white-space:nowrap;font-weight:600}
+.badge2.done{background:rgba(26,127,90,.12);color:var(--green)}
+.badge2.wait{background:rgba(180,121,31,.14);color:#8a5c12}
+.badge2.draft{background:var(--surf2);color:var(--text3)}
+.alert-row{display:flex;gap:9px;padding:11px 13px;border-radius:12px;margin-bottom:8px;font-size:13.5px;line-height:1.6;align-items:flex-start}
+.alert-row .ic{flex:none;font-size:15px;line-height:1.4}
+.alert-row.hi{background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.25)}
+.alert-row.mid{background:rgba(180,121,31,.10);border:1px solid rgba(180,121,31,.28)}
+.alert-row.low{background:var(--surf2)}
+@media(min-width:560px){.dash-kpi{grid-template-columns:repeat(4,1fr)}}
+#printDoc.pd-render .ap-jd h4{font-size:14px;margin:16px 0 6px;font-weight:700}
+#printDoc.pd-render .ap-jd ul{margin:0;padding-left:22px}
+#printDoc.pd-render .ap-jd li{margin-bottom:5px;font-size:14px;line-height:1.75}
+
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar" style="display:none">
+  <div class="topbar-inner">
+    <button class="back-btn" onclick="empBack()">&#8592;</button>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="stepLabel">ตำแหน่งงาน</span><span id="stepCount">ขั้นตอน 1 จาก 5</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:20%"></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="wgn" id="wgn" style="display:none"><div class="wgn-track">
+    <div class="wgn-item" data-group="position"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7"/></svg></span><span class="wgn-check">&#10003;</span></div><div class="wgn-label">ตำแหน่งงาน</div></div>
+    <div class="wgn-item" data-group="parties"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="8.5" cy="8" r="2.6"/><circle cx="16" cy="9" r="2.2"/><path d="M3.5 20c0-3 2.4-5.2 5-5.2s5 2.2 5 5.2"/><path d="M13 20c0-2.4 1.9-4.3 4-4.3s4 1.9 4 4.3"/></svg></span><span class="wgn-check">&#10003;</span></div><div class="wgn-label">คู่สัญญา</div></div>
+    <div class="wgn-item" data-group="review"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9.2 12.5l2 2 4-4.3"/></svg></span><span class="wgn-check">&#10003;</span></div><div class="wgn-label">ตรวจสอบ</div></div>
+    <div class="wgn-item" data-group="payment"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="6" width="19" height="13" rx="2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/></svg></span><span class="wgn-check">&#10003;</span></div><div class="wgn-label">ชำระเงิน</div></div>
+    <div class="wgn-item" data-group="sign"><div class="wgn-dot"><span class="wgn-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M3 20.5c3.2 0 3.2-13 6.4-13s3.2 13 6.4 13c1.6 0 2.6-1.6 3.3-3.4"/><line x1="14" y1="20.5" x2="21" y2="20.5"/></svg></span><span class="wgn-check">&#10003;</span></div><div class="wgn-label">ลงนาม</div></div>
+  </div></div>
+
+  <div class="brand">
+    <div class="brand-logo">S</div>
+    <div class="brand-name">SignDee <span style="color:var(--blue)">สัญญาจ้าง</span></div>
+  </div>
+
+  <!-- ══ LANDING ══ -->
+  <section class="phase active" id="ph-landing">
+    <div class="card">
+      <div class="q">สร้างสัญญาจ้างงานใน 2 ขั้นตอน</div>
+      <div class="sub">เลือกตำแหน่งงาน แล้วอัปโหลดบัตรประชาชนของนายจ้างและลูกจ้าง จากนั้นระบบจะจัดทำหนังสือสัญญาจ้างพร้อมรายละเอียดตำแหน่งงานแนบท้าย และ Legal Evidence Pack ให้อัตโนมัติ</div>
+      <div class="feat" style="margin-left:0">
+        <div>&#10003; ร่างตาม พ.ร.บ.คุ้มครองแรงงาน พ.ศ. 2541</div>
+        <div>&#10003; เอกสารแนบท้าย ก. รายละเอียดตำแหน่งงาน</div>
+        <div>&#10003; เซ็นออนไลน์พร้อมใบรับรองอิเล็กทรอนิกส์</div>
+      </div>
+      <button class="btn" onclick="go('step1')">เริ่มสร้างสัญญา &#8594;</button>
+      <div class="secnote">&#128274; ข้อมูลเข้ารหัส &middot; ตามกฎหมาย PDPA</div>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div class="mini" style="margin-bottom:8px">เครื่องมือสำหรับนายจ้าง</div>
+        <button class="btn ghost" onclick="go('dash')">แดชบอร์ดนายจ้าง &#8594;</button>
+        <button class="btn ghost" onclick="go('sso')">คำนวณและนำส่งเงินสมทบประกันสังคม &#8594;</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ แดชบอร์ดนายจ้าง ══ -->
+  <section class="phase" id="ph-dash">
+    <div class="card">
+      <div class="q">แดชบอร์ดนายจ้าง</div>
+      <div class="sub" id="dashSub">สรุปสัญญา ลูกจ้าง และสิ่งที่ต้องทำ</div>
+      <div id="dashLogin"></div>
+      <div id="dashBody"><div class="mini" style="padding:18px 0">กำลังโหลด…</div></div>
+      <div class="btn-row" style="margin-top:18px">
+        <button class="btn ghost sm" type="button" onclick="dashInit(true)">รีเฟรช</button>
+        <button class="btn ghost sm" type="button" onclick="go('sso')">ไปหน้าประกันสังคม</button>
+        <button class="btn ghost sm" type="button" onclick="go('step1')">+ สร้างสัญญาใหม่</button>
+      </div>
+      <div class="secnote" id="dashScope" style="margin-top:14px"></div>
+      <button class="btn ghost" onclick="go('landing')" style="margin-top:10px">&#8592; กลับหน้าแรก</button>
+    </div>
+  </section>
+
+  <!-- ══ ประกันสังคม (สปส.1-10) ══ -->
+  <section class="phase" id="ph-sso">
+    <div class="card">
+      <div class="q">เงินสมทบประกันสังคม</div>
+      <div class="sub">คำนวณเงินสมทบ ออกแบบ สปส.1-10 ไฟล์อัปโหลด e-Service และสลิปเงินเดือน</div>
+      <div id="ssoDue"></div>
+
+      <label class="fl">งวดค่าจ้าง</label>
+      <div class="row">
+        <div><select id="ssoMonth" onchange="ssoRender()"></select></div>
+        <div><select id="ssoYear" onchange="ssoRender()"></select></div>
+      </div>
+
+      <label class="fl">เลขที่บัญชีนายจ้าง (10 หลัก)</label>
+      <input type="text" id="ssoAcct" inputmode="numeric" maxlength="10" placeholder="0000000000" oninput="ssoSave()">
+      <div class="row">
+        <div><label class="fl">ลำดับที่สาขา</label><input type="text" id="ssoBranch" inputmode="numeric" maxlength="6" value="000000" oninput="ssoSave()"></div>
+        <div><label class="fl">วันที่ชำระเงิน</label><input type="date" id="ssoPayDate" onchange="ssoSave()"></div>
+      </div>
+      <label class="fl">ชื่อสถานประกอบการ</label>
+      <input type="text" id="ssoName" maxlength="45" placeholder="บริษัท ตัวอย่าง จำกัด" oninput="ssoSave()">
+
+      <label class="fl" style="margin-top:18px">รายชื่อลูกจ้าง</label>
+      <div class="btn-row">
+        <button class="btn ghost sm" type="button" onclick="$('ssoFile').click()">อัปโหลด CSV / Excel</button>
+        <button class="btn ghost sm" type="button" onclick="ssoAddRow()">+ เพิ่มทีละคน</button>
+        <button class="btn ghost sm" type="button" onclick="ssoTemplate()">ดาวน์โหลดไฟล์ตัวอย่าง</button>
+      </div>
+      <input type="file" id="ssoFile" accept=".csv,.txt,.xlsx,.xls" style="display:none">
+      <div id="ssoErr"></div>
+      <div class="sso-wrap"><table class="sso-tbl" id="ssoTbl"></table></div>
+      <div id="ssoSum"></div>
+
+      <div class="btn-row" style="margin-top:18px">
+        <button class="btn" type="button" onclick="ssoPdf()">แบบ สปส.1-10 (PDF)</button>
+        <button class="btn ghost" type="button" onclick="ssoTxt()">ไฟล์อัปโหลด e-Service (.txt)</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn ghost" type="button" onclick="ssoSlips()">สลิปเงินเดือนทุกคน (PDF)</button>
+        <button class="btn ghost" type="button" onclick="ssoIcs()">เตือนกำหนดยื่นในปฏิทิน (.ics)</button>
+      </div>
+
+      <details style="margin-top:16px">
+        <summary class="mini" style="cursor:pointer">ตั้งค่าไฟล์อัปโหลด (แก้เมื่ออัปโหลดไม่ผ่าน)</summary>
+        <label class="fl">ปีในไฟล์</label>
+        <select id="ssoYearMode" onchange="ssoSave()">
+          <option value="be">พ.ศ. 2 หลัก (เช่น 69)</option>
+          <option value="ce">ค.ศ. 2 หลัก (เช่น 26)</option>
+        </select>
+        <label class="fl">การเข้ารหัสอักขระ</label>
+        <select id="ssoEnc" onchange="ssoSave()">
+          <option value="tis620">TIS-620 (มาตรฐานราชการไทย)</option>
+          <option value="utf8">UTF-8</option>
+        </select>
+      </details>
+
+      <div class="warnrow" style="margin-top:16px">&#9888; SignDee ไม่ได้โอนเงินเข้าสำนักงานประกันสังคมให้ ระบบนี้คำนวณและออกเอกสาร/ไฟล์ให้เท่านั้น นายจ้างต้องนำไปยื่นและชำระเงินเองที่ e-Service ของ สปส. ธนาคาร หรือสำนักงานประกันสังคมพื้นที่</div>
+      <button class="btn ghost" onclick="go('landing')" style="margin-top:14px">&#8592; กลับหน้าแรก</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 1 — ตำแหน่ง + JD ══ -->
+  <section class="phase" id="ph-step1">
+    <div class="card">
+      <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="q">ตำแหน่งงานอะไร</div>
+      <div class="sub">พิมพ์หรือเลือกตำแหน่ง &mdash; ระบบจะร่างขอบเขตงาน คุณสมบัติ และตัวชี้วัดให้ แก้ไขได้ทุกบรรทัด</div>
+      <div class="combo">
+        <input type="text" id="posInput" autocomplete="off" placeholder="เช่น พนักงานขาย, Software Engineer" oninput="posSearch(this.value)" onfocus="posSearch(this.value)">
+        <div class="combo-list" id="posList" style="display:none"></div>
+      </div>
+      <div class="chips" id="posChips"></div>
+      <div id="jdBox" style="display:none"></div>
+      <button class="btn" id="s1next" onclick="step1Next()" disabled>ถัดไป &#8594;</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 1b — รายละเอียดการจ้าง ══ -->
+  <section class="phase" id="ph-step1b">
+    <div class="card">
+      <div class="dots"><span class="dot done"></span><span class="dot on"></span><span class="dot"></span></div>
+      <div class="q">รายละเอียดการจ้าง</div>
+      <div class="sub">กรอกเท่าที่จำเป็น &mdash; เงื่อนไขตามกฎหมายแรงงานระบบใส่ให้อัตโนมัติ</div>
+
+      <label class="fl">ประเภทการจ้าง</label>
+      <div class="pills" id="etPills"></div>
+      <div id="etWarn"></div>
+
+      <label class="fl">เงินเดือน (บาท/เดือน)</label>
+      <input type="text" id="salary" inputmode="numeric" placeholder="เช่น 25000" oninput="onSalary(this.value)">
+      <div id="wageWarn"></div>
+
+      <div id="moreMoneyBtn"><button class="btn ghost sm" type="button" onclick="showMoreMoney()">+ เพิ่มเงินได้อื่น (ค่าตำแหน่ง / โบนัส)</button></div>
+      <div id="moreMoney" style="display:none">
+        <label class="fl">ค่าตำแหน่ง / ค่าครองชีพ (บาท/เดือน)</label>
+        <input type="text" id="allowance" inputmode="numeric" placeholder="0" oninput="_updS1b()">
+        <label class="fl">โบนัส</label>
+        <input type="text" id="bonus" placeholder="เช่น ตามผลประกอบการ ปีละ 1 ครั้ง" oninput="_updS1b()">
+      </div>
+
+      <label class="fl">ระยะทดลองงาน</label>
+      <div class="pills" id="pbPills"></div>
+      <input type="text" id="pbCustom" inputmode="numeric" placeholder="ระบุจำนวนวัน (1&ndash;180)" style="display:none;margin-top:8px" oninput="_updS1b()">
+      <div class="mini" style="margin-top:8px;line-height:1.65;padding:11px 13px;background:var(--surf2);border-radius:12px">
+        <b>หมายเหตุ:</b> การทดลองงานไม่ตัดสิทธิค่าชดเชย &mdash; หากลูกจ้างทำงานติดต่อกันครบ <b>120 วัน</b> ขึ้นไปแล้วถูกเลิกจ้างโดยลูกจ้างไม่มีความผิด
+        นายจ้างต้องจ่ายค่าชดเชยไม่น้อยกว่าค่าจ้างอัตราสุดท้าย <b>30 วัน</b> (ประมาณ 1 เดือน) ตามมาตรา 118 พ.ร.บ.คุ้มครองแรงงาน
+        <br>ผู้ประกอบการส่วนใหญ่จึงกำหนดระยะทดลองงานไว้ที่ 119 วัน
+      </div>
+
+      <label class="fl">วันทำงาน</label>
+      <div class="pills" id="wdPresets"></div>
+      <div class="pills" id="wdPills" style="display:none"></div>
+
+      <div class="row">
+        <div><label class="fl">เวลาเข้างาน</label>
+          <div class="timepick"><select id="wStartH" onchange="_updS1b()"></select><span>:</span><select id="wStartM" onchange="_updS1b()"></select><span class="hh">น.</span></div>
+        </div>
+        <div><label class="fl">เวลาเลิกงาน</label>
+          <div class="timepick"><select id="wEndH" onchange="_updS1b()"></select><span>:</span><select id="wEndM" onchange="_updS1b()"></select><span class="hh">น.</span></div>
+        </div>
+      </div>
+      <div id="hourWarn"></div>
+
+      <label class="fl">สถานที่ทำงาน</label>
+      <input type="text" id="wLoc" placeholder="เช่น สำนักงานใหญ่ ถ.สุขุมวิท กรุงเทพฯ" oninput="_updS1b()">
+      <div class="chips" id="locChips"></div>
+
+      <label class="pdpa" style="margin-top:12px"><input type="checkbox" id="optClientSite" onchange="toggleClientSite()">
+        <span>ลูกจ้างไปปฏิบัติงานประจำที่สถานประกอบการของลูกค้า/หน่วยงานอื่น</span></label>
+      <div id="clientSiteBox" style="display:none">
+        <input type="text" id="clientSite" placeholder="ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน" oninput="_updS1b()">
+        <div class="warnrow" style="margin-top:8px">&#9888; ลูกจ้างรับเหมาค่าแรงต้องได้รับสิทธิประโยชน์และสวัสดิการที่เป็นธรรมโดยไม่เลือกปฏิบัติ ตามมาตรา 11/1 พ.ร.บ.คุ้มครองแรงงาน</div>
+      </div>
+
+      <label class="fl">วันเริ่มงาน</label>
+      <input type="date" id="startDate" onchange="_updS1b()">
+      <div class="mini" id="startDateTh" style="margin-top:5px"></div>
+
+      <label class="fl">วันจ่ายค่าจ้าง</label>
+      <input type="text" id="payday" value="ภายในวันที่ 5 ของทุกเดือน" oninput="_updS1b()">
+
+      <label class="pdpa" style="margin-top:14px"><input type="checkbox" id="optRestrict" onchange="toggleRestrict()">
+        <span>เพิ่มข้อจำกัดหลังพ้นสภาพการเป็นลูกจ้าง</span></label>
+      <div id="restrictBox" style="display:none">
+        <div class="pills" id="rsPills"></div>
+        <input type="text" id="rsArea" placeholder="เขตพื้นที่ เช่น จังหวัดลำปาง" style="display:none;margin-top:8px" oninput="_updS1b()">
+        <div class="warnrow" style="margin-top:8px">&#9888; ข้อจำกัดหลังพ้นสภาพต้องมีขอบเขตที่สมเหตุสมผล ศาลอาจลดขอบเขตลงตาม พ.ร.บ.ว่าด้วยข้อสัญญาที่ไม่เป็นธรรม พ.ศ. 2540</div>
+      </div>
+
+      <div class="sumline" id="sumline"></div>
+      <button class="btn" id="s1bnext" onclick="step1bNext()" disabled>ถัดไป &#8594;</button>
+    </div>
+  </section>
+
+  <!-- ══ STEP 2 — บัตรประชาชน ══ -->
+  <section class="phase" id="ph-step2">
+    <div class="card">
+      <div class="dots"><span class="dot done"></span><span class="dot done"></span><span class="dot on"></span></div>
+      <div class="q">อัปโหลดบัตรประชาชนทั้งสองฝ่าย</div>
+      <div class="sub">ถ่ายด้านหน้าบัตร &mdash; ระบบจะอ่านข้อมูลให้ ตรวจแก้ได้ก่อนไปต่อ</div>
+
+      <div class="party-h">นายจ้าง <span>&mdash; ผู้ว่าจ้าง</span></div>
+      <label class="pdpa" style="margin-top:10px"><input type="checkbox" id="jur_A" onchange="toggleJuristic('A')">
+        <span>นายจ้างเป็นนิติบุคคล (บริษัท / ห้างหุ้นส่วน / สมาคม)</span></label>
+      <div class="ocrbox" id="jurBox_A" style="display:none"></div>
+      <div class="drop" id="dropA" onclick="pickCard('A')">
+        <div class="ic">&#128247;</div><div class="t">ถ่าย / เลือกรูปบัตรประชาชน</div><div class="s">ด้านหน้าเท่านั้น</div>
+      </div>
+      <img class="thumb" id="thumbA" style="display:none">
+      <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" type="button" onclick="manualCard('A')">หรือกรอกข้อมูลเอง (ไม่มีรูปบัตร)</button></div>
+      <div class="ocrbox" id="ocrA" style="display:none"></div>
+
+      <div class="party-h">ลูกจ้าง <span>&mdash; ผู้รับจ้าง</span></div>
+      <div class="drop" id="dropB" onclick="pickCard('B')">
+        <div class="ic">&#128247;</div><div class="t">ถ่าย / เลือกรูปบัตรประชาชน</div><div class="s">ด้านหน้าเท่านั้น</div>
+      </div>
+      <img class="thumb" id="thumbB" style="display:none">
+      <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" type="button" onclick="manualCard('B')">หรือกรอกข้อมูลเอง (ไม่มีรูปบัตร)</button></div>
+      <div class="ocrbox" id="ocrB" style="display:none"></div>
+
+      <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
+      <input type="file" id="certInput" accept="image/*" style="display:none">
+      <div class="secnote">&#128274; รูปถูกเข้ารหัสและลบอัตโนมัติใน 60 วัน</div>
+      <label class="pdpa"><input type="checkbox" id="pdpa" onchange="_updS2()">
+        <span>ข้าพเจ้ายินยอมให้ประมวลผลข้อมูลบัตรประชาชนเพื่อจัดทำสัญญา ตามนโยบายความเป็นส่วนตัว</span></label>
+      <button class="btn" id="s2next" onclick="step2Generate()" disabled>สร้างสัญญา</button>
+    </div>
+  </section>
+
+  <!-- ══ PROCESSING ══ -->
+  <section class="phase" id="ph-proc">
+    <div class="card">
+      <div class="q" style="text-align:center">กำลังจัดทำหนังสือสัญญาจ้าง</div>
+      <div class="sub" style="text-align:center">กำลังประกอบข้อสัญญาตามกฎหมายแรงงาน&hellip;</div>
+      <div id="procList" style="margin-top:14px"></div>
+    </div>
+  </section>
+
+  <!-- ══ PREVIEW + PAYWALL ══ -->
+  <section class="phase" id="ph-preview">
+    <div class="dots"><span class="dot done"></span><span class="dot done"></span><span class="dot on"></span></div>
+    <div class="doc" id="docPreview"></div>
+    <div class="paywall">
+      <div class="spark">&#10024;</div>
+      <h3>สัญญาจ้างของคุณพร้อมแล้ว</h3>
+      <div class="mini">ปลดล็อกสัญญาฉบับเต็ม พร้อมเอกสารแนบท้าย ก., Evidence Pack และส่งเซ็นทางไกล</div>
+      <div class="price">&#3647;790</div>
+      <div class="per">ครั้งเดียว ต่อสัญญา</div>
+      <div class="feat">
+        <div><b>&#10003;</b> หนังสือสัญญาจ้าง ตาม พ.ร.บ.คุ้มครองแรงงาน</div>
+        <div><b>&#10003;</b> เอกสารแนบท้าย ก. รายละเอียดตำแหน่งงาน</div>
+        <div><b>&#10003;</b> ข้อตกลงทรัพย์สินทางปัญญาเป็นหนังสือ</div>
+        <div><b>&#10003;</b> ส่งเซ็นทางไกล 2 ฝ่าย</div>
+        <div><b>&#10003;</b> ใบรับรอง + SHA-256 &middot; ดาวน์โหลด PDF ไม่จำกัด</div>
+      </div>
+      <button class="btn" onclick="go('pay')">ปลดล็อกสัญญาฉบับเต็ม</button>
+    </div>
+  </section>
+
+  <!-- ══ PAYMENT ══ -->
+  <section class="phase" id="ph-pay">
+    <div class="card">
+      <div class="q" style="text-align:center">ชำระเงิน &#3647;790</div>
+      <div class="sub" style="text-align:center">สแกน PromptPay เพื่อชำระ</div>
+      <div class="qrbox" id="qrbox"><div class="pay-status">กำลังสร้าง QR&hellip;</div></div>
+      <div class="pay-status" id="payStatus"></div>
+      <div id="skipBox" style="display:none;margin-top:14px"></div>
+      <button class="btn ghost" onclick="go('preview')">&#8592; กลับ</button>
+    </div>
+  </section>
+
+  <!-- ══ REVIEW ══ -->
+  <section class="phase" id="ph-review">
+    <div class="card">
+      <div class="q">ตรวจสอบสัญญา</div>
+      <div class="sub" id="reviewSub">อ่านให้ครบทุกข้อ ตรวจข้อมูลก่อนส่งเซ็น</div>
+      <div id="reviewParties"></div>
+      <div class="doc" id="docFull" style="margin-top:14px"></div>
+      <label class="fl">คุณคือคู่สัญญาฝ่ายไหน?</label>
+      <div class="pills" id="rolePills">
+        <div class="pill" data-role="a" onclick="pickRole('a')">นายจ้าง</div>
+        <div class="pill" data-role="b" onclick="pickRole('b')">ลูกจ้าง</div>
+        <div class="pill" data-role="third" onclick="pickRole('third')">คนกลาง / ฝ่ายบุคคล</div>
+      </div>
+      <button class="btn" id="reviewNext" onclick="reviewNext()" disabled>ยืนยันและไปลงนาม &#8594;</button>
+    </div>
+  </section>
+
+  <!-- ══ SIGN (ผู้ร่าง) ══ -->
+  <section class="phase" id="ph-sign">
+    <div class="card">
+      <div class="q" id="signTitle">ลงลายมือชื่อ</div>
+      <div class="sub" id="signSub"></div>
+      <label class="pdpa"><input type="checkbox" id="signConsent" onchange="_updSign()">
+        <span>ข้าพเจ้าอ่านและตกลงตามสัญญา และยินยอมลงนามอิเล็กทรอนิกส์ ตาม พ.ร.บ.ว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544</span></label>
+      <div class="sigwrap">
+        <canvas id="sigCanvas"></canvas>
+        <div class="sig-tools"><span>เซ็นในกรอบด้านบน</span><button class="btn ghost sm" onclick="clearSig('sigCanvas')">ล้าง</button></div>
+      </div>
+      <button class="btn" id="signBtn" onclick="submitCreatorSign()" disabled>บันทึกลายเซ็น &#8594;</button>
+    </div>
+  </section>
+
+  <!-- ══ STATUS ══ -->
+  <section class="phase" id="ph-status">
+    <div class="card">
+      <div class="q">ส่งลิงก์ให้อีกฝ่ายเซ็น</div>
+      <div class="sub">คัดลอกลิงก์ส่งทาง LINE / SMS ให้คู่สัญญาที่ต้องเซ็นทางไกล</div>
+      <div id="linkCards"></div>
+      <div style="margin-top:18px" id="statusList"></div>
+      <button class="btn" id="doneBtn" onclick="go('done')" style="display:none">ไปหน้าดาวน์โหลด &#8594;</button>
+    </div>
+  </section>
+
+  <!-- ══ REMOTE SIGN ══ -->
+  <section class="phase" id="ph-remote">
+    <div class="card">
+      <div class="q" id="rmTitle">ลงนามหนังสือสัญญาจ้าง</div>
+      <div class="sub" id="rmSub"></div>
+      <div class="doc" id="rmDoc"></div>
+      <div id="rmLineBox"></div>
+      <label class="pdpa" style="margin-top:14px"><input type="checkbox" id="rmConsent" onchange="_updRemote()">
+        <span>ข้าพเจ้าอ่านและตกลงตามสัญญา และยินยอมลงนามอิเล็กทรอนิกส์ ตาม พ.ร.บ.ว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544</span></label>
+      <div class="sigwrap">
+        <canvas id="rmCanvas"></canvas>
+        <div class="sig-tools"><span>เซ็นในกรอบด้านบน</span><button class="btn ghost sm" onclick="clearSig('rmCanvas')">ล้าง</button></div>
+      </div>
+      <button class="btn" id="rmBtn" onclick="submitRemoteSign()" disabled>ลงนาม &#8594;</button>
+    </div>
+  </section>
+
+  <!-- ══ DONE ══ -->
+  <section class="phase" id="ph-done">
+    <div class="card">
+      <div class="q" style="text-align:center">ลงนามครบทั้งสองฝ่ายแล้ว</div>
+      <div class="sub" style="text-align:center">เลขที่ใบรับรอง <span class="mono" id="certNoDisp">&mdash;</span></div>
+      <button class="btn" id="dlBtn" onclick="buildEvidencePDF()">ดาวน์โหลด PDF ฉบับสมบูรณ์</button>
+      <div class="secnote">ไฟล์ประกอบด้วย สัญญาจ้าง &middot; เอกสารแนบท้าย ก. &middot; ใบรับรองการลงนาม &middot; ภาคผนวกบัตรประชาชน</div>
+    </div>
+  </section>
+</div>
+
+<div id="printDoc"></div>
+<div class="toast" id="toast"></div>
+<div id="cfTurnstile" style="display:none"></div>
+
+<script>
+
+/* ═══════════════ CONFIG ═══════════════ */
+const SUPABASE_URL  = 'https://vopercafgleteuahwvkf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvcGVyY2FmZ2xldGV1YWh3dmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODczMTQsImV4cCI6MjA5NTQ2MzMxNH0.vsMqOTFc1kMuw1ZwQt9tlvlIcn9SpifAJo4VUzxy2_c';
+/* ยิง API เข้า origin เดียวกับหน้าเว็บเสมอ (preview → backend ของ preview, prod → prod) */
+const JUSTSIGN_API  = (function(){
+  const h=(location.hostname||'').toLowerCase();
+  if(/\.vercel\.app$/.test(h) || /(^|\.)signdee\.com$/.test(h)) return '';
+  return 'https://justsign-api.vercel.app';
+})();
+const EMP_TABLE   = 'emp_contracts';
+const PRICE_STANG = 79000;
+const TURNSTILE_SITEKEY = '0x4AAAAAAD8CHNcVMgcVLwTJ';
+let _cfWidgetId = null, _cfResolver = null, _cfPending = null;
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ═══════════════ STATE ═══════════════ */
+const S = {
+  rowId:  localStorage.getItem('emp_contract_row_id')  || null,
+  token:  localStorage.getItem('emp_creator_token')    || null,
+  contractNo: localStorage.getItem('emp_contract_no')  || '',
+  position: null,
+  jd: { responsibilities:[], qualifications:[], kpis:[] },
+  edu: '', exp: '',
+  jdSource: '',
+  emp: { type:'full_time', salary:0, allowance:0, bonus:'', payday:'ภายในวันที่ 5 ของทุกเดือน',
+         probation:119, days:['mon','tue','wed','thu','fri'], customDays:false, start:'09:00', end:'18:00',
+         loc:'', clientSite:'', startDate:'', restrict:'none', restrictArea:'' },
+  cards:{A:null,B:null}, jur:{A:null},
+  clauses:null, appendix:null, meta:null, docHash:'', certNo:'', clauseCount:18,
+  parties:{a:'',b:''}, creatorParty:null,
+  sig:{a:null,b:null}, tokens:null, remote:null,
+  _chargeId:null, _paidAt:null,
+};
+
+/* ═══════════════ UTIL (ยกจาก index-nda.html) ═══════════════ */
+function $(id){ return document.getElementById(id); }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+async function sha256Hex(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function _normSp(v){
+  return String(v==null?'':v)
+    .replace(/\r\n?/g,'\n')
+    .replace(/[^\S\n]+/g,' ')
+    .replace(/ *\n */g,'\n')
+    .trim();
+}
+function _clauseHtml(txt){
+  return _normSp(txt).split('\n').map(l=>{
+    const t=l.trim(); if(!t) return '';
+    return /^\d+\.\d+/.test(t) ? `<div class="cl-sub">${esc(t)}</div>` : `<div class="cl-para">${esc(t)}</div>`;
+  }).join('');
+}
+function validThaiId(id){ const d=String(id||'').replace(/\D/g,''); if(d.length!==13) return false; let s=0; for(let i=0;i<12;i++) s+=parseInt(d[i],10)*(13-i); return ((11-(s%11))%10)===parseInt(d[12],10); }
+function _fmtTel(v){
+  const d=String(v||'').replace(/\D/g,'').slice(0,10);
+  if(d.length<=3) return d;
+  if(d.length<=6) return d.slice(0,3)+'-'+d.slice(3);
+  return d.slice(0,3)+'-'+d.slice(3,6)+'-'+d.slice(6);
+}
+/* ใช้ตัวจัดการรูปกลาง (/img-safe.js) — ดูเหตุผลในไฟล์นั้น
+   ของเดิม reject เมื่อถอดรหัสไม่ได้ แต่ _onCert ไม่มี try/catch รับ
+   และ _onFile จับ error รวมกับ OCR แล้วขึ้นข้อความว่า "อ่านบัตรไม่สำเร็จ"
+   ซึ่งทำให้ผู้ใช้เข้าใจผิดว่ารูปแนบแล้ว ทั้งที่ไม่มีรูปบัตรเลย */
+async function compressImage(file,maxPx,q){
+  return await SignDeeImg.toJpeg(file,{maxEdge:maxPx,quality:q});
+}
+function initSig(id){
+  const cv=$(id); if(!cv||cv._init) return; cv._init=true;
+  const ratio=window.devicePixelRatio||1;
+  const rect=cv.getBoundingClientRect();
+  cv.width=(rect.width||320)*ratio; cv.height=200*ratio;
+  const ctx=cv.getContext('2d'); ctx.scale(ratio,ratio);
+  ctx.lineWidth=2.4; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='#0F2135';
+  let drawing=false,last=null;
+  function pos(e){ const r=cv.getBoundingClientRect(); const t=e.touches?e.touches[0]:e; return {x:t.clientX-r.left,y:t.clientY-r.top}; }
+  function start(e){ e.preventDefault(); drawing=true; last=pos(e); }
+  function move(e){ if(!drawing) return; e.preventDefault(); const p=pos(e); ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; cv._has=true; onSigChange(id); }
+  function end(){ drawing=false; }
+  cv.addEventListener('mousedown',start); cv.addEventListener('mousemove',move); window.addEventListener('mouseup',end);
+  cv.addEventListener('touchstart',start,{passive:false}); cv.addEventListener('touchmove',move,{passive:false}); cv.addEventListener('touchend',end);
+  cv._ctx=ctx; cv._has=false;
+}
+function clearSig(id){ const cv=$(id); if(!cv||!cv._ctx) return; cv._ctx.clearRect(0,0,cv.width,cv.height); cv._has=false; onSigChange(id); }
+function sigDataUrl(id){ const cv=$(id); return (cv&&cv._has)?cv.toDataURL('image/png'):null; }
+function _addrTwoLines(addr){
+  const s=String(addr||'').trim();
+  if(!s) return ['',''];
+  const m=/(อำเภอ|เขต)/.exec(s);
+  if(!m) return [s,''];
+  return [s.slice(0,m.index).trim(), s.slice(m.index).trim()];
+}
+function _pdDateTh(iso){
+  try{
+    const mo=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+    const d=new Date(iso||Date.now());
+    if(isNaN(d.getTime())) return '';
+    return d.getDate()+' '+mo[d.getMonth()]+' พ.ศ. '+(d.getFullYear()+543);
+  }catch(_){ return ''; }
+}
+function fmtUTC(ts){ if(!ts) return '—'; try{ return new Date(ts).toISOString().replace('T',' ').slice(0,19)+' UTC'; }catch(_){ return '—'; } }
+function _pdLocal(ts){ if(!ts) return '—'; try{ return new Date(ts).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'}); }catch(_){ return '—'; } }
+function _pdDevice(ua){ if(!ua) return '—'; const s=String(ua); let os=/Windows/.test(s)?'Windows':/iPhone|iPad|iOS/.test(s)?'iPhone/iPad':/Android/.test(s)?'Android':/Mac/.test(s)?'Mac':''; let br=/Chrome/.test(s)?'Chrome':/Safari/.test(s)?'Safari':/Firefox/.test(s)?'Firefox':/Edg/.test(s)?'Edge':''; return [os,br].filter(Boolean).join(' · ')||'—'; }
+function _pdAge(card){ try{ const dob=card&&card.ocr_raw&&card.ocr_raw.date_of_birth; if(!dob) return ''; const d=new Date(dob); if(isNaN(d)) return ''; const n=new Date(); let a=n.getFullYear()-d.getFullYear(); const m=n.getMonth()-d.getMonth(); if(m<0||(m===0&&n.getDate()<d.getDate()))a--; return (a>0&&a<130)?String(a):''; }catch(_){ return ''; } }
+function _pdClauseHtml(txt){
+  return String(txt||'').split(/\n/).map(l=>{
+    const t=_normSp(l);
+    if(!t) return '';
+    if(/^\d+\.\d+/.test(t)) return `<div class="pd-sub">${esc(t)}</div>`;
+    return `<div class="pd-para">${esc(t)}</div>`;
+  }).join('');
+}
+async function myIp(){ try{ const r=await fetch(JUSTSIGN_API+'/api/myip'); const j=await r.json(); return j.ip||''; }catch(_){ return ''; } }
+function _cfTurnstileOnload(){ try{ if(!window.turnstile) return; const el=document.getElementById('cfTurnstile'); if(!el||_cfWidgetId!==null) return; _cfWidgetId=window.turnstile.render('#cfTurnstile',{sitekey:TURNSTILE_SITEKEY,size:'invisible',callback:t=>{if(_cfResolver){_cfResolver(t||'');_cfResolver=null;}},'error-callback':()=>{if(_cfResolver){_cfResolver('');_cfResolver=null;}},'timeout-callback':()=>{if(_cfResolver){_cfResolver('');_cfResolver=null;}}}); }catch(_){} }
+function _turnstileToken(){ if(_cfPending) return _cfPending;
+  _cfPending = new Promise(resolve=>{ if(!window.turnstile||_cfWidgetId===null){resolve('');return;} _cfResolver=resolve; try{window.turnstile.reset(_cfWidgetId);window.turnstile.execute(_cfWidgetId);}catch(_){_cfResolver=null;resolve('');return;} setTimeout(()=>{if(_cfResolver){_cfResolver=null;resolve('');}},8000); });
+  _cfPending.finally(()=>{ _cfPending=null; });
+  return _cfPending; }
+function _isMobileUA(){ return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||''); }
+async function _copyText(t){
+  try{ if(navigator.clipboard&&navigator.clipboard.writeText){ await navigator.clipboard.writeText(t); return true; } }catch(_){}
+  try{ const ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
+       document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); return true; }catch(_){}
+  return false;
+}
+
+/* ═══════════════ PHASE / CHROME ═══════════════ */
+const EMP_GROUPS      = ['position','parties','review','payment','sign'];
+const EMP_GROUP_LABEL = { position:'ตำแหน่งงาน', parties:'คู่สัญญา', review:'ตรวจสอบ', payment:'ชำระเงิน', sign:'ลงนาม' };
+const EMP_PHASE_GROUP = { step1:'position', step1b:'position', step2:'parties', proc:'parties',
+                          preview:'review', review:'review', pay:'payment', sign:'sign', status:'sign', done:'sign' };
+const EMP_BACK        = { step1:'landing', step1b:'step1', step2:'step1b', preview:'step2',
+                          pay:'preview', review:'preview', sign:'review', status:'sign', done:'status' };
+window._empPhase='landing';
+function empBack(){ const p=EMP_BACK[window._empPhase]; if(p) go(p); }
+function go(name){
+  document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+  const el=$('ph-'+name); if(el){ el.classList.add('active'); window.scrollTo(0,0); }
+  _empChrome(name);
+  if(name==='pay') startPayment();
+  if(name==='sso') ssoInit();
+  if(name==='dash') dashInit();
+}
+function _empChrome(name){
+  window._empPhase=name;
+  const g=EMP_PHASE_GROUP[name];
+  const tb=$('topbar'), wg=$('wgn'), br=document.querySelector('.brand');
+  if(!g){ if(tb) tb.style.display='none'; if(wg) wg.style.display='none'; if(br) br.style.display='flex'; return; }
+  if(tb) tb.style.display='block'; if(wg) wg.style.display='block'; if(br) br.style.display='none';
+  const i=EMP_GROUPS.indexOf(g);
+  if($('stepLabel'))   $('stepLabel').textContent=EMP_GROUP_LABEL[g];
+  if($('stepCount'))   $('stepCount').textContent='ขั้นตอน '+(i+1)+' จาก '+EMP_GROUPS.length;
+  if($('progressFill'))$('progressFill').style.width=Math.round((i+1)/EMP_GROUPS.length*100)+'%';
+  document.querySelectorAll('.wgn-item').forEach(el=>{
+    const idx=EMP_GROUPS.indexOf(el.dataset.group);
+    el.classList.toggle('done', idx>=0 && idx<i);
+    el.classList.toggle('active', idx===i);
+  });
+}
+
+/* ═══════════════ DRAFT ═══════════════ */
+function _saveDraft(){
+  try{
+    localStorage.setItem('signdee_emp_draft', JSON.stringify({
+      position:S.position, jd:S.jd, edu:S.edu, exp:S.exp, emp:S.emp, jur:(S.jur.A&&S.jur.A.on)?_jurNoImg(S.jur.A):null
+    }));
+  }catch(_){}
+}
+function _jurNoImg(j){ const c=Object.assign({},j); delete c.certImg; delete c.sealImg; return c; }
+function _loadDraft(){
+  try{
+    const d=JSON.parse(localStorage.getItem('signdee_emp_draft')||'{}');
+    if(d.position) S.position=d.position;
+    if(d.jd) S.jd=d.jd;
+    if(d.edu!==undefined) S.edu=d.edu;
+    if(d.exp!==undefined) S.exp=d.exp;
+    if(d.emp) S.emp=Object.assign(S.emp,d.emp);
+    if(d.jur) S.jur.A=d.jur;
+  }catch(_){}
+}
+
+/* ═══════════════ STEP 1 — ตำแหน่งงาน + Job Description ═══════════════ */
+const POSITIONS = [{"code":"sales_exec","th":"พนักงานขาย","en":"Sales Executive","category":"sales","chip":true,"jd":{"responsibilities":["หาลูกค้าใหม่และขยายฐานลูกค้าในพื้นที่ที่รับผิดชอบ","นำเสนอสินค้าและบริการให้ตรงกับความต้องการของลูกค้า","จัดทำใบเสนอราคาและเจรจาเงื่อนไขการซื้อขาย","ปิดการขายและติดตามการชำระเงิน","ดูแลลูกค้าเดิมและสร้างความสัมพันธ์ระยะยาว","จัดทำรายงานการขายประจำสัปดาห์เสนอผู้บังคับบัญชา"],"qualifications":["วุฒิปริญญาตรีขึ้นไป ไม่จำกัดสาขา","มีทักษะการสื่อสารและการนำเสนอที่ดี","มีประสบการณ์ด้านงานขายอย่างน้อย 1 ปี","ใช้งานคอมพิวเตอร์และโปรแกรมสำนักงานได้"],"kpis":["ยอดขายรายเดือนตามเป้าหมายที่กำหนด","จำนวนลูกค้าใหม่ต่อเดือน","อัตราความพึงพอใจของลูกค้า"]}},{"code":"software_engineer","th":"วิศวกรซอฟต์แวร์","en":"Software Engineer","category":"tech","chip":true,"jd":{"responsibilities":["ออกแบบ พัฒนา และทดสอบซอฟต์แวร์ตามข้อกำหนดของโครงการ","เขียนโค้ดที่มีคุณภาพพร้อมเอกสารประกอบ","แก้ไขข้อบกพร่องและปรับปรุงประสิทธิภาพของระบบ","ทบทวนโค้ดของทีมและให้ข้อเสนอแนะ","ร่วมประชุมวางแผนงานและประเมินระยะเวลาพัฒนา","ดูแลระบบที่เผยแพร่แล้วให้ทำงานได้ต่อเนื่อง"],"qualifications":["วุฒิปริญญาตรีสาขาวิศวกรรมคอมพิวเตอร์ วิทยาการคอมพิวเตอร์ หรือสาขาที่เกี่ยวข้อง","มีความรู้ภาษาโปรแกรมอย่างน้อยหนึ่งภาษาในระดับใช้งานจริง","เข้าใจการควบคุมเวอร์ชันด้วย Git และการทำงานแบบทีม","มีทักษะการวิเคราะห์และแก้ปัญหาเชิงระบบ"],"kpis":["ส่งมอบงานตรงตามกำหนดของแต่ละรอบพัฒนา","จำนวนข้อบกพร่องที่พบหลังเผยแพร่","ระยะเวลาเฉลี่ยในการแก้ไขปัญหา"]}},{"code":"graphic_designer","th":"กราฟิกดีไซเนอร์","en":"Graphic Designer","category":"creative","chip":true,"jd":{"responsibilities":["ออกแบบสื่อประชาสัมพันธ์ทั้งออนไลน์และสิ่งพิมพ์","จัดทำภาพประกอบและองค์ประกอบกราฟิกตามแนวทางแบรนด์","แก้ไขงานตามข้อเสนอแนะของทีมและลูกค้า","จัดเตรียมไฟล์งานสำหรับส่งโรงพิมพ์และเผยแพร่ออนไลน์","ดูแลคลังไฟล์งานออกแบบให้เป็นระบบ"],"qualifications":["วุฒิปริญญาตรีสาขาออกแบบนิเทศศิลป์ หรือสาขาที่เกี่ยวข้อง","ใช้งานโปรแกรมออกแบบระดับมืออาชีพได้คล่อง","มีผลงานที่นำเสนอได้","บริหารเวลาและทำงานหลายชิ้นพร้อมกันได้"],"kpis":["จำนวนชิ้นงานที่ส่งมอบตรงกำหนด","อัตราการแก้ไขงานซ้ำต่อชิ้น"]}},{"code":"marketing_manager","th":"ผู้จัดการฝ่ายการตลาด","en":"Marketing Manager","category":"marketing","chip":true,"jd":{"responsibilities":["วางแผนกลยุทธ์การตลาดประจำปีและรายไตรมาส","บริหารงบประมาณการตลาดให้เกิดผลตอบแทนสูงสุด","ดูแลแคมเปญโฆษณาทั้งออนไลน์และออฟไลน์","วิเคราะห์ข้อมูลตลาดและพฤติกรรมผู้บริโภค","บริหารทีมงานและประสานงานกับหน่วยงานภายนอก","รายงานผลการดำเนินงานต่อผู้บริหาร"],"qualifications":["วุฒิปริญญาตรีขึ้นไปสาขาการตลาด บริหารธุรกิจ หรือสาขาที่เกี่ยวข้อง","มีประสบการณ์ด้านการตลาดอย่างน้อย 3 ปี","มีทักษะการวิเคราะห์ข้อมูลและการบริหารทีม","สื่อสารภาษาอังกฤษได้ในระดับใช้งาน"],"kpis":["ผลตอบแทนจากงบประมาณการตลาด","จำนวนผู้สนใจที่ส่งต่อให้ฝ่ายขาย","การเติบโตของการรับรู้แบรนด์"]}},{"code":"hr_officer","th":"เจ้าหน้าที่ทรัพยากรบุคคล","en":"HR Officer","category":"hr","chip":true,"jd":{"responsibilities":["ดำเนินการสรรหาและคัดเลือกบุคลากรตามแผนอัตรากำลัง","จัดทำและดูแลเอกสารสัญญาจ้างและทะเบียนประวัติพนักงาน","ดูแลการลงเวลาทำงาน วันลา และสวัสดิการพนักงาน","ประสานงานเรื่องประกันสังคมและกองทุนที่เกี่ยวข้อง","จัดกิจกรรมและการฝึกอบรมภายในองค์กร","ให้คำแนะนำพนักงานเรื่องระเบียบข้อบังคับการทำงาน"],"qualifications":["วุฒิปริญญาตรีสาขาการบริหารทรัพยากรมนุษย์ รัฐศาสตร์ นิติศาสตร์ หรือสาขาที่เกี่ยวข้อง","มีความรู้กฎหมายแรงงานเบื้องต้น","ใช้งานโปรแกรมสำนักงานและระบบบริหารงานบุคคลได้","มีมนุษยสัมพันธ์และรักษาความลับของข้อมูลได้"],"kpis":["ระยะเวลาเฉลี่ยในการปิดตำแหน่งงานว่าง","อัตราการลาออกของพนักงาน","ความถูกต้องของเอกสารและข้อมูลพนักงาน"]}},{"code":"accountant","th":"นักบัญชี","en":"Accountant","category":"finance","chip":true,"jd":{"responsibilities":["บันทึกรายการบัญชีรับ-จ่ายและจัดทำสมุดบัญชี","จัดทำงบการเงินและรายงานทางบัญชีประจำเดือน","จัดทำและยื่นแบบภาษีที่เกี่ยวข้องภายในกำหนด","กระทบยอดบัญชีธนาคารและตรวจสอบเอกสารประกอบ","ประสานงานกับผู้สอบบัญชีและหน่วยงานราชการ","ควบคุมเอกสารทางบัญชีให้ครบถ้วนตามมาตรฐาน"],"qualifications":["วุฒิปริญญาตรีสาขาการบัญชี","มีความรู้มาตรฐานการรายงานทางการเงินและกฎหมายภาษีอากร","ใช้งานโปรแกรมบัญชีสำเร็จรูปได้","ละเอียดรอบคอบและทำงานภายใต้กำหนดเวลาได้"],"kpis":["ความตรงต่อเวลาในการปิดงบประจำเดือน","ความถูกต้องของรายการบัญชีและการยื่นภาษี"]}},{"code":"receptionist","th":"พนักงานต้อนรับ","en":"Receptionist","category":"admin","chip":false,"jd":{"responsibilities":["ต้อนรับผู้มาติดต่อและให้ข้อมูลเบื้องต้น","รับสายโทรศัพท์และโอนสายไปยังหน่วยงานที่เกี่ยวข้อง","ดูแลการรับ-ส่งเอกสารและพัสดุของสำนักงาน","จัดการตารางการใช้ห้องประชุมและอุปกรณ์","ดูแลความเรียบร้อยของพื้นที่ส่วนหน้า"],"qualifications":["วุฒิ ปวส. ขึ้นไป","มีทักษะการสื่อสารและการให้บริการที่ดี","ใช้งานโปรแกรมสำนักงานได้","สื่อสารภาษาอังกฤษเบื้องต้นได้"],"kpis":["ความพึงพอใจของผู้มาติดต่อ","ความถูกต้องในการรับ-ส่งเอกสาร"]}},{"code":"customer_service","th":"เจ้าหน้าที่บริการลูกค้า","en":"Customer Service","category":"service","chip":true,"jd":{"responsibilities":["รับเรื่องและตอบคำถามลูกค้าผ่านช่องทางที่บริษัทกำหนด","แก้ไขปัญหาและข้อร้องเรียนเบื้องต้น","ส่งต่อเรื่องที่เกินขอบเขตให้หน่วยงานที่เกี่ยวข้องและติดตามผล","บันทึกข้อมูลการติดต่อลงระบบให้ครบถ้วน","จัดทำรายงานสรุปปัญหาที่พบบ่อยเสนอผู้บังคับบัญชา"],"qualifications":["วุฒิ ปวส. ขึ้นไป","มีทักษะการสื่อสารและควบคุมอารมณ์ได้ดี","ใช้งานคอมพิวเตอร์และระบบบันทึกข้อมูลได้","ทำงานเป็นกะได้"],"kpis":["ระยะเวลาเฉลี่ยในการตอบกลับลูกค้า","อัตราการแก้ปัญหาจบในครั้งเดียว","คะแนนความพึงพอใจของลูกค้า"]}},{"code":"driver","th":"พนักงานขับรถ","en":"Driver","category":"operations","chip":false,"jd":{"responsibilities":["ขับรถรับ-ส่งบุคคลหรือสินค้าตามที่ได้รับมอบหมาย","ตรวจสอบสภาพรถและความพร้อมก่อนและหลังการใช้งาน","ดูแลความสะอาดและบำรุงรักษารถตามกำหนด","บันทึกระยะทาง ค่าน้ำมัน และรายการเดินทาง","ปฏิบัติตามกฎจราจรและระเบียบความปลอดภัยอย่างเคร่งครัด"],"qualifications":["มีใบอนุญาตขับขี่ตามประเภทรถที่ใช้งานและยังไม่หมดอายุ","รู้เส้นทางในเขตพื้นที่ที่รับผิดชอบ","ไม่มีประวัติการกระทำผิดกฎจราจรร้ายแรง","มีสุขภาพแข็งแรงเหมาะสมกับลักษณะงาน"],"kpis":["จำนวนอุบัติเหตุและการกระทำผิดกฎจราจร","ความตรงต่อเวลาในการรับ-ส่ง"]}},{"code":"technician","th":"ช่างเทคนิค","en":"Technician","category":"operations","chip":false,"jd":{"responsibilities":["ติดตั้ง ตรวจสอบ และซ่อมบำรุงเครื่องจักรและอุปกรณ์","ดำเนินการบำรุงรักษาเชิงป้องกันตามแผนที่กำหนด","วิเคราะห์สาเหตุของปัญหาและดำเนินการแก้ไข","บันทึกประวัติการซ่อมบำรุงและเบิกจ่ายอะไหล่","ปฏิบัติตามมาตรฐานความปลอดภัยในการทำงาน"],"qualifications":["วุฒิ ปวช. หรือ ปวส. สาขาช่างที่เกี่ยวข้อง","อ่านแบบและคู่มือทางเทคนิคได้","มีประสบการณ์งานซ่อมบำรุงจะได้รับการพิจารณาเป็นพิเศษ","ทำงานนอกเวลาในกรณีฉุกเฉินได้"],"kpis":["ระยะเวลาเฉลี่ยในการซ่อมแซมให้กลับมาใช้งาน","อัตราการหยุดทำงานของเครื่องจักร","การปฏิบัติตามแผนบำรุงรักษาเชิงป้องกัน"]}},{"code":"warehouse_staff","th":"พนักงานคลังสินค้า","en":"Warehouse Staff","category":"operations","chip":false,"jd":{"responsibilities":["รับและตรวจนับสินค้าเข้าคลังให้ตรงกับเอกสาร","จัดเก็บสินค้าตามผังคลังและหลักการหมุนเวียนสินค้า","จัดเตรียมและบรรจุสินค้าสำหรับจัดส่ง","ตรวจนับสต๊อกประจำงวดและรายงานผลต่าง","ดูแลความสะอาดและความปลอดภัยภายในคลัง"],"qualifications":["วุฒิ ม.6 หรือ ปวช. ขึ้นไป","ใช้งานระบบบริหารคลังสินค้าเบื้องต้นได้","มีสุขภาพแข็งแรงเหมาะสมกับลักษณะงาน","มีใบอนุญาตขับรถยกจะได้รับการพิจารณาเป็นพิเศษ"],"kpis":["ความแม่นยำของยอดสต๊อก","ความตรงต่อเวลาในการจัดส่ง","อัตราความเสียหายของสินค้า"]}},{"code":"admin_officer","th":"เจ้าหน้าที่ธุรการ","en":"Administrative Officer","category":"admin","chip":false,"jd":{"responsibilities":["จัดทำและจัดเก็บเอกสารของหน่วยงานให้เป็นระบบ","ประสานงานภายในและภายนอกองค์กร","จัดซื้อและเบิกจ่ายวัสดุสำนักงาน","จัดเตรียมการประชุมและจดบันทึกรายงานการประชุม","สนับสนุนงานอื่นตามที่ได้รับมอบหมาย"],"qualifications":["วุฒิ ปวส. ขึ้นไป","ใช้งานโปรแกรมสำนักงานได้คล่อง","มีความละเอียดรอบคอบและจัดลำดับความสำคัญของงานได้"],"kpis":["ความตรงต่อเวลาในการส่งมอบงานเอกสาร","ความถูกต้องครบถ้วนของเอกสาร"]}},{"code":"digital_marketing","th":"เจ้าหน้าที่การตลาดออนไลน์","en":"Digital Marketing Officer","category":"marketing","chip":false,"jd":{"responsibilities":["วางแผนและจัดทำเนื้อหาสำหรับช่องทางออนไลน์ของบริษัท","ดูแลและปรับปรุงประสิทธิภาพโฆษณาออนไลน์","วิเคราะห์ข้อมูลผู้เข้าชมและปรับกลยุทธ์ตามผลลัพธ์","ตอบข้อความและดูแลชุมชนออนไลน์","จัดทำรายงานผลการดำเนินงานประจำเดือน"],"qualifications":["วุฒิปริญญาตรีสาขาการตลาด นิเทศศาสตร์ หรือสาขาที่เกี่ยวข้อง","มีความรู้เรื่องแพลตฟอร์มโฆษณาออนไลน์","อ่านและตีความข้อมูลเชิงสถิติได้","มีทักษะการเขียนเนื้อหาที่ดี"],"kpis":["ต้นทุนต่อผู้สนใจหนึ่งราย","อัตราการมีส่วนร่วมบนช่องทางออนไลน์","การเติบโตของผู้ติดตาม"]}},{"code":"purchasing","th":"เจ้าหน้าที่จัดซื้อ","en":"Purchasing Officer","category":"operations","chip":false,"jd":{"responsibilities":["สรรหาและเปรียบเทียบผู้ขายเพื่อเสนอราคาที่เหมาะสม","จัดทำใบสั่งซื้อและติดตามการส่งมอบ","ตรวจสอบคุณภาพสินค้าและเอกสารประกอบการรับของ","ดูแลฐานข้อมูลผู้ขายและเงื่อนไขการค้า","ประสานงานกับฝ่ายบัญชีเรื่องการชำระเงิน"],"qualifications":["วุฒิปริญญาตรีสาขาบริหารธุรกิจ หรือสาขาที่เกี่ยวข้อง","มีทักษะการเจรจาต่อรอง","ใช้งานโปรแกรมสำนักงานและระบบจัดซื้อได้","มีความซื่อสัตย์และโปร่งใสในการปฏิบัติงาน"],"kpis":["ส่วนต่างต้นทุนที่ประหยัดได้","ความตรงต่อเวลาของการส่งมอบจากผู้ขาย"]}},{"code":"qa_officer","th":"เจ้าหน้าที่ควบคุมคุณภาพ","en":"QA/QC Officer","category":"operations","chip":false,"jd":{"responsibilities":["ตรวจสอบคุณภาพวัตถุดิบ ระหว่างผลิต และสินค้าสำเร็จรูป","บันทึกและวิเคราะห์ผลการตรวจสอบ","รายงานสิ่งที่ไม่เป็นไปตามข้อกำหนดและติดตามการแก้ไข","ทบทวนเอกสารระบบคุณภาพให้เป็นปัจจุบัน","สนับสนุนการตรวจประเมินจากภายนอก"],"qualifications":["วุฒิปริญญาตรีสาขาวิทยาศาสตร์ วิศวกรรมศาสตร์ หรือสาขาที่เกี่ยวข้อง","มีความรู้ระบบมาตรฐานคุณภาพ","ใช้เครื่องมือวัดและบันทึกผลได้อย่างถูกต้อง"],"kpis":["อัตราของเสียในกระบวนการผลิต","จำนวนข้อร้องเรียนด้านคุณภาพจากลูกค้า"]}},{"code":"production_staff","th":"พนักงานฝ่ายผลิต","en":"Production Staff","category":"operations","chip":false,"jd":{"responsibilities":["ปฏิบัติงานผลิตตามขั้นตอนและมาตรฐานที่กำหนด","ตรวจสอบความเรียบร้อยของงานในความรับผิดชอบ","บันทึกข้อมูลการผลิตตามแบบฟอร์มที่กำหนด","ดูแลรักษาเครื่องมือและพื้นที่ปฏิบัติงาน","ปฏิบัติตามกฎความปลอดภัยอย่างเคร่งครัด"],"qualifications":["วุฒิ ม.3 ขึ้นไป","มีสุขภาพแข็งแรงเหมาะสมกับลักษณะงาน","ทำงานเป็นกะได้"],"kpis":["ปริมาณผลผลิตต่อกะ","อัตราของเสีย","จำนวนอุบัติเหตุจากการทำงาน"]}},{"code":"chef","th":"พ่อครัว/แม่ครัว","en":"Chef / Cook","category":"service","chip":false,"jd":{"responsibilities":["ปรุงอาหารตามสูตรและมาตรฐานของร้าน","ควบคุมคุณภาพและปริมาณวัตถุดิบ","ดูแลความสะอาดของครัวและอุปกรณ์ตามหลักสุขาภิบาล","จัดเตรียมวัตถุดิบและตรวจสอบวันหมดอายุ","ประสานงานกับพนักงานบริการเรื่องรายการอาหาร"],"qualifications":["มีประสบการณ์งานครัวหรือผ่านการอบรมด้านการประกอบอาหาร","มีใบรับรองการอบรมสุขาภิบาลอาหารจะได้รับการพิจารณาเป็นพิเศษ","มีสุขภาพแข็งแรงและผ่านการตรวจสุขภาพตามที่กฎหมายกำหนด"],"kpis":["ระยะเวลาเฉลี่ยในการเสิร์ฟต่อจาน","อัตราของเสียจากวัตถุดิบ","คะแนนความพึงพอใจของลูกค้า"]}},{"code":"waiter","th":"พนักงานเสิร์ฟ","en":"Waiter / Waitress","category":"service","chip":false,"jd":{"responsibilities":["ต้อนรับและรับรายการอาหารจากลูกค้า","เสิร์ฟอาหารและเครื่องดื่มให้ถูกต้องและรวดเร็ว","ดูแลความสะอาดของโต๊ะและพื้นที่บริการ","รับชำระเงินและออกใบเสร็จตามระบบของร้าน","รับข้อเสนอแนะจากลูกค้าและแจ้งผู้บังคับบัญชา"],"qualifications":["วุฒิ ม.3 ขึ้นไป","มีทักษะการให้บริการและมนุษยสัมพันธ์ดี","ทำงานเป็นกะและวันหยุดได้"],"kpis":["คะแนนความพึงพอใจของลูกค้า","ความถูกต้องของรายการอาหารและการรับชำระเงิน"]}},{"code":"nurse_assistant","th":"ผู้ช่วยพยาบาล","en":"Nurse Assistant","category":"health","chip":false,"jd":{"responsibilities":["ช่วยดูแลผู้รับบริการตามที่พยาบาลวิชาชีพมอบหมาย","จัดเตรียมอุปกรณ์และสถานที่ให้พร้อมใช้งาน","บันทึกข้อมูลเบื้องต้นของผู้รับบริการ","ดูแลความสะอาดและการควบคุมการติดเชื้อในพื้นที่","ปฏิบัติตามระเบียบและมาตรฐานวิชาชีพอย่างเคร่งครัด"],"qualifications":["ผ่านหลักสูตรผู้ช่วยพยาบาลหรือหลักสูตรที่เกี่ยวข้อง","มีความอดทนและใส่ใจในรายละเอียด","รักษาความลับของผู้รับบริการได้","ทำงานเป็นกะได้"],"kpis":["ความถูกต้องของการบันทึกข้อมูล","ความพึงพอใจของผู้รับบริการ"]}},{"code":"teacher","th":"ครู/ผู้สอน","en":"Teacher / Instructor","category":"education","chip":false,"jd":{"responsibilities":["จัดทำแผนการสอนและสื่อการเรียนรู้","ดำเนินการสอนตามหลักสูตรที่กำหนด","วัดและประเมินผลผู้เรียนอย่างเป็นระบบ","ดูแลพฤติกรรมและพัฒนาการของผู้เรียน","สื่อสารกับผู้ปกครองเรื่องความก้าวหน้าของผู้เรียน"],"qualifications":["วุฒิปริญญาตรีในสาขาที่สอนหรือสาขาศึกษาศาสตร์","มีใบอนุญาตประกอบวิชาชีพครูตามที่กฎหมายกำหนด (ถ้ามี)","มีทักษะการสื่อสารและการถ่ายทอดที่ดี"],"kpis":["ผลสัมฤทธิ์ทางการเรียนของผู้เรียน","ความพึงพอใจของผู้เรียนและผู้ปกครอง"]}},{"code":"security_guard","th":"พนักงานรักษาความปลอดภัย","en":"Security Guard","category":"operations","chip":false,"jd":{"responsibilities":["ตรวจตราและดูแลความปลอดภัยในพื้นที่ที่รับผิดชอบ","ตรวจสอบและบันทึกการเข้า-ออกของบุคคลและยานพาหนะ","เฝ้าระวังและรายงานเหตุผิดปกติทันที","ดูแลอุปกรณ์รักษาความปลอดภัยให้พร้อมใช้งาน","ปฏิบัติตามแผนเผชิญเหตุฉุกเฉินของหน่วยงาน"],"qualifications":["มีใบอนุญาตเป็นพนักงานรักษาความปลอดภัยรับอนุญาตตามที่กฎหมายกำหนด","มีสุขภาพแข็งแรงเหมาะสมกับลักษณะงาน","ทำงานเป็นกะได้"],"kpis":["จำนวนเหตุการณ์ผิดปกติที่ตรวจพบและรายงานได้ทันเวลา","ความครบถ้วนของบันทึกการตรวจตรา"]}},{"code":"data_analyst","th":"นักวิเคราะห์ข้อมูล","en":"Data Analyst","category":"tech","chip":false,"jd":{"responsibilities":["รวบรวมและจัดเตรียมข้อมูลจากแหล่งต่าง ๆ","วิเคราะห์ข้อมูลเพื่อตอบคำถามทางธุรกิจ","จัดทำแดชบอร์ดและรายงานสำหรับผู้บริหาร","ตรวจสอบคุณภาพและความถูกต้องของข้อมูล","นำเสนอข้อค้นพบและข้อเสนอแนะต่อหน่วยงานที่เกี่ยวข้อง"],"qualifications":["วุฒิปริญญาตรีสาขาสถิติ คณิตศาสตร์ เทคโนโลยีสารสนเทศ หรือสาขาที่เกี่ยวข้อง","ใช้งาน SQL และเครื่องมือวิเคราะห์ข้อมูลได้","มีทักษะการนำเสนอข้อมูลด้วยภาพ","คิดเชิงวิเคราะห์และตั้งคำถามกับข้อมูลได้"],"kpis":["ความตรงต่อเวลาในการส่งมอบรายงาน","ความถูกต้องของข้อมูลในรายงาน"]}},{"code":"project_coordinator","th":"ผู้ประสานงานโครงการ","en":"Project Coordinator","category":"admin","chip":false,"jd":{"responsibilities":["จัดทำแผนงานและติดตามความคืบหน้าของโครงการ","ประสานงานระหว่างทีมภายในและผู้เกี่ยวข้องภายนอก","จัดเตรียมเอกสารและรายงานสถานะโครงการ","ติดตามงบประมาณและทรัพยากรของโครงการ","แจ้งเตือนความเสี่ยงและปัญหาที่อาจกระทบกำหนดการ"],"qualifications":["วุฒิปริญญาตรีขึ้นไป ไม่จำกัดสาขา","มีทักษะการวางแผนและบริหารเวลา","ใช้งานเครื่องมือบริหารโครงการได้","สื่อสารและประสานงานได้ดี"],"kpis":["สัดส่วนงานที่ส่งมอบตรงกำหนด","ความแม่นยำของการควบคุมงบประมาณ"]}},{"code":"delivery_rider","th":"พนักงานส่งของ","en":"Delivery Rider","category":"operations","chip":false,"jd":{"responsibilities":["รับและตรวจสอบสินค้าก่อนออกจัดส่ง","จัดส่งสินค้าให้ถึงผู้รับตามเส้นทางและเวลาที่กำหนด","เก็บหลักฐานการส่งมอบและรับชำระเงินปลายทาง (ถ้ามี)","ดูแลรักษายานพาหนะและอุปกรณ์ให้พร้อมใช้งาน","รายงานปัญหาการจัดส่งต่อผู้บังคับบัญชาทันที"],"qualifications":["มีใบอนุญาตขับขี่ที่ยังไม่หมดอายุ","รู้เส้นทางในพื้นที่ที่รับผิดชอบ","มีสุขภาพแข็งแรงเหมาะสมกับลักษณะงาน"],"kpis":["อัตราการจัดส่งสำเร็จตรงเวลา","อัตราสินค้าเสียหายหรือสูญหาย"]}}];
+
+function posChips(){
+  $('posChips').innerHTML = POSITIONS.filter(p=>p.chip)
+    .map(p=>`<div class="chip" onclick="posPick('${p.code}')">${esc(p.th)}</div>`).join('');
+}
+function _norm(s){ return String(s||'').toLowerCase().replace(/\s+/g,''); }
+function posSearch(q){
+  const box=$('posList'); const t=_norm(q);
+  let list = t ? POSITIONS.filter(p=>_norm(p.th).includes(t)||_norm(p.en).includes(t)||_norm(p.category).includes(t)) : POSITIONS.slice();
+  let html = list.slice(0,40).map(p=>
+    `<div class="combo-opt" onclick="posPick('${p.code}')">${esc(p.th)}<span class="cat">${esc(p.en)}</span></div>`).join('');
+  const raw=String(q||'').trim();
+  if(raw.length>=2 && !list.some(p=>p.th===raw)){
+    html = `<div class="combo-opt" onclick="posCustom()">+ ใช้ &quot;${esc(raw)}&quot; เป็นตำแหน่งงาน</div>` + html;
+  }
+  box.innerHTML=html;
+  box.style.display = html ? 'block' : 'none';
+}
+function posPick(code){
+  const p=POSITIONS.find(x=>x.code===code); if(!p) return;
+  S.position={code:p.code, th:p.th, en:p.en, category:p.category};
+  $('posInput').value=p.th; $('posList').style.display='none';
+  S.jd = JSON.parse(JSON.stringify(p.jd));  // optimistic: โชว์ seed ทันที
+  S.jd.qualifications=_jdStripDup(S.jd.qualifications); _jdEnsureCatchAll();
+  S.jdSource='seed'; renderJD();
+  genJD();
+  _updS1(); _saveDraft();
+}
+function posCustom(){
+  const raw=$('posInput').value.trim(); if(raw.length<2) return;
+  S.position={code:'custom', th:raw, en:'', category:'other'};
+  $('posList').style.display='none';
+  S.jd={responsibilities:[],qualifications:[],kpis:[]}; S.jdSource='';
+  renderJDSkeleton(); genJD();
+  _updS1(); _saveDraft();
+}
+function renderJDSkeleton(){
+  $('jdBox').style.display='block';
+  $('jdBox').innerHTML=`<div class="jd-sec"><h4>กำลังร่างขอบเขตงาน…</h4>
+    <div class="jd-skel"></div><div class="jd-skel"></div><div class="jd-skel"></div></div>`;
+}
+const JD_SECS=[['responsibilities','ขอบเขตงาน'],['qualifications','คุณสมบัติ'],['kpis','ตัวชี้วัดผลงาน']];
+
+/* งานอื่น ๆ ที่ได้รับมอบหมาย — ต้องเป็นข้อสุดท้ายของขอบเขตงานเสมอ */
+const JD_CATCHALL='ปฏิบัติงานอื่น ๆ ตามที่ได้รับมอบหมายจากผู้บังคับบัญชา';
+function _jdEnsureCatchAll(){
+  const a=S.jd.responsibilities||(S.jd.responsibilities=[]);
+  const i=a.findIndex(x=>/งานอื่น\s*ๆ|ได้รับมอบหมาย/.test(String(x)));
+  if(i>=0) a.splice(i,1);
+  a.push(JD_CATCHALL);
+}
+
+/* วุฒิการศึกษา / ประสบการณ์ — ให้ผู้ใช้เลือก ไม่ให้ AI กำหนด */
+const EDU_OPTS=[['','ไม่กำหนดวุฒิการศึกษา'],
+  ['ประกาศนียบัตรวิชาชีพ (ปวช.)','ประกาศนียบัตรวิชาชีพ (ปวช.)'],
+  ['ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)','ประกาศนียบัตรวิชาชีพชั้นสูง (ปวส.)'],
+  ['ปริญญาตรี','ปริญญาตรี'],['ปริญญาโท','ปริญญาโท'],['ปริญญาเอก','ปริญญาเอก']];
+const EXP_OPTS=[['','ไม่จำเป็นต้องมีประสบการณ์'],
+  ['6 เดือน','อย่างน้อย 6 เดือน'],['1 ปี','อย่างน้อย 1 ปี'],['2 ปี','อย่างน้อย 2 ปี'],
+  ['3 ปี','อย่างน้อย 3 ปี'],['5 ปี','อย่างน้อย 5 ปี'],['10 ปี','อย่างน้อย 10 ปี']];
+function eduLine(){ return S.edu ? ('สำเร็จการศึกษาระดับ'+S.edu+'ขึ้นไป') : ''; }
+function expLine(){ return S.exp ? ('มีประสบการณ์ทำงานที่เกี่ยวข้องอย่างน้อย '+S.exp) : ''; }
+/* คุณสมบัติฉบับเต็ม = วุฒิ + ประสบการณ์ + รายการที่พิมพ์เอง */
+function jdQualsFull(){
+  return [eduLine(), expLine()].concat(S.jd.qualifications||[])
+    .map(x=>String(x||'').trim()).filter(Boolean);
+}
+/* ตัดบรรทัดที่ AI ร่างมาซ้ำกับ dropdown ออก (กันซ้ำในสัญญา) */
+const RE_EDU=/(วุฒิ|สำเร็จการศึกษา|จบการศึกษา|ปริญญา|ปวช|ปวส|มัธยมศึกษา|การศึกษาระดับ)/;
+const RE_EXP=/ประสบการณ์[^]*?\d+\s*(ปี|เดือน)/;
+function _jdStripDup(list){ return (list||[]).filter(x=>!RE_EDU.test(x)&&!RE_EXP.test(x)); }
+function setEdu(v){ S.edu=v; _saveDraft(); }
+function setExp(v){ S.exp=v; _saveDraft(); }
+function renderJD(){
+  const box=$('jdBox'); box.style.display='block';
+  const sel=(id,opts,cur,fn)=>`<select id="${id}" onchange="${fn}(this.value);renderJD()">`
+    + opts.map(([v,t])=>`<option value="${esc(v)}"${v===cur?' selected':''}>${esc(t)}</option>`).join('')
+    + `</select>`;
+  const fixed=k=> k!=='qualifications' ? '' : `<div class="jd-fixed">
+      <label>วุฒิการศึกษาขั้นต่ำ</label>${sel('eduSel',EDU_OPTS,S.edu,'setEdu')}
+      <label>ประสบการณ์ทำงานที่เกี่ยวข้อง</label>${sel('expSel',EXP_OPTS,S.exp,'setExp')}
+    </div>`;
+  box.innerHTML = JD_SECS.map(([k,label])=>`
+    <div class="jd-sec">
+      <h4>${label}</h4>
+      ${fixed(k)}
+      ${(S.jd[k]||[]).map((v,i)=>`<div class="jd-item">
+        <input type="text" value="${esc(v)}" oninput="jdEdit('${k}',${i},this.value)">
+        <button class="x" type="button" onclick="jdDel('${k}',${i})" aria-label="ลบ">&times;</button>
+      </div>`).join('')}
+      <button class="btn ghost sm" type="button" onclick="jdAdd('${k}')">+ เพิ่มรายการ</button>
+    </div>`).join('')
+    + (S.jdSource==='seed' ? `<div class="mini" style="margin-top:8px">ใช้แบบร่างมาตรฐานของตำแหน่งนี้ — แก้ไขให้ตรงกับงานจริงได้</div>` : '');
+}
+function jdEdit(k,i,v){ S.jd[k][i]=v; _updS1(); _saveDraft(); }
+function jdDel(k,i){ S.jd[k].splice(i,1); renderJD(); _updS1(); _saveDraft(); }
+function jdAdd(k){ (S.jd[k]=S.jd[k]||[]).push(''); renderJD(); _saveDraft();
+  const inps=$('jdBox').querySelectorAll('.jd-sec');
+  const idx=JD_SECS.findIndex(s=>s[0]===k);
+  if(inps[idx]){ const all=inps[idx].querySelectorAll('input'); if(all.length) all[all.length-1].focus(); }
+}
+async function genJD(){
+  if(!S.position) return;
+  const want=S.position.th;
+  try{
+    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'emp_jd', position_th:S.position.th, position_en:S.position.en,
+        position_code:S.position.code, employment_type:S.emp.type, turnstile_token:await _turnstileToken()})});
+    const j=await r.json();
+    if(!S.position || S.position.th!==want) return;   // ผู้ใช้เปลี่ยนตำแหน่งระหว่างรอ
+    if(j&&j.ok&&j.jd&&(j.jd.responsibilities||[]).length>=3){
+      S.jd={responsibilities:j.jd.responsibilities||[],qualifications:_jdStripDup(j.jd.qualifications||[]),kpis:j.jd.kpis||[]};
+      _jdEnsureCatchAll();
+      S.jdSource=j.source||'ai'; renderJD(); _updS1(); _saveDraft();
+    }else if(!(S.jd.responsibilities||[]).length){
+      S.jd={responsibilities:[''],qualifications:[''],kpis:['']}; S.jdSource=''; renderJD();
+      toast('ร่างขอบเขตงานอัตโนมัติไม่สำเร็จ — กรอกเองได้');
+    }
+  }catch(_){
+    if(!(S.jd.responsibilities||[]).length){
+      S.jd={responsibilities:[''],qualifications:[''],kpis:['']}; S.jdSource=''; renderJD();
+    }
+  }
+}
+function _updS1(){
+  const okPos = !!(S.position && (S.position.th||'').trim().length>=2);
+  const okJd  = (S.jd.responsibilities||[]).filter(x=>String(x).trim()).length>=3;
+  $('s1next').disabled = !(okPos&&okJd);
+}
+function step1Next(){
+  ['responsibilities','qualifications','kpis'].forEach(k=>{
+    S.jd[k]=(S.jd[k]||[]).map(x=>String(x).trim()).filter(Boolean);
+  });
+  _jdEnsureCatchAll();
+  _saveDraft(); buildStep1b(); go('step1b');
+}
+
+/* ═══════════════ STEP 1b — รายละเอียดการจ้าง ═══════════════ */
+const ET = [['full_time','เต็มเวลา'],['part_time','พาร์ทไทม์'],['temporary','ชั่วคราว'],['probation','ทดลองงาน']];
+const PB = [[0,'ไม่มี'],[90,'90 วัน'],[119,'119 วัน'],[-1,'กำหนดเอง']];
+const WD_PRESET = [['mon,tue,wed,thu,fri','จ–ศ'],['mon,tue,wed,thu,fri,sat','จ–ส'],['custom','กำหนดเอง']];
+const DAYS = [['mon','จ'],['tue','อ'],['wed','พ'],['thu','พฤ'],['fri','ศ'],['sat','ส'],['sun','อา']];
+const LOC_CHIPS = ['ตามที่อยู่นายจ้าง','Work from Home','Hybrid'];
+const RS = [['nonsolicit','ห้ามชักชวนพนักงาน/ลูกค้า (12 เดือน)'],['noncompete','ห้ามแข่งขัน จำกัดขอบเขต (12 เดือน)']];
+
+function buildStep1b(){
+  const e=S.emp;
+  $('etPills').innerHTML = ET.map(([v,t])=>`<div class="pill ${e.type===v?'on':''}" onclick="pickET('${v}')">${t}</div>`).join('');
+  $('pbPills').innerHTML = PB.map(([v,t])=>{
+    const on = (v===-1) ? ![0,90,119].includes(e.probation) : e.probation===v;
+    return `<div class="pill ${on?'on':''}" onclick="pickPB(${v})">${t}</div>`;
+  }).join('');
+  $('pbCustom').style.display = [0,90,119].includes(e.probation) ? 'none' : 'block';
+  if(!$('pbCustom').value && ![0,90,119].includes(e.probation)) $('pbCustom').value=e.probation;
+
+  const key=e.days.join(',');
+  const known=WD_PRESET.find(([v])=>v===key);
+  const preset = (e.customDays || !known) ? 'custom' : key;
+  $('wdPresets').innerHTML = WD_PRESET.map(([v,t])=>`<div class="pill ${preset===v?'on':''}" onclick="pickWDPreset('${v}')">${t}</div>`).join('');
+  $('wdPills').style.display = preset==='custom' ? 'flex' : 'none';
+  $('wdPills').innerHTML = DAYS.map(([v,t])=>`<div class="pill ${e.days.includes(v)?'on':''}" onclick="toggleDay('${v}')">${t}</div>`).join('');
+
+  $('locChips').innerHTML = LOC_CHIPS.map(t=>`<div class="chip" onclick="setLoc('${t}')">${t}</div>`).join('');
+  $('rsPills').innerHTML = RS.map(([v,t])=>`<div class="pill ${e.restrict===v?'on':''}" onclick="pickRS('${v}')">${t}</div>`).join('');
+
+  if(e.salary) $('salary').value = _fmtInt(e.salary);
+  if(e.allowance) { $('allowance').value=_fmtInt(e.allowance); showMoreMoney(); }
+  if(e.bonus) { $('bonus').value=e.bonus; showMoreMoney(); }
+  _buildTimeSel('wStart', e.start); _buildTimeSel('wEnd', e.end);
+  $('wLoc').value=e.loc; $('payday').value=e.payday;
+  if(!e.startDate){ const d=new Date(Date.now()+7*864e5); e.startDate=d.toISOString().slice(0,10); }
+  $('startDate').value=e.startDate;
+  $('optClientSite').checked=!!e.clientSite; $('clientSiteBox').style.display=e.clientSite?'block':'none';
+  $('clientSite').value=e.clientSite||'';
+  $('optRestrict').checked = e.restrict!=='none'; $('restrictBox').style.display = e.restrict!=='none'?'block':'none';
+  $('rsArea').style.display = e.restrict==='noncompete'?'block':'none'; $('rsArea').value=e.restrictArea||'';
+  _updS1b();
+}
+function _fmtInt(n){ return (Number(n)||0).toLocaleString('en-US'); }
+/* select เวลาแบบ 24 ชั่วโมง (input type=time โชว์ AM/PM ตาม locale ของเครื่อง — คุมไม่ได้) */
+function _buildTimeSel(id, val){
+  const [h,m]=String(val||'09:00').split(':');
+  const hs=$(id+'H'), ms=$(id+'M');
+  if(!hs||!ms) return;
+  hs.innerHTML=Array.from({length:24},(_,i)=>{
+    const v=String(i).padStart(2,'0');
+    return `<option value="${v}"${v===h?' selected':''}>${v}</option>`; }).join('');
+  ms.innerHTML=['00','15','30','45'].map(v=>
+    `<option value="${v}"${v===m?' selected':''}>${v}</option>`).join('');
+}
+function _readTime(id){
+  const hs=$(id+'H'), ms=$(id+'M');
+  return (hs&&ms&&hs.value&&ms.value) ? (hs.value+':'+ms.value) : '';
+}
+function _int(v){ return parseInt(String(v||'').replace(/[^\d]/g,''),10)||0; }
+
+function pickET(v){ S.emp.type=v; buildStep1b(); }
+function pickPB(v){
+  if(v===-1){ S.emp.probation=30; }
+  else S.emp.probation=v;
+  buildStep1b(); if(v===-1) $('pbCustom').focus();
+}
+function pickWDPreset(v){
+  if(v==='custom'){ S.emp.customDays=true; }
+  else { S.emp.customDays=false; S.emp.days=v.split(','); }
+  buildStep1b();
+}
+function toggleDay(d){
+  S.emp.customDays=true;
+  const i=S.emp.days.indexOf(d);
+  if(i>=0) S.emp.days.splice(i,1); else S.emp.days.push(d);
+  const order=DAYS.map(x=>x[0]); S.emp.days.sort((a,b)=>order.indexOf(a)-order.indexOf(b));
+  buildStep1b();
+}
+function setLoc(t){ $('wLoc').value=t; S.emp.loc=t; _updS1b(); }
+function showMoreMoney(){ $('moreMoney').style.display='block'; $('moreMoneyBtn').style.display='none'; }
+function toggleClientSite(){
+  const on=$('optClientSite').checked;
+  $('clientSiteBox').style.display=on?'block':'none';
+  if(!on) S.emp.clientSite='';
+  _updS1b();
+}
+function toggleRestrict(){
+  const on=$('optRestrict').checked;
+  $('restrictBox').style.display=on?'block':'none';
+  S.emp.restrict = on ? (S.emp.restrict==='none'?'nonsolicit':S.emp.restrict) : 'none';
+  buildStep1b();
+}
+function pickRS(v){ S.emp.restrict=v; buildStep1b(); }
+function onSalary(v){
+  const n=_int(v); S.emp.salary=n;
+  const el=$('salary'); const f=n?_fmtInt(n):'';
+  if(el.value!==f) el.value=f;
+  _updS1b();
+}
+function _hours(){
+  const a=(_readTime('wStart')||'09:00').split(':'), b=(_readTime('wEnd')||'18:00').split(':');
+  let m=(+b[0]*60+ +b[1])-(+a[0]*60+ +a[1]); if(m<0) m+=1440;
+  return Math.max(0, Math.round((m-60)/6)/10);   // หักพัก 1 ชม.
+}
+function _updS1b(){
+  const e=S.emp;
+  e.allowance=_int($('allowance').value); e.bonus=($('bonus').value||'').trim();
+  e.start=_readTime('wStart')||e.start||'09:00'; e.end=_readTime('wEnd')||e.end||'18:00';
+  e.loc=($('wLoc').value||'').trim(); e.payday=($('payday').value||'').trim();
+  e.startDate=$('startDate').value||''; e.clientSite=$('optClientSite').checked?($('clientSite').value||'').trim():'';
+  e.restrictArea=($('rsArea').value||'').trim();
+  if($('pbCustom').style.display!=='none'){ const n=_int($('pbCustom').value); if(n>=1&&n<=180) e.probation=n; }
+
+  const h=_hours();
+  $('hourWarn').innerHTML = h>8
+    ? `<div class="warnrow">&#9888; เวลาทำงานสุทธิ ${h} ชม./วัน เกินเวลาทำงานปกติตามกฎหมาย (8 ชม./วัน) ส่วนที่เกินต้องจ่ายค่าล่วงเวลา</div>` : '';
+
+  const perDay = e.salary>0 && e.days.length ? e.salary/((e.days.length*52)/12) : 0;
+  $('wageWarn').innerHTML = (perDay>0 && perDay<337)
+    ? `<div class="warnrow">&#9888; คิดเป็นราว ${Math.round(perDay).toLocaleString('en-US')} บาท/วัน ซึ่งอาจต่ำกว่าค่าจ้างขั้นต่ำ (337–400 บาท/วัน แล้วแต่จังหวัด) กรุณาตรวจสอบ</div>` : '';
+
+  $('etWarn').innerHTML = (e.type==='temporary')
+    ? `<div class="warnrow">&#9888; สัญญาจ้างที่มีกำหนดระยะเวลาได้รับยกเว้นค่าชดเชยเฉพาะงานตามที่กฎหมายกำหนด (งานโครงการเฉพาะ / งานครั้งคราว / งานตามฤดูกาล) การจ้างชั่วคราวทั่วไปยังต้องจ่ายค่าชดเชย</div>` : '';
+
+  $('startDateTh').innerHTML = e.startDate
+    ? ('= <b>'+esc(_thDateFull(e.startDate))+'</b>')
+    : '<span style="color:var(--err)">ยังไม่ได้เลือกวันเริ่มงาน</span>';
+  const dayTxt = e.days.length===0 ? '—' : DAYS.filter(([v])=>e.days.includes(v)).map(x=>x[1]).join(' ');
+  $('sumline').innerHTML = `ตำแหน่ง <b>${esc((S.position&&S.position.th)||'—')}</b> · จ้าง${esc((ET.find(x=>x[0]===e.type)||[])[1]||'')} · เงินเดือน <b>${_fmtInt(e.salary)} บาท</b>`
+    + (e.allowance?` + ค่าตำแหน่ง ${_fmtInt(e.allowance)} บาท`:'')
+    + ` · ทดลองงาน ${e.probation?e.probation+' วัน':'ไม่มี'} · ทำงาน ${esc(dayTxt)} ${esc(e.start)}–${esc(e.end)} (${h} ชม./วัน)`
+    + (e.startDate?` · เริ่ม <b>${esc(_thDate(e.startDate))}</b>`:'');
+
+  const ok = e.salary>0 && e.days.length>0 && e.loc && e.startDate && (!$('optClientSite').checked || e.clientSite)
+             && (e.restrict!=='noncompete' || true);
+  $('s1bnext').disabled = !ok;
+  _saveDraft();
+}
+function _thDateFull(iso){
+  const mo=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const d=new Date(iso); if(isNaN(d)) return '';
+  return d.getDate()+' '+mo[d.getMonth()]+' พ.ศ. '+(d.getFullYear()+543);
+}
+function _thDate(iso){
+  const mo=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const d=new Date(iso); if(isNaN(d)) return '';
+  return d.getDate()+' '+mo[d.getMonth()]+' '+(d.getFullYear()+543);
+}
+function step1bNext(){ _updS1b(); _saveDraft(); go('step2'); }
+
+/* ═══════════════ STEP 2 — บัตรประชาชน + นิติบุคคล ═══════════════ */
+let _pickTarget='A', _certWhich=null;
+function pickCard(which){ _pickTarget=which; $('fileInput').value=''; $('fileInput').click(); }
+/* กรอกเอง — ใช้เมื่อไม่มีรูปบัตร หรือ OCR อ่านไม่ได้ */
+function manualCard(which){
+  if(!S.cards[which]) S.cards[which]={dataUrl:'',fields:{},edited:true,idValid:false};
+  S.cards[which].edited=true;
+  renderOcr(which, S.cards[which].fields||{}, validThaiId((S.cards[which].fields||{}).id_number||''));
+  _updS2();
+  const el=$('ocr'+which); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'});
+    const inp=el.querySelector('input'); if(inp) setTimeout(()=>inp.focus(),300); }
+}
+function pickCert(){ _certWhich='A'; $('certInput').value=''; $('certInput').click(); }
+
+const JUR_REQ = ['name','regNo','signer','addrNo','subdistrict','district','province'];
+const JUR_LBL = {name:'ชื่อนิติบุคคล',regNo:'เลขทะเบียนนิติบุคคล',signer:'ผู้มีอำนาจลงนาม',addrNo:'เลขที่',subdistrict:'ตำบล/แขวง',district:'อำเภอ/เขต',province:'จังหวัด'};
+
+function toggleJuristic(which){
+  const on = !!($('jur_'+which) && $('jur_'+which).checked);
+  S.jur[which]=Object.assign({},S.jur[which]||{},{on});
+  const box=$('jurBox_'+which);
+  box.style.display=on?'block':'none';
+  if(on) renderJur(which); else box.innerHTML='';
+  const hint=$('drop'+which)&&$('drop'+which).querySelector('.s');
+  if(hint) hint.textContent = on ? 'บัตรของผู้มีอำนาจลงนาม — ด้านหน้าเท่านั้น' : 'ด้านหน้าเท่านั้น';
+  _updS2(); _saveDraft();
+}
+function renderJur(which){
+  const j=S.jur[which]||{};
+  const f=(k,ph,extra)=>`<input type="text" value="${esc(j[k]||'')}" placeholder="${esc(ph||'')}" ${extra||''} oninput="editJur('${which}','${k}',this.value)">`;
+  $('jurBox_'+which).innerHTML=`
+    <label class="fl">ชื่อนิติบุคคล (บริษัท / ห้างหุ้นส่วน / สมาคม)</label>${f('name','บริษัท ตัวอย่าง จำกัด')}
+    <label class="fl">เลขทะเบียนนิติบุคคล (13 หลัก)</label>${f('regNo','0105500000000','inputmode="numeric" maxlength="13"')}
+    <label class="fl">ชื่อผู้มีอำนาจลงนามผูกพันนิติบุคคล</label>${f('signer','นาย/นาง/นางสาว ...')}
+    <label class="fl">ตำแหน่ง</label>${f('signerTitle','กรรมการผู้มีอำนาจลงนาม')}
+    <div class="row"><div><label class="fl">เลขที่</label>${f('addrNo','99/1')}</div>
+      <div><label class="fl">ถนน <span class="mini">(ถ้ามี)</span></label>${f('road','สุขุมวิท')}</div></div>
+    <div class="row"><div><label class="fl">ตำบล/แขวง</label>${f('subdistrict','คลองเตย')}</div>
+      <div><label class="fl">อำเภอ/เขต</label>${f('district','คลองเตย')}</div></div>
+    <label class="fl">จังหวัด</label>${f('province','กรุงเทพมหานคร')}
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn ghost sm" type="button" onclick="pickCert()">${j.certImg?'เปลี่ยนหนังสือรับรอง':'แนบหนังสือรับรอง (ถ้ามี)'}</button>
+      <button class="btn ghost sm" type="button" onclick="pickSeal()">${j.sealImg?'เปลี่ยนตราประทับ':'แนบตราประทับ (ถ้ามี)'}</button>
+    </div>
+    <div id="jurWarnA"></div>`;
+  _jurWarn(which);
+}
+function pickSeal(){ _certWhich='SEAL'; $('certInput').value=''; $('certInput').click(); }
+function editJur(which,k,v){ S.jur[which]=Object.assign({},S.jur[which]||{}); S.jur[which][k]=v; _jurWarn(which); _updS2(); _saveDraft(); }
+function _jurMissing(which){
+  const j=S.jur[which]; if(!j||!j.on) return [];
+  return JUR_REQ.filter(k=>!String(j[k]||'').trim());
+}
+function _jurWarn(which){
+  const box=$('jurWarn'+which); if(!box) return;
+  const miss=_jurMissing(which);
+  box.innerHTML = miss.length ? `<div class="warnrow">&#9888; ยังไม่ได้กรอก: ${miss.map(k=>JUR_LBL[k]).join(', ')}</div>` : '';
+}
+function _jurOf(which){ const j=S.jur[which]; return (j&&j.on)?j:null; }
+
+async function _onFile(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const which=_pickTarget;
+  const box=$('ocr'+which); box.style.display='block'; box.innerHTML='<div class="mini">กำลังอ่านบัตร…</div>';
+  // แยกการแปลงรูปออกมานอก try เพื่อไม่ให้ error เรื่องฟอร์แมตไฟล์
+  // ถูกกลืนไปรวมกับ error ของ OCR แล้วขึ้นข้อความที่ทำให้เข้าใจผิด
+  const _res=await SignDeeImg.process(f,{maxEdge:1400,quality:0.82});
+  if(!_res.ok){
+    box.style.display='none';
+    SignDeeImg.explainFailure([{name:f.name,kind:_res.kind}]);
+    return;
+  }
+  try{
+    const dataUrl=_res.dataUrl;
+    $('thumb'+which).src=dataUrl; $('thumb'+which).style.display='block';
+    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({image:dataUrl, turnstile_token:await _turnstileToken()})});
+    const j=await r.json();
+    const fields=(j&&(j.fields||j.data))||j||{};
+    const full=[fields.prefix,fields.first_name_th,fields.last_name_th].filter(Boolean).join(' ').trim();
+    fields.full_name_th = fields.full_name_th || full;
+    S.cards[which]={dataUrl, fields, edited:false, idValid:validThaiId(fields.id_number||'')};
+    renderOcr(which, fields, S.cards[which].idValid);
+  }catch(err){
+    S.cards[which]={dataUrl:'', fields:{}, edited:true, idValid:false};
+    renderOcr(which, {}, false);
+    toast('อ่านบัตรอัตโนมัติไม่สำเร็จ — กรอกเองได้');
+  }
+  _updS2();
+}
+async function _onCert(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  const _res=await SignDeeImg.process(f,{maxEdge:1200,quality:0.8});
+  if(!_res.ok){ SignDeeImg.explainFailure([{name:f.name,kind:_res.kind}]); return; }
+  const dataUrl=_res.dataUrl;
+  S.jur.A=Object.assign({},S.jur.A||{});
+  if(_certWhich==='SEAL') S.jur.A.sealImg=dataUrl; else S.jur.A.certImg=dataUrl;
+  renderJur('A'); toast('แนบไฟล์แล้ว');
+}
+function renderOcr(which,f,idValid){
+  const box=$('ocr'+which); box.style.display='block';
+  box.innerHTML=`
+    <label class="fl">ชื่อ-นามสกุล</label>
+    <input type="text" value="${esc(f.full_name_th||'')}" oninput="editField('${which}','name',this.value)">
+    ${(f.first_name_en||f.last_name_en)?`<div class="mini" style="margin-top:5px">ชื่อบนบัตร (อังกฤษ): <b>${esc([f.first_name_en,f.last_name_en].filter(Boolean).join(' '))}</b> — โปรดตรวจวรรณยุกต์ในชื่อไทยให้ตรงกัน</div>`:''}
+    <label class="fl">เลขบัตรประชาชน (13 หลัก)</label>
+    <input type="text" inputmode="numeric" maxlength="13" class="${(f.id_number&&!idValid)?'bad':''}" id="idf_${which}" value="${esc(f.id_number||'')}" oninput="editField('${which}','id13',this.value)">
+    <label class="fl">ที่อยู่</label>
+    <input type="text" id="addr_${which}" value="${esc(f.address_th||'')}" oninput="editField('${which}','address',this.value)">
+    <label class="fl">หมายเลขโทรศัพท์</label>
+    <input type="text" inputmode="tel" maxlength="12" id="tel_${which}" placeholder="08X-XXX-XXXX" value="${esc(f.phone||'')}" oninput="editField('${which}','phone',this.value)">
+    <div id="warn_${which}"></div>`;
+  updateWarns(which);
+  if(typeof sdAddrSplitField==='function') setTimeout(()=>sdAddrSplitField('addr_'+which),40);
+}
+/* แปลงวันที่จาก OCR — รองรับ YYYY-MM-DD / DD-MM-YYYY / DD/MM/YYYY และปี พ.ศ.
+   คืน Date หรือ null ถ้าอ่านไม่ออก (ห้ามเดา — เดาผิดแล้วเตือนผิดแย่กว่าไม่เตือน) */
+function _parseCardDate(v){
+  const raw=String(v==null?'':v).trim();
+  if(!raw) return null;
+  const nums=raw.match(/\d+/g);
+  let y,m,d;
+  if(!nums||nums.length<3){
+    // รูปแบบ "12 ก.พ. 2567" — ชื่อเดือนภาษาไทย
+    if(!nums||nums.length<2) return null;
+    const TH_MO=['ม.ค','ก.พ','มี.ค','เม.ย','พ.ค','มิ.ย','ก.ค','ส.ค','ก.ย','ต.ค','พ.ย','ธ.ค'];
+    const TH_FULL=['มกรา','กุมภา','มีนา','เมษา','พฤษภา','มิถุนา','กรกฎา','สิงหา','กันยา','ตุลา','พฤศจิกา','ธันวา'];
+    let mi=TH_MO.findIndex(x=>raw.includes(x));
+    if(mi<0) mi=TH_FULL.findIndex(x=>raw.includes(x));
+    if(mi<0) return null;
+    d=+nums[0]; m=mi+1; y=+nums[1];
+    if(y>2400) y-=543;
+    if(!(y>=1900&&y<=2200)||!(d>=1&&d<=31)) return null;
+    const dt0=new Date(Date.UTC(y,m-1,d));
+    return isNaN(dt0.getTime())?null:dt0;
+  }
+  if(nums[0].length===4){ y=+nums[0]; m=+nums[1]; d=+nums[2]; }        // YYYY-MM-DD
+  else if(nums[2].length===4){ d=+nums[0]; m=+nums[1]; y=+nums[2]; }   // DD-MM-YYYY
+  else return null;
+  if(y>2400) y-=543;                                                    // ปี พ.ศ. → ค.ศ.
+  if(!(y>=1900&&y<=2200)||!(m>=1&&m<=12)||!(d>=1&&d<=31)) return null;
+  const dt=new Date(Date.UTC(y,m-1,d));
+  if(isNaN(dt.getTime())) return null;
+  if(dt.getUTCFullYear()!==y||dt.getUTCMonth()!==m-1||dt.getUTCDate()!==d) return null;
+  return dt;
+}
+/* บัตรประชาชนไทยมีอายุประมาณ 8 ปีนับจากวันออกบัตร
+   ถ้าช่วงห่างผิดไปมาก แปลว่า OCR อ่านปีพลาด — อย่าเตือนว่าหมดอายุ ให้บอกว่าอ่านผิดแทน */
+function _expiryStatus(f){
+  const exp=_parseCardDate(f&&f.date_expiry);
+  const iss=_parseCardDate(f&&f.date_issue);
+  if(!f||!f.date_expiry) return {state:'none'};
+  if(!exp){ console.warn('[EMP] อ่านวันหมดอายุบัตรไม่ออก:', f.date_expiry); return {state:'unreadable',text:String(f.date_expiry)}; }
+  const text=_fmtCardDate(exp);
+  if(iss){
+    const yrs=(exp.getTime()-iss.getTime())/(365.25*864e5);
+    if(yrs<5||yrs>11) return {state:'suspect',text,issueText:_fmtCardDate(iss)};
+  }
+  const t=new Date(); const t0=Date.UTC(t.getFullYear(),t.getMonth(),t.getDate());
+  return exp.getTime()<t0 ? {state:'expired',text} : {state:'ok',text};
+}
+function _fmtCardDate(dt){
+  const mo=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return dt.getUTCDate()+' '+mo[dt.getUTCMonth()]+' '+(dt.getUTCFullYear()+543);
+}
+function _ageOf(which){
+  const c=S.cards[which]; if(!c) return 0;
+  const dob=c.fields&&c.fields.date_of_birth; if(!dob) return 0;
+  const d=new Date(dob); if(isNaN(d)) return 0;
+  const n=new Date(); let a=n.getFullYear()-d.getFullYear();
+  const m=n.getMonth()-d.getMonth(); if(m<0||(m===0&&n.getDate()<d.getDate())) a--;
+  return (a>0&&a<130)?a:0;
+}
+function updateWarns(which){
+  const c=S.cards[which]; if(!c) return;
+  const f=c.fields, box=$('warn_'+which); if(!box) return;
+  const w=[];
+  const id=(f.id_number||'').replace(/\D/g,'');
+  if(id.length===13&&!validThaiId(id)) w.push('&#9888; เลขบัตร 13 หลักตรวจไม่ผ่าน (แก้ให้ถูกต้อง)');
+  else if(id.length>0&&id.length<13) w.push('&#9888; เลขบัตรยังไม่ครบ 13 หลัก');
+  const expChk=_expiryStatus(f);
+  if(expChk.state==='expired'){
+    w.push('&#9888; บัตรประชาชนหมดอายุแล้ว (วันหมดอายุ '+esc(expChk.text)+')');
+  }else if(expChk.state==='suspect'){
+    w.push('&#9888; ระบบอ่านวันหมดอายุบัตรได้ '+esc(expChk.text)+' ซึ่งไม่สอดคล้องกับวันออกบัตร '+esc(expChk.issueText)+' &mdash; น่าจะอ่านผิด แก้ให้ถูกต้องได้ด้านล่าง');
+  }
+  if(expChk.state==='expired'||expChk.state==='suspect'||expChk.state==='unreadable'){
+    w.push('<label class="fl" style="margin-top:6px">วันหมดอายุบัตร (ปี พ.ศ. หรือ ค.ศ. ก็ได้)</label>'
+      + '<input type="text" id="expfix_'+which+'" value="'+esc(f.date_expiry||'')+'" placeholder="เช่น 22/08/2575" oninput="editField(\''+which+'\',\'expiry\',this.value)">');
+  }
+  if(which==='B'){
+    const a=_ageOf('B');
+    if(a>0&&a<15) w.push('&#9940; กฎหมายห้ามจ้างเด็กอายุต่ำกว่า 15 ปี');
+    else if(a>=15&&a<18) w.push('&#9888; ลูกจ้างอายุ '+a+' ปี — ระบบจะเพิ่มข้อคุ้มครองแรงงานเด็กให้อัตโนมัติ (ห้ามทำงาน 22.00–06.00 น. ห้าม OT ห้ามทำงานวันหยุด)');
+  }
+  box.innerHTML=w.map(x=>`<div class="warnrow">${x}</div>`).join('');
+}
+function editField(which,key,val){
+  const c=S.cards[which]; if(!c) return;
+  if(key==='name') c.fields.full_name_th=val;
+  if(key==='id13'){ c.fields.id_number=val.replace(/\D/g,'').slice(0,13);
+    const ok=validThaiId(c.fields.id_number); const inp=$('idf_'+which);
+    if(inp) inp.classList.toggle('bad', c.fields.id_number.length===13&&!ok);
+    c.idValid=ok; }
+  if(key==='address') c.fields.address_th=val;
+  if(key==='issue')   c.fields.date_issue=val;
+  if(key==='expiry')  c.fields.date_expiry=val;
+  if(key==='phone'){ c.fields.phone=_fmtTel(val); const inp=$('tel_'+which); if(inp&&inp.value!==c.fields.phone) inp.value=c.fields.phone; }
+  c.edited=true; updateWarns(which); _updS2();
+}
+function _empAgeOk(){ const a=_ageOf('B'); return !(a>0&&a<15); }
+function _updS2(){
+  const ok = S.cards.A && S.cards.B && $('pdpa').checked
+    && (S.cards.A.fields.full_name_th||'').trim()
+    && (S.cards.B.fields.full_name_th||'').trim()
+    && !_jurMissing('A').length
+    && _empAgeOk();
+  $('s2next').disabled=!ok;
+}
+
+/* ═══════════════ GENERATE ═══════════════ */
+const PROC=['อ่านบัตรประชาชน','สกัดข้อมูล','ยืนยันตัวตน','ตรวจสอบตามกฎหมายแรงงาน','กำลังร่างหนังสือสัญญาจ้าง','จัดทำเอกสารแนบท้าย ก.','สร้าง Audit Trail','สร้าง Legal Evidence Pack','เตรียมระบบลงนาม'];
+function renderProc(active){
+  $('procList').innerHTML=PROC.map((t,i)=>{
+    const cls=i<active?'ok':(i===active?'on':'');
+    const ic=i<active?'&#10003;':(i===active?'&#9673;':'&#9675;');
+    return `<div class="proc-line ${cls}"><span class="proc-ic">${ic}</span>${esc(t)}</div>`;
+  }).join('');
+}
+async function ensureRow(){
+  if(S.rowId && S.token) return S.rowId;
+  const {data,error}=await sb.rpc('emp_new_contract');
+  if(error) throw error;
+  const row=Array.isArray(data)?data[0]:data;
+  if(!row||!row.id) throw new Error('create_failed');
+  S.rowId=row.id; S.token=row.creator_token; S.contractNo=row.contract_no||'';
+  try{
+    localStorage.setItem('emp_contract_row_id',S.rowId);
+    localStorage.setItem('emp_creator_token',S.token);
+    localStorage.setItem('emp_contract_no',S.contractNo);
+  }catch(_){}
+  empRegPut({id:S.rowId, token:S.token, no:S.contractNo});
+  empClaimIfLoggedIn(S.rowId);
+  return S.rowId;
+}
+function partyPayload(which){
+  const f=S.cards[which].fields;
+  const j=(which==='A')?_jurOf('A'):null;
+  return {
+    name:(f.full_name_th||'').trim(),
+    id13:(f.id_number||'').replace(/\D/g,''),
+    address:(f.address_th||'').trim(),
+    phone:(f.phone||'').trim(),
+    issue:f.date_issue||'', expiry:f.date_expiry||'',
+    jur: j?_jurNoImg(j):null,
+    edited:!!S.cards[which].edited,
+  };
+}
+function empRowPayload(){
+  const e=S.emp;
+  return {
+    position_th:(S.position&&S.position.th)||'', position_en:(S.position&&S.position.en)||'',
+    position_code:(S.position&&S.position.code)||'',
+    jd:{responsibilities:S.jd.responsibilities||[], qualifications:jdQualsFull(), kpis:S.jd.kpis||[]}, jd_edited:true,
+    employment_type:e.type, salary:e.salary, allowance:e.allowance||0, bonus_text:e.bonus||null,
+    payday_text:e.payday||null, probation_days:e.probation||0,
+    work_days:e.days, work_start:e.start.replace(':','.'), work_end:e.end.replace(':','.'),
+    work_hours:_hours(), work_location:e.loc, client_site:e.clientSite||null,
+    start_date:e.startDate||null,
+    restrict_level:e.restrict, restrict_months:12, restrict_area:e.restrictArea||null,
+  };
+}
+async function step2Generate(){
+  const a=partyPayload('A'), b=partyPayload('B');
+  if(a.id13&&b.id13&&a.id13===b.id13){ toast('นายจ้างและลูกจ้างต้องเป็นคนละบุคคล'); return; }
+  go('proc'); let step=0; renderProc(0);
+  const timer=setInterval(()=>{ if(step<4){ step++; renderProc(step); } },1200);
+  try{
+    await ensureRow();
+    const jurA=_jurOf('A');
+    /* ส่งข้อมูลทั้งหมดให้ backend เขียนด้วย service_role
+       (เดิมให้ client เขียนเองด้วย anon key แล้วบางครั้ง party_a ไม่ลง DB) */
+    const payload=Object.assign(empRowPayload(),{
+      party_a:a, party_b:b,
+      a_card:{image:(S.cards.A.dataUrl||''), ocr_raw:S.cards.A.fields,
+              cert_image:(jurA&&jurA.certImg)||'', seal_image:(jurA&&jurA.sealImg)||''},
+      b_card:{image:(S.cards.B.dataUrl||''), ocr_raw:S.cards.B.fields},
+    });
+    step=4; renderProc(4);
+    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'emp_generate', row_id:S.rowId, payload:payload, turnstile_token:await _turnstileToken()})});
+    let j; try{ j=await r.json(); }catch(_){ j={}; }
+    clearInterval(timer);
+    if(!j||!j.ok){
+      const msg=(j&&(j.message_th||j.code))||('HTTP '+r.status+' — สร้างสัญญาไม่สำเร็จ');
+      console.error('[EMP] generate failed', r.status, JSON.stringify(j,null,2));
+      toast(msg + ((j&&j.detail)?(' · '+String(j.detail).slice(0,90)):''));
+      go('step2'); return;
+    }
+    for(let i=5;i<=PROC.length;i++){ renderProc(i); await new Promise(x=>setTimeout(x,300)); }
+    S.clauses=j.clauses_preview; S.appendix=j.appendix_preview; S.meta=j.meta;
+    S.docHash=j.doc_hash||''; S.clauseCount=j.clause_count||18;
+    S.parties={a:j.parties.a,b:j.parties.b};
+    empRegPut({id:S.rowId, token:S.token, no:(j.meta&&j.meta.contract_no)||S.contractNo,
+               employee:j.parties.b, position:(S.position&&S.position.th)||''});
+    DASH.rows=[];   // ให้แดชบอร์ดโหลดใหม่
+    renderDoc('docPreview',S.clauses,S.appendix,true);
+    go('preview');
+  }catch(err){ clearInterval(timer); console.error(err); toast('ระบบขัดข้อง: '+(err.message||err)); go('step2'); }
+}
+
+/* ═══════════════ DOC RENDER ═══════════════ */
+function _jurText(j,role){
+  const addr=[j.addrNo&&('เลขที่ '+j.addrNo), j.road&&('ถนน'+j.road), j.subdistrict&&('ตำบล/แขวง'+j.subdistrict),
+              j.district&&('อำเภอ/เขต'+j.district), j.province&&('จังหวัด'+j.province)].filter(Boolean).join(' ');
+  return `${esc(j.name||'________________')} ทะเบียนนิติบุคคลเลขที่ ${esc(j.regNo||'________________')} สำนักงานตั้งอยู่ ${esc(addr||'________________')} โดย ${esc(j.signer||'________________')} ตำแหน่ง ${esc(j.signerTitle||'ผู้มีอำนาจลงนาม')} ผู้มีอำนาจลงนามผูกพันนิติบุคคล ต่อไปนี้เรียกว่า "${role}"`;
+}
+function partyBlock(meta,which,role){
+  if(which==='a'){ const j=_jurOf('A')||((meta&&meta.a&&meta.a.jur)||null); if(j) return _jurText(j,role); }
+  const p=(meta&&meta[which])||{};
+  const age=p.age?(' อายุ '+esc(p.age)+' ปี'):' อายุ ...... ปี';
+  const name=esc(p.name||'________________');
+  const id=esc(p.id||'________________');
+  const addr=esc(p.addr||'________________');
+  return `${name}${age} บัตรประจำตัวประชาชนเลขที่ ${id} อยู่บ้านเลขที่ ${addr} ต่อไปนี้เรียกว่า "${role}"`;
+}
+function _apHtml(ap,locked){
+  if(!ap) return '';
+  const sec=(t,arr)=> (arr&&arr.length)?`<div class="ap-sec"><h4>${t}</h4><ul>${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`:'';
+  return `<div class="clause ${locked?'locked':''}">
+      <div class="cl-para" style="text-indent:0"><b>${esc(ap.title||'เอกสารแนบท้าย ก. — รายละเอียดตำแหน่งงาน')}</b></div>
+      <div class="cl-para" style="text-indent:0">ตำแหน่ง: ${esc(ap.position||'')}</div>
+      ${sec('ขอบเขตงาน',ap.responsibilities)}${sec('คุณสมบัติ',ap.qualifications)}${sec('ตัวชี้วัดผลงาน',ap.kpis)}
+    </div>`;
+}
+function renderDoc(target,clauses,ap,blurred){
+  const meta=S.meta||{};
+  const n=S.clauseCount||18;
+  const _pls=_addrTwoLines((meta.a&&meta.a.addr)||'');
+  const jurA=_jurOf('A');
+  const place = jurA ? [ [jurA.addrNo,jurA.road?('ถนน'+jurA.road):''].filter(Boolean).join(' '),
+                         [jurA.subdistrict?('ต.'+jurA.subdistrict):'',jurA.district?('อ.'+jurA.district):'',jurA.province?('จ.'+jurA.province):''].filter(Boolean).join(' ') ]
+                     : _pls;
+  const hd=`<div class="doc-hd"><h2>หนังสือสัญญาจ้าง</h2>
+      <div class="no">${esc(meta.contract_no||S.contractNo||'')}${S.docHash?(' · #'+esc(S.docHash.slice(0,10))):''}</div></div>
+    <div class="doc-parties">
+      <div style="text-align:right;line-height:1.9">ทำที่ ${esc(place[0]||'................................................')}</div>
+      ${place[1]?`<div style="text-align:right;line-height:1.9">${esc(place[1])}</div>`:''}
+      <div style="text-align:center;line-height:1.9;margin-bottom:10px">วันที่ ${esc(meta.date_th||'....................')}</div>
+      <div style="margin-bottom:8px"><b>ระหว่าง:</b> ${partyBlock(meta,'a','นายจ้าง')} ฝ่ายหนึ่ง</div>
+      <div style="margin-bottom:8px"><b>กับ</b> ${partyBlock(meta,'b','ลูกจ้าง')} อีกฝ่ายหนึ่ง</div>
+      <div>${esc(_normSp(meta.intro)||'คู่สัญญาทั้งสองฝ่ายตกลงทำสัญญาจ้างกันโดยมีข้อความ ดังต่อไปนี้')}</div>
+    </div>`;
+  let body='';
+  for(let i=1;i<=n;i++){
+    const txt=(clauses&&clauses['c'+i])||(i+'. ');
+    const lock=blurred&&i>2;
+    body+=`<div class="clause ${lock?'locked':''}">${_clauseHtml(txt)}</div>`;
+  }
+  body+=_apHtml(ap, !!blurred);
+  const closing=_normSp(meta.closing)||'';
+  if(closing) body+=`<div class="clause" style="border-top:2px solid var(--line)"><div class="cl-para">${esc(closing)}</div></div>`;
+  body+=`<div class="clause" style="display:flex;gap:24px;padding-top:22px">
+      <div style="flex:1;text-align:center">${sigImg('a')}
+        <div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;font-size:13px">ลงชื่อ ...................... นายจ้าง<br>( ${esc((meta.a&&meta.a.name)||S.parties.a||'')} )</div></div>
+      <div style="flex:1;text-align:center">${sigImg('b')}
+        <div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;font-size:13px">ลงชื่อ ...................... ลูกจ้าง<br>( ${esc((meta.b&&meta.b.name)||S.parties.b||'')} )</div></div>
+    </div>`;
+  $(target).innerHTML=hd+body;
+}
+function sigImg(which){ const s=S.sig&&S.sig[which]; return s?`<img src="${s}" style="height:56px;object-fit:contain">`:'<div style="height:56px"></div>'; }
+
+/* ═══════════════ PAYMENT ═══════════════ */
+/* staging เท่านั้น — โดเมน production ต้อง return false เสมอ
+   (ตัวปลดล็อกจริงอยู่ที่ backend: EMP_ALLOW_SKIP=1 ซึ่งตั้งไว้เฉพาะ Preview) */
+const EMP_PROD_HOSTS=['justsign-api.vercel.app','emp.signdee.com','app.signdee.com','nda.signdee.com','sale.signdee.com'];
+function _isTestEnv(){
+  const h=(location.hostname||'').toLowerCase();
+  if(EMP_PROD_HOSTS.includes(h)) return false;
+  if(/(^|\.)signdee\.com$/.test(h)) return false;
+  return /\.vercel\.app$/.test(h) || h==='localhost' || h==='127.0.0.1';
+}
+function _renderSkipBtn(){
+  const box=$('skipBox'); if(!box) return;
+  if(!_isTestEnv()){ box.innerHTML=''; box.style.display='none'; return; }
+  box.style.display='block';
+  box.innerHTML='<button class="btn ghost" onclick="skipPayment()">&#9889; ข้ามการชำระเงิน (staging)</button>'
+    + '<div class="mini" style="margin-top:6px;text-align:center">ปุ่มนี้ไม่แสดงบนโดเมน production</div>';
+}
+async function skipPayment(){
+  toast('กำลังปลดล็อก (staging)…');
+  const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'emp_content', row_id:S.rowId, skip:true, turnstile_token:await _turnstileToken()})});
+  const j=await r.json().catch(()=>({}));
+  if(!j||!j.ok){ toast('ข้ามไม่สำเร็จ: '+((j&&(j.message_th||j.code))||r.status)); return; }
+  if(_payPoll) clearInterval(_payPoll);
+  onPaid();
+}
+let _payPoll=null;
+async function startPayment(){
+  _renderSkipBtn();
+  $('qrbox').innerHTML='<div class="pay-status">กำลังสร้าง QR…</div>'; $('payStatus').textContent='';
+  try{
+    const r=await fetch(JUSTSIGN_API+'/api/create-payment-intent',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ contract_id:S.rowId, product:'emp', gateway:'beam', email:'support@signdee.com',
+                            idempotency_key:'emp_'+S.rowId+'_'+Date.now() })});
+    const j=await r.json();
+    const chargeId=j.charge_id||j.payment_intent_id;
+    if(!chargeId||!j.qr_image_png) throw new Error(j.error||'create_failed');
+    S._chargeId=chargeId;
+    $('qrbox').innerHTML=`<img src="${esc(j.qr_image_png)}" alt="PromptPay QR">`;
+    $('payStatus').textContent='รอการชำระเงิน…';
+    if(_payPoll) clearInterval(_payPoll);
+    _payPoll=setInterval(pollPayment,3500);
+  }catch(err){ $('qrbox').innerHTML='<div class="pay-status">สร้าง QR ไม่สำเร็จ</div>'; toast(err.message||'error'); }
+}
+async function pollPayment(){
+  if(!S._chargeId) return;
+  try{
+    const r=await fetch(JUSTSIGN_API+'/api/verify-payment-intent',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ payment_intent_id:S._chargeId, contract_id:S.rowId, product:'emp', gateway:'beam' })});
+    const j=await r.json();
+    if(j.paid){ clearInterval(_payPoll); onPaid(); }
+  }catch(_){}
+}
+async function onPaid(){
+  toast('ชำระเงินสำเร็จ ✓ กำลังปลดล็อก…');
+  try{ localStorage.setItem('emp_paid_at_'+S.rowId,new Date().toISOString()); }catch(_){}
+  await loadFullContent(); go('review');
+}
+async function loadFullContent(token){
+  const body={action:'emp_content', row_id:S.rowId};
+  if(token) body.token=token;
+  else if(S.creatorParty) body.creator_party=S.creatorParty;
+  body.turnstile_token=await _turnstileToken();
+  try{
+    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();
+    if(j&&j.ok&&j.clauses){
+      S.clauses=j.clauses; S.appendix=j.appendix; S.meta=j.meta||S.meta;
+      S.docHash=j.doc_hash||S.docHash; S.clauseCount=j.clause_count||S.clauseCount;
+      S.certNo=j.cert_no||S.certNo;
+      if(j.parties) S.parties=j.parties;
+      S.sig.a=j.a_signature||S.sig.a; S.sig.b=j.b_signature||S.sig.b;
+      renderReview(); return true;
+    }
+    toast('ปลดล็อกเนื้อหาไม่สำเร็จ: '+((j&&(j.message_th||j.code))||''));
+  }catch(e){ toast('ปลดล็อกเนื้อหาไม่สำเร็จ'); }
+  return false;
+}
+
+/* ═══════════════ REVIEW ═══════════════ */
+function _reviewPartyCard(which,role){
+  const m=(S.meta&&S.meta[which])||{};
+  const jur=(which==='a')?_jurOf('A'):null;
+  return `<div style="padding:10px 0;border-bottom:1px solid var(--line)">
+      <div style="font-weight:700;color:var(--blue);font-family:'Anuphan'">${role}</div>
+      <div style="margin-top:4px">${esc(m.name||(which==='a'?S.parties.a:S.parties.b)||'—')}</div>
+      <div class="mini" style="margin-top:3px">อายุ ${esc(m.age||'—')} ปี · บัตรประชาชนเลขที่ ${esc(m.id||'—')}</div>
+      <div class="mini" style="margin-top:2px">ที่อยู่ ${esc(m.addr||'—')}</div>
+      ${jur?`<div class="mini" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border2)">ในนาม ${esc(jur.name||'')} · ทะเบียน ${esc(jur.regNo||'')} · โดย ${esc(jur.signer||'')}</div>`:''}
+    </div>`;
+}
+function renderReview(){
+  $('reviewSub').textContent='อ่านให้ครบทั้ง '+(S.clauseCount||18)+' ข้อ พร้อมเอกสารแนบท้าย ก. ก่อนส่งเซ็น';
+  $('reviewParties').innerHTML=`
+    <div class="ocrbox" style="padding:6px 14px">
+      ${_reviewPartyCard('a','นายจ้าง')}
+      ${_reviewPartyCard('b','ลูกจ้าง')}
+      <div class="mini" style="padding:9px 0">SHA-256: <span class="mono">${esc((S.docHash||'').slice(0,24))}…</span></div>
+    </div>`;
+  renderDoc('docFull',S.clauses,S.appendix,false);
+}
+function pickRole(role){
+  S.creatorParty=role;
+  document.querySelectorAll('#rolePills .pill').forEach(p=>p.classList.toggle('on',p.getAttribute('data-role')===role));
+  $('reviewNext').disabled=false;
+}
+async function reviewNext(){
+  await loadFullContent();          // ส่ง creator_party ให้ backend เขียนด้วย service_role
+  const ok=await genTokens();
+  if(!ok) return;
+  if(S.creatorParty==='third'){ buildStatus(); go('status'); return; }
+  const who=S.creatorParty==='a'?'นายจ้าง':'ลูกจ้าง';
+  $('signTitle').textContent='ลงลายมือชื่อ — '+who;
+  $('signSub').textContent='คุณลงนามในฐานะ '+who;
+  go('sign'); initSig('sigCanvas');
+}
+async function genTokens(){
+  const {data,error}=await sb.rpc('emp_issue_tokens',{p_id:S.rowId,p_token:S.token});
+  if(error||!data||!data.ok){
+    toast('ออกลิงก์ลงนามไม่สำเร็จ'+((data&&data.code)?(' ('+data.code+')'):'')); return false;
+  }
+  S.tokens={a:data.a_read_token, b:data.b_read_token};
+  return true;
+}
+
+/* ═══════════════ SIGN (ผู้ร่าง) ═══════════════ */
+function onSigChange(id){ if(id==='sigCanvas') _updSign(); else _updRemote(); }
+function _updSign(){
+  const cv=$('sigCanvas');
+  $('signBtn').disabled = !($('signConsent').checked && cv && cv._has);
+}
+async function submitCreatorSign(){
+  const sig=sigDataUrl('sigCanvas');
+  if(!sig){ toast('กรุณาเซ็นก่อน'); return; }
+  $('signBtn').disabled=true;
+  const ip=await myIp();
+  const {data,error}=await sb.rpc('emp_submit_signature',{
+    p_id:S.rowId, p_token:S.token, p_party:S.creatorParty,
+    p_signature:sig, p_device:(navigator.userAgent||'').slice(0,200), p_ip:ip
+  });
+  if(error||!data||!data.ok){
+    toast('บันทึกลายเซ็นไม่สำเร็จ'+((data&&data.code)?(' ('+data.code+')'):''));
+    $('signBtn').disabled=false; return;
+  }
+  S.sig[S.creatorParty]=sig;
+  toast('บันทึกลายเซ็นแล้ว ✓');
+  buildStatus(); go('status'); pollStatus();
+}
+
+/* ═══════════════ STATUS ═══════════════ */
+function _signUrl(party){
+  const t=S.tokens&&S.tokens[party]; if(!t) return '';
+  return location.origin+location.pathname+'?e='+encodeURIComponent(S.rowId)+'&t='+encodeURIComponent(t)+'&p='+party;
+}
+function buildStatus(){
+  const need=[];
+  if(S.creatorParty!=='a') need.push(['a','นายจ้าง']);
+  if(S.creatorParty!=='b') need.push(['b','ลูกจ้าง']);
+  $('linkCards').innerHTML = need.map(([p,label])=>{
+    const url=_signUrl(p);
+    return `<div class="link-card">
+      <div class="lt">ลิงก์สำหรับ ${label}</div>
+      <div class="link-url mono">${esc(url)}</div>
+      <div class="btn-row">
+        <button class="btn ghost sm" onclick="copyLink('${p}')">คัดลอกลิงก์</button>
+        <button class="btn ghost sm" onclick="shareLine('${p}')">ส่งทาง LINE</button>
+      </div></div>`;
+  }).join('') || '<div class="mini">ไม่มีลิงก์ที่ต้องส่ง</div>';
+  renderStatusList({});
+}
+async function copyLink(p){
+  const ok=await _copyText(_signUrl(p));
+  toast(ok?'คัดลอกลิงก์แล้ว ✓':'คัดลอกไม่สำเร็จ');
+}
+function shareLine(p){
+  const url=_signUrl(p);
+  const msg='กรุณาลงนามหนังสือสัญญาจ้าง: '+url;
+  const share='https://line.me/R/msg/text/?'+encodeURIComponent(msg);
+  window.open(share,'_blank');
+}
+function renderStatusList(st){
+  const rows=[
+    {label:'นายจ้าง', done:!!st.a_signed_at || !!S.sig.a},
+    {label:'ลูกจ้าง', done:!!st.b_signed_at || !!S.sig.b},
+  ];
+  $('statusList').innerHTML=rows.map(r=>
+    `<div class="status-row ${r.done?'done':'wait'}"><span class="st">${r.done?'&#10003;':'&#9675;'}</span> ${esc(r.label)} ${r.done?'ลงนามแล้ว':'รอลงนาม'}</div>`).join('');
+  const all=rows.every(r=>r.done);
+  $('doneBtn').style.display=all?'block':'none';
+  if(all&&S.certNo) $('certNoDisp').textContent=S.certNo;
+}
+let _stPoll=null;
+async function pollStatus(){
+  if(_stPoll) clearInterval(_stPoll);
+  const tick=async()=>{
+    try{
+      const {data}=await sb.rpc('emp_sign_status',{p_id:S.rowId,p_token:S.token});
+      if(!data||!data.ok) return;
+      S.sig.a=data.a_signature||S.sig.a; S.sig.b=data.b_signature||S.sig.b;
+      S.certNo=data.cert_no||S.certNo;
+      renderStatusList(data);
+      if(data.a_signed_at&&data.b_signed_at){ clearInterval(_stPoll); toast('ลงนามครบทั้งสองฝ่ายแล้ว ✓'); }
+    }catch(_){}
+  };
+  await tick();
+  _stPoll=setInterval(tick,5000);
+}
+
+/* ═══════════════ REMOTE SIGN ═══════════════ */
+async function initRemote(rowId,token,partyHint){
+  S.rowId=rowId;
+  const {data,error}=await sb.rpc('emp_get_contract',{p_id:rowId,p_token:token});
+  if(error||!data||!data.ok){
+    console.error('[EMP] remote link failed', error||data);
+    toast('ลิงก์ลงนามไม่ถูกต้องหรือหมดอายุ'); go('landing'); return;
+  }
+  // role มาจาก DB (a / b / creator) เชื่อถือได้กว่า query string ที่อาจติดอักขระเกินตอนคัดลอก
+  const party = (data.role==='a'||data.role==='b') ? data.role : (partyHint||'b');
+  S.remote={token,party};
+  const row=data.row||{};
+  if(!row.payment_completed){ toast('สัญญานี้ยังไม่ได้ชำระเงิน'); go('landing'); return; }
+  S.parties={a:(row.party_a&&row.party_a.name)||'', b:(row.party_b&&row.party_b.name)||''};
+  S.docHash=row.doc_hash||''; S.certNo=row.cert_no||'';
+  S.sig.a=row.a_signature||null; S.sig.b=row.b_signature||null;
+  S._remoteRow=row;
+  const already = party==='a' ? row.a_signed_at : row.b_signed_at;
+
+  const okc=await loadFullContent(token);
+  if(!okc){ toast('โหลดสัญญาไม่สำเร็จ'); return; }
+  S.clauseCount=S.clauseCount||18;
+  renderDoc('rmDoc',S.clauses,S.appendix,false);
+
+  const who = party==='a' ? 'นายจ้าง' : 'ลูกจ้าง';
+  $('rmTitle').textContent='ลงนามหนังสือสัญญาจ้าง';
+  $('rmSub').textContent='คุณลงนามในฐานะ '+who+' — '+((party==='a'?S.parties.a:S.parties.b)||'');
+  go('remote');
+  if(already){
+    $('rmBtn').disabled=true; $('rmBtn').textContent='ลงนามแล้ว ✓';
+    toast('คุณลงนามสัญญาฉบับนี้แล้ว');
+  }else{
+    initSig('rmCanvas'); _renderLineBox(); _updRemote(); _initLiff();
+  }
+}
+/* ยืนยันตัวตน — ลิงก์ถือ token uuid (128-bit) อยู่แล้ว จึงไม่บังคับกรอกเลขบัตร 4 ตัวท้าย
+   ถ้าตั้ง EMP_LIFF_ID จะมีปุ่มยืนยันด้วย LINE เพิ่มให้ (รูปแบบเดียวกับ NDA) */
+const EMP_LIFF_ID = '';   // ← ใส่ LIFF ID ของแอปสัญญาจ้างเมื่อพร้อม จึงจะมีปุ่ม LINE
+function _lineVerified(){ return !!(S.line && S.line.userId); }
+function _renderLineBox(){
+  const box=$('rmLineBox'); if(!box) return;
+  if(_lineVerified()){
+    const pic=S.line.pic?`<img src="${esc(S.line.pic)}" alt="">`
+      :'<div style="width:42px;height:42px;border-radius:50%;background:#06C755;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">L</div>';
+    box.innerHTML=`<label class="fl">ยืนยันตัวตน</label>
+      <div class="lineid ok">${pic}<div style="flex:1;min-width:0">
+        <div class="nm">${esc(S.line.name||'บัญชี LINE')}</div>
+        <div class="st">&#10003; ยืนยันตัวตนด้วยบัญชี LINE แล้ว</div></div></div>`;
+  }else if(EMP_LIFF_ID){
+    box.innerHTML=`<label class="fl">ยืนยันตัวตน (ไม่บังคับ)</label>
+      <button class="btn ghost" type="button" onclick="_liffLogin()">ยืนยันตัวตนด้วย LINE</button>`;
+  }else{
+    box.innerHTML='';
+  }
+  _updRemote();
+}
+async function _initLiff(){
+  if(!EMP_LIFF_ID || !window.liff) return;
+  try{
+    await liff.init({liffId:EMP_LIFF_ID});
+    if(liff.isLoggedIn()){
+      const pr=await liff.getProfile();
+      S.line={userId:pr.userId,name:pr.displayName,pic:pr.pictureUrl};
+      _renderLineBox();
+    }
+  }catch(err){ console.warn('[EMP] liff init failed',err); }
+}
+function _liffLogin(){
+  if(!EMP_LIFF_ID||!window.liff){ toast('ยังไม่ได้เปิดใช้การยืนยันด้วย LINE'); return; }
+  try{ liff.login({redirectUri:location.href}); }catch(err){ toast('เปิด LINE ไม่สำเร็จ'); }
+}
+function _updRemote(){
+  const cv=$('rmCanvas');
+  $('rmBtn').disabled = !($('rmConsent').checked && cv && cv._has);
+}
+async function submitRemoteSign(){
+  const sig=sigDataUrl('rmCanvas');
+  if(!sig){ toast('กรุณาเซ็นก่อน'); return; }
+  $('rmBtn').disabled=true;
+  const ip=await myIp();
+  const {data,error}=await sb.rpc('emp_submit_signature',{
+    p_id:S.rowId, p_token:S.remote.token, p_party:S.remote.party,
+    p_signature:sig, p_device:(navigator.userAgent||'').slice(0,200), p_ip:ip
+  });
+  if(error||!data||!data.ok){
+    toast('ลงนามไม่สำเร็จ'+((data&&data.code)?(' ('+data.code+')'):''));
+    $('rmBtn').disabled=false; return;
+  }
+  S.sig[S.remote.party]=sig; S.certNo=data.cert_no||S.certNo;
+  $('rmBtn').textContent='ลงนามแล้ว ✓';
+  toast('ลงนามเรียบร้อย ✓');
+  if(data.a_signed_at&&data.b_signed_at){
+    $('certNoDisp').textContent=S.certNo||'—';
+    setTimeout(()=>go('done'),1200);
+  }
+}
+
+/* ═══════════════ PDF / EVIDENCE PACK ═══════════════ */
+async function buildEvidencePDF(){
+  toast('กำลังสร้าง PDF…');
+  $('dlBtn').disabled=true;
+  try{
+    const {data,error}=await sb.rpc('emp_get_contract',{p_id:S.rowId,p_token:S.token||(S.remote&&S.remote.token)});
+    if(error||!data||!data.ok) throw new Error('load_failed');
+    const row=data.row||{};
+    if(!S.clauses||!S.appendix) await loadFullContent(S.remote?S.remote.token:undefined);
+    const cl=S.clauses||row.clauses||{};
+    const ap=S.appendix||{title:'เอกสารแนบท้าย ก. — รายละเอียดตำแหน่งงาน',position:row.position_th,
+                          responsibilities:(row.jd&&row.jd.responsibilities)||[],
+                          qualifications:(row.jd&&row.jd.qualifications)||[],
+                          kpis:(row.jd&&row.jd.kpis)||[]};
+    const A=row.party_a||{}, B=row.party_b||{};
+    const aCard=row.a_card||{}, bCard=row.b_card||{};
+    const jur=(A&&A.jur)||null;
+    const hash=row.doc_hash||S.docHash||'';
+    const cno=row.cert_no||S.certNo||('SDE-'+(new Date().getFullYear()+543)+'-'+hash.slice(0,12).toUpperCase());
+    let paidIso=row.paid_at; if(!paidIso){ try{ paidIso=localStorage.getItem('emp_paid_at_'+row.id)||null; }catch(_){} }
+    const dateTh=_pdDateTh(paidIso||row.created_at);
+    const n=(S.clauseCount)||(cl.c19?19:18);
+
+    const placeArr = jur
+      ? [[jur.addrNo,jur.road?('ถนน'+jur.road):''].filter(Boolean).join(' '),
+         [jur.subdistrict?('ต.'+jur.subdistrict):'',jur.district?('อ.'+jur.district):'',jur.province?('จ.'+jur.province):''].filter(Boolean).join(' ')]
+      : _addrTwoLines((A.address||'').trim());
+
+    const pl=(p,role)=>{
+      const nm=(p&&p.name)||'________________';
+      const id=(p&&p.id13)||'________________';
+      const ad=(p&&p.address)||'________________';
+      return `${esc(nm)} บัตรประจำตัวประชาชนเลขที่ ${esc(id)} อยู่บ้านเลขที่ ${esc(ad)} ต่อไปนี้เรียกว่า "${role}"`;
+    };
+    const jurLine = jur ? `${esc(jur.name||'')} ทะเบียนนิติบุคคลเลขที่ ${esc(jur.regNo||'')} โดย ${esc(jur.signer||'')} ตำแหน่ง ${esc(jur.signerTitle||'ผู้มีอำนาจลงนาม')} ต่อไปนี้เรียกว่า "นายจ้าง"` : pl(A,'นายจ้าง');
+    const ageB=_pdAge(bCard); const ageA=_pdAge(aCard);
+
+    const sigBlock=(sig,name,role)=>`<div class="col">
+        <div class="pd-sig-img">${sig?`<img src="${sig}">`:''}</div>
+        <div class="pd-sig-ln">ลงชื่อ ...................................... ${role}</div>
+        <div class="pd-sig-nm">( ${esc(name||'________________')} )</div>
+      </div>`;
+
+    /* ── แบ่งหน้าตามความสูงจริง (เดิมแบ่งทุก 6 ข้อ → เนื้อหาล้นหน้าแล้วโดนบีบให้เล็กลง) ── */
+    const pd0=$('printDoc'); pd0.className='pd-render';
+    const _probe=document.createElement('div');
+    _probe.className='pd-page';
+    _probe.style.cssText='min-height:0;position:absolute;left:-99999px;top:0;visibility:hidden';
+    pd0.appendChild(_probe);
+    const PAGE_H=1123;                       // A4 ที่ 96dpi — .pd-page เป็น border-box จึงรวม padding แล้ว
+    function _fits(html){ _probe.innerHTML=html; return _probe.scrollHeight<=PAGE_H; }
+    function _paginate(headerHtml, blocks){
+      const out=[]; let cur=headerHtml||'';
+      for(const b of blocks){
+        if(cur && !_fits(cur+b)){ out.push(cur); cur=b; }
+        else cur+=b;
+      }
+      if(cur.trim()) out.push(cur);
+      return out.map(h=>`<div class="pd-page">${h}</div>`).join('');
+    }
+
+    /* หัวสัญญา — รูปแบบเดียวกับ NDA */
+    const headHtml=`<div class="pd-title">หนังสือสัญญาจ้าง</div>
+      <div class="pd-no">เลขที่ ${esc(row.contract_no||'')}</div>
+      <div class="pd-place">ทำที่ ${esc(placeArr[0]||'................................................')}</div>
+      ${placeArr[1]?`<div class="pd-place" style="margin-top:0">${esc(placeArr[1])}</div>`:''}
+      <div class="pd-date">วันที่ ${esc(dateTh||'....................')}</div>
+      <div class="pd-clause"><b>ระหว่าง:</b> ${jurLine} ฝ่ายหนึ่ง</div>
+      <div class="pd-clause"><b>กับ</b> ${pl(B,'ลูกจ้าง')}${ageB?(' อายุ '+esc(ageB)+' ปี'):''} อีกฝ่ายหนึ่ง</div>
+      <div class="pd-clause">คู่สัญญาทั้งสองฝ่ายตกลงทำสัญญาจ้างกันโดยมีข้อความ ดังต่อไปนี้</div>`;
+
+    /* ทุกข้อต้องห่อด้วย .pd-clause — CSS ทั้งหมดอยู่ใต้ selector นี้ ถ้าไม่ห่อจะไม่มีสไตล์เลย */
+    const blocks=[];
+    for(let i=1;i<=n;i++) blocks.push(`<div class="pd-clause">${_pdClauseHtml(cl['c'+i]||'')}</div>`);
+
+    /* สำเนาบัตรประชาชนบนหน้าลงนาม */
+    const idCopy=(label,name,img)=> img
+      ? `<div style="flex:1;text-align:center">
+           <div style="font-size:11.5px;color:#666;margin-bottom:5px">สำเนาบัตรประจำตัวประชาชน — ${esc(label)}</div>
+           <div class="apc-wrap" style="display:inline-block;position:relative;max-width:100%">
+             <img src="${img}" style="height:230px;width:auto;max-width:100%;object-fit:contain;border:1px solid #d0ccc4;border-radius:8px;display:block;margin:0 auto">
+             <div class="apc-wm"><span>ใช้เพื่อประกอบหนังสือสัญญาจ้างเท่านั้น</span></div>
+           </div>
+           <div style="font-size:11.5px;color:#555;margin-top:6px">รับรองสำเนาถูกต้อง<br>( ${esc(name||'________________')} )</div>
+         </div>`
+      : `<div style="flex:1"></div>`;
+
+    /* ปิดท้าย + ลายเซ็น = บล็อกเดียว ไม่ให้ลายเซ็นหลุดไปอยู่คนละหน้ากับข้อความปิดท้าย */
+    blocks.push(`<div class="pd-clause">
+        <div class="pd-para">คู่สัญญาทั้งสองฝ่ายได้อ่านและเข้าใจข้อความในสัญญานี้โดยตลอดแล้ว เห็นว่าถูกต้องตรงตามเจตนา จึงได้ลงลายมือชื่ออิเล็กทรอนิกส์ไว้เป็นสำคัญ พร้อมด้วยเอกสารแนบท้าย ก. และเอกสารแนบท้าย ข. ซึ่งถือเป็นส่วนหนึ่งของสัญญานี้</div>
+        <div class="pd-sig">${sigBlock(row.a_signature,(jur&&jur.signer)||A.name,'นายจ้าง')}${sigBlock(row.b_signature,B.name,'ลูกจ้าง')}</div>
+        ${(jur&&jur.sealImg)?`<div style="text-align:center;margin-top:20px"><img src="${jur.sealImg}" style="height:96px;width:auto;object-fit:contain"><div style="font-size:11.5px;color:#666;margin-top:4px">(ตราประทับนิติบุคคล)</div></div>`:''}
+      </div>`);
+
+    let pages=_paginate(headHtml, blocks);
+
+    /* ── เอกสารแนบท้าย ก. ── */
+    const apSec=(t,arr)=> (arr&&arr.length)?`<h4>${t}</h4><ul>${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:'';
+    pages+=`<div class="pd-page ap-jd">
+        <div class="ap-page-header">
+          <div class="ap-page-title">เอกสารแนบท้าย ก.</div>
+          <div class="ap-page-sub">รายละเอียดตำแหน่งงาน (Job Description)</div>
+          <div class="ap-page-meta">แนบท้ายหนังสือสัญญาจ้างเลขที่ ${esc(row.contract_no||'')}</div>
+        </div>
+        <div class="pd-clause"><div class="pd-para" style="text-indent:0"><b>ตำแหน่ง:</b> ${esc(ap.position||row.position_th||'')}</div></div>
+        ${apSec('ขอบเขตงานและหน้าที่ความรับผิดชอบ',ap.responsibilities)}
+        ${apSec('คุณสมบัติ',ap.qualifications)}
+        ${apSec('ตัวชี้วัดผลการปฏิบัติงาน',ap.kpis)}
+        <div class="ap-footer">เอกสารแนบท้ายนี้เป็นส่วนหนึ่งของหนังสือสัญญาจ้าง</div>
+      </div>`;
+
+    /* ── เอกสารแนบท้าย ข. — สำเนาบัตรประจำตัวประชาชน ── */
+    pages+=`<div class="pd-page">
+        <div class="ap-page-header">
+          <div class="ap-page-title">เอกสารแนบท้าย ข.</div>
+          <div class="ap-page-sub">สำเนาบัตรประจำตัวประชาชนของคู่สัญญา</div>
+          <div class="ap-page-meta">แนบท้ายหนังสือสัญญาจ้างเลขที่ ${esc(row.contract_no||'')}</div>
+        </div>
+        <div style="display:flex;gap:34px;margin-top:22px;align-items:flex-start">
+          ${idCopy('นายจ้าง',(jur&&jur.signer)||A.name,aCard.image)}
+          ${idCopy('ลูกจ้าง',B.name,bCard.image)}
+        </div>
+        <div class="ap-footer">สำเนาเอกสารแสดงตนนี้ใช้เพื่อประกอบหนังสือสัญญาจ้างเท่านั้น และถูกลบออกจากระบบอัตโนมัติภายใน 60 วัน</div>
+      </div>`;
+
+    /* ── ใบรับรองการลงนาม ── */
+    const rowCert=(k,v,utc)=>`<div class="cert-row"><div class="cert-meta-k">${k}</div><div class="cert-meta-v">${v}${utc?`<div class="cert-utc">${utc}</div>`:''}</div></div>`;
+    pages+=`<div class="pd-page">
+        <div class="ap-page-header">
+          <div class="ap-page-title">ใบรับรองการลงลายมือชื่ออิเล็กทรอนิกส์</div>
+          <div class="ap-page-sub">Electronic Signature Certificate</div>
+        </div>
+        <div class="cert-table">
+          ${rowCert('เลขที่ใบรับรอง','<span class="mono">'+esc(cno)+'</span>')}
+          ${rowCert('เลขที่สัญญา',esc(row.contract_no||'—'))}
+          ${rowCert('Transaction ID','<span class="mono">'+esc(row.id||'')+'</span>')}
+          ${rowCert('สถานะ',esc(row.status||''))}
+        </div>
+        <div class="cert-sec-title">บันทึกการลงนาม</div>
+        <div class="cert-table">
+          ${rowCert('นายจ้าง — '+esc((jur&&jur.signer)||A.name||'—'), _pdLocal(row.a_signed_at)+'<br>'+_pdDevice(row.a_sign_device)+' · IP '+esc(row.a_sign_ip||'—'), fmtUTC(row.a_signed_at))}
+          ${rowCert('ลูกจ้าง — '+esc(B.name||'—'), _pdLocal(row.b_signed_at)+'<br>'+_pdDevice(row.b_sign_device)+' · IP '+esc(row.b_sign_ip||'—'), fmtUTC(row.b_signed_at))}
+        </div>
+        <div class="cert-hash">SHA-256: ${esc(hash||'—')}</div>
+        <div class="cert-legal">
+          <div class="cert-legal-title">ข้อความรับรอง</div>
+          เอกสารฉบับนี้จัดทำและลงลายมือชื่อด้วยวิธีการทางอิเล็กทรอนิกส์ ตามพระราชบัญญัติว่าด้วยธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544
+          ค่าแฮช SHA-256 ข้างต้นคำนวณจากเนื้อหาสัญญาและเอกสารแนบท้าย ณ เวลาที่จัดทำ หากเนื้อหาถูกแก้ไขแม้เพียงอักขระเดียว ค่าแฮชจะเปลี่ยนไป
+        </div>
+        <div class="cert-note">ออกโดยระบบ SignDee · ${esc(_pdLocal(new Date().toISOString()))}</div>
+      </div>`;
+
+    /* ── ภาคผนวก: หนังสือรับรองนิติบุคคล (บัตรประชาชนย้ายไปหน้าลงนามแล้ว) ── */
+    if(aCard.cert_image){
+      pages+=`<div class="pd-page">
+        <div class="ap-page-header">
+          <div class="ap-page-title">ภาคผนวก — หนังสือรับรองนิติบุคคล</div>
+          <div class="ap-page-meta">แนบท้ายหนังสือสัญญาจ้างเลขที่ ${esc(row.contract_no||'')}</div>
+        </div>
+        <div class="apc-card"><div class="apc-hd">หนังสือรับรอง</div><div class="apc-img"><div class="apc-wrap">
+          <img src="${aCard.cert_image}"><div class="apc-wm"><span>ใช้เพื่อประกอบหนังสือสัญญาจ้างเท่านั้น</span></div>
+        </div></div></div>
+        <div class="ap-footer">รูปเอกสารแสดงตนถูกลบออกจากระบบอัตโนมัติภายใน 60 วัน</div>
+      </div>`;
+    }
+    _probe.remove();
+
+    const pd=$('printDoc'); pd.className='pd-render'; pd.innerHTML=pages;
+    await new Promise(r=>setTimeout(r,260));
+
+    const jsPDFCtor=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+    const pdf=new jsPDFCtor('p','mm','a4');
+    const els=[...pd.querySelectorAll('.pd-page')];
+    for(let i=0;i<els.length;i++){
+      const cv=await html2canvas(els[i],{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+      const img=cv.toDataURL('image/jpeg',0.92);
+      if(i) pdf.addPage();
+      const hmm=cv.height*210/cv.width;
+      if(hmm<=297){ pdf.addImage(img,'JPEG',0,0,210,hmm); }
+      else { const sc=297/hmm; pdf.addImage(img,'JPEG',(210-210*sc)/2,0,210*sc,297); }  // ย่อทั้งภาพ ไม่บิดสัดส่วน
+    }
+    pdf.save('สัญญาจ้าง-'+(row.contract_no||S.rowId)+'.pdf');
+    pd.innerHTML=''; pd.className='';
+    toast('ดาวน์โหลดแล้ว ✓');
+  }catch(e){
+    console.error(e); toast('สร้าง PDF ไม่สำเร็จ: '+(e.message||e));
+  }
+  $('dlBtn').disabled=false;
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ประกันสังคม — คำนวณเงินสมทบ · สปส.1-10 · ไฟล์ e-Service · สลิปเงินเดือน
+   อ้างอิง: กฎกระทรวงฯ ราชกิจจานุเบกษา 12 ธ.ค. 2568 มีผล 1 ม.ค. 2569
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* เพดานฐานค่าจ้าง 3 ระยะ — ปีเป็น พ.ศ.
+   ⚠️ ฐานขั้นต่ำ 1,650 เป็นค่าที่ใช้มาแต่เดิม ควรยืนยันกับ สปส. อีกครั้ง */
+const SSO_TIERS = [
+  { fromBE: 0,    toBE: 2568, floor: 1650, ceiling: 15000, rate: 0.05 },
+  { fromBE: 2569, toBE: 2571, floor: 1650, ceiling: 17500, rate: 0.05 },
+  { fromBE: 2572, toBE: 2574, floor: 1650, ceiling: 20000, rate: 0.05 },
+  { fromBE: 2575, toBE: 9999, floor: 1650, ceiling: 23000, rate: 0.05 },
+];
+function ssoTier(yearBE){
+  return SSO_TIERS.find(t=>yearBE>=t.fromBE&&yearBE<=t.toBE) || SSO_TIERS[SSO_TIERS.length-1];
+}
+/* เงินสมทบฝ่ายละ 5% ของฐานค่าจ้างที่ปรับเข้ากรอบแล้ว ปัดเศษ 2 ตำแหน่ง */
+function ssoCalc(wage, yearBE){
+  const t=ssoTier(yearBE);
+  const w=Math.max(0, Number(wage)||0);
+  const base = w<=0 ? 0 : Math.min(Math.max(w, t.floor), t.ceiling);
+  const one = Math.round(base*t.rate*100)/100;
+  return { base, tier:t, employee:one, employer:one, total:Math.round(one*2*100)/100 };
+}
+
+const SSO_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const SSO_PREFIX=[['นาย','001'],['นาง','002'],['นางสาว','003']];
+function ssoPrefixCode(p){ const h=SSO_PREFIX.find(x=>x[0]===String(p||'').trim()); return h?h[1]:'000'; }
+
+let SSO={ rows:[], month:new Date().getMonth()+1, year:new Date().getFullYear()+543 };
+
+function ssoMoney(v){ return (Number(v)||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+/* ── โหลด/บันทึกค่า (localStorage เท่านั้น ไม่ส่งข้อมูลเงินเดือนขึ้นเซิร์ฟเวอร์) ── */
+function ssoSave(){
+  try{ localStorage.setItem('signdee_sso', JSON.stringify({
+    acct:$('ssoAcct').value, branch:$('ssoBranch').value, name:$('ssoName').value,
+    payDate:$('ssoPayDate').value, yearMode:$('ssoYearMode').value, enc:$('ssoEnc').value,
+    rows:SSO.rows, month:SSO.month, year:SSO.year })); }catch(_){}
+}
+function ssoLoad(){
+  try{
+    const d=JSON.parse(localStorage.getItem('signdee_sso')||'{}');
+    if(d.acct) $('ssoAcct').value=d.acct;
+    if(d.branch) $('ssoBranch').value=d.branch;
+    if(d.name) $('ssoName').value=d.name;
+    if(d.payDate) $('ssoPayDate').value=d.payDate;
+    if(d.yearMode) $('ssoYearMode').value=d.yearMode;
+    if(d.enc) $('ssoEnc').value=d.enc;
+    if(Array.isArray(d.rows)) SSO.rows=d.rows;
+    if(d.month) SSO.month=d.month;
+    if(d.year) SSO.year=d.year;
+  }catch(_){}
+}
+
+function ssoInit(){
+  if($('ssoMonth').options.length) return;
+  $('ssoMonth').innerHTML=SSO_MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  const y=new Date().getFullYear()+543;
+  $('ssoYear').innerHTML=[y-1,y,y+1].map(v=>`<option value="${v}">พ.ศ. ${v}</option>`).join('');
+  if(!$('ssoPayDate').value){
+    const d=new Date(); d.setMonth(d.getMonth()+1); d.setDate(15);
+    $('ssoPayDate').value=d.toISOString().slice(0,10);
+  }
+  ssoLoad();
+  $('ssoMonth').value=SSO.month; $('ssoYear').value=SSO.year;
+  $('ssoFile').addEventListener('change', ssoOnFile);
+  ssoRender();
+}
+
+/* ── กำหนดยื่น: ภายในวันที่ 15 ของเดือนถัดจากงวดค่าจ้าง ── */
+function ssoDueDate(){
+  const m=SSO.month, yBE=SSO.year;
+  let dm=m+1, dy=yBE; if(dm>12){ dm=1; dy++; }
+  return new Date(dy-543, dm-1, 15);
+}
+function ssoRenderDue(){
+  const due=ssoDueDate();
+  const now=new Date(); const t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const days=Math.round((due-t0)/864e5);
+  const txt='งวดค่าจ้าง '+SSO_MONTHS[SSO.month-1]+' พ.ศ. '+SSO.year
+    +' &mdash; ต้องยื่นและชำระภายในวันที่ 15 '+SSO_MONTHS[due.getMonth()]+' พ.ศ. '+(due.getFullYear()+543);
+  let cls='ok', extra='';
+  if(days<0){ cls='late'; extra='<br><b>เลยกำหนดมาแล้ว '+Math.abs(days)+' วัน</b> &mdash; เงินเพิ่มร้อยละ 2 ต่อเดือนของเงินสมทบที่ค้าง'; }
+  else if(days<=7){ cls='warn'; extra='<br><b>เหลืออีก '+days+' วัน</b>'; }
+  else extra='<br>เหลืออีก '+days+' วัน';
+  $('ssoDue').innerHTML='<div class="sso-due '+cls+'">'+txt+extra+'</div>';
+}
+
+/* ── ตาราง ── */
+function ssoAddRow(){ SSO.rows.push({prefix:'นาย',first:'',last:'',id13:'',wage:0,tax:0}); ssoRender(); }
+function ssoDelRow(i){ SSO.rows.splice(i,1); ssoRender(); }
+function ssoEdit(i,k,v){
+  const r=SSO.rows[i]; if(!r) return;
+  if(k==='wage'||k==='tax') r[k]=Number(String(v).replace(/[^\d.]/g,''))||0;
+  else if(k==='id13') r.id13=String(v).replace(/\D/g,'').slice(0,13);
+  else r[k]=v;
+  ssoRender(k==='wage'||k==='tax');
+}
+function ssoRender(keepFocus){
+  SSO.month=+$('ssoMonth').value||SSO.month;
+  SSO.year=+$('ssoYear').value||SSO.year;
+  ssoRenderDue();
+  const t=ssoTier(SSO.year);
+  const tb=$('ssoTbl');
+  if(!SSO.rows.length){
+    tb.innerHTML='<tr><td class="mini" style="padding:18px 4px">ยังไม่มีรายชื่อลูกจ้าง &mdash; อัปโหลดไฟล์ หรือกด "เพิ่มทีละคน"</td></tr>';
+    $('ssoSum').innerHTML=''; ssoSave(); return;
+  }
+  const head='<tr><th>#</th><th>คำนำหน้า</th><th>ชื่อ</th><th>นามสกุล</th><th>เลขบัตรประชาชน</th><th>ค่าจ้าง</th><th>ฐานคำนวณ</th><th>สมทบลูกจ้าง</th><th>สมทบนายจ้าง</th><th></th></tr>';
+  const body=SSO.rows.map((r,i)=>{
+    const c=ssoCalc(r.wage,SSO.year);
+    const idBad=r.id13&&!validThaiId(r.id13);
+    return `<tr class="${idBad?'sso-bad':''}">
+      <td class="mini">${i+1}</td>
+      <td><select onchange="ssoEdit(${i},'prefix',this.value)">${SSO_PREFIX.map(([p])=>`<option${p===r.prefix?' selected':''}>${p}</option>`).join('')}</select></td>
+      <td><input value="${esc(r.first||'')}" oninput="ssoEdit(${i},'first',this.value)"></td>
+      <td><input value="${esc(r.last||'')}" oninput="ssoEdit(${i},'last',this.value)"></td>
+      <td><input inputmode="numeric" maxlength="13" value="${esc(r.id13||'')}" oninput="ssoEdit(${i},'id13',this.value)"></td>
+      <td><input inputmode="decimal" class="num" value="${esc(String(r.wage||0))}" oninput="ssoEdit(${i},'wage',this.value)"></td>
+      <td class="num mini">${ssoMoney(c.base)}</td>
+      <td class="num">${ssoMoney(c.employee)}</td>
+      <td class="num">${ssoMoney(c.employer)}</td>
+      <td><button class="rm" type="button" onclick="ssoDelRow(${i})" aria-label="ลบ">&times;</button></td>
+    </tr>`;
+  }).join('');
+  tb.innerHTML=head+body;
+
+  const tot=ssoTotals();
+  const badIds=SSO.rows.filter(r=>r.id13&&!validThaiId(r.id13)).length;
+  const noId=SSO.rows.filter(r=>!r.id13||r.id13.length!==13).length;
+  const capped=SSO.rows.filter(r=>Number(r.wage)>t.ceiling).length;
+  $('ssoSum').innerHTML=`<div class="sso-sum">
+      <div class="r"><span>จำนวนผู้ประกันตน</span><span class="v">${tot.count} คน</span></div>
+      <div class="r"><span>รวมค่าจ้าง</span><span class="v">${ssoMoney(tot.wage)} บาท</span></div>
+      <div class="r"><span>เงินสมทบส่วนผู้ประกันตน (5%)</span><span class="v">${ssoMoney(tot.employee)} บาท</span></div>
+      <div class="r"><span>เงินสมทบส่วนนายจ้าง (5%)</span><span class="v">${ssoMoney(tot.employer)} บาท</span></div>
+      <div class="r tot"><span>รวมนำส่งทั้งสิ้น</span><span class="v">${ssoMoney(tot.total)} บาท</span></div>
+      <div class="mini" style="margin-top:9px;line-height:1.6">ฐานค่าจ้างที่ใช้คำนวณปี ${SSO.year}: ${ssoMoney(t.floor)} &ndash; ${ssoMoney(t.ceiling)} บาท &middot; สมทบสูงสุดฝ่ายละ ${ssoMoney(t.ceiling*t.rate)} บาท/เดือน</div>
+    </div>`
+    + (capped?`<div class="warnrow">&#9888; มี ${capped} คนที่ค่าจ้างเกินเพดาน ระบบคำนวณจากเพดาน ${ssoMoney(t.ceiling)} บาทให้แล้ว</div>`:'')
+    + (badIds?`<div class="warnrow">&#9888; มี ${badIds} คนที่เลขบัตรประชาชนตรวจสอบไม่ผ่าน (แถวสีแดง)</div>`:'')
+    + (noId?`<div class="warnrow">&#9888; มี ${noId} คนที่ยังไม่ได้กรอกเลขบัตรประชาชนครบ 13 หลัก &mdash; ไฟล์อัปโหลดจะไม่ผ่าน</div>`:'');
+  ssoSave();
+}
+function ssoTotals(){
+  let wage=0, employee=0, employer=0;
+  for(const r of SSO.rows){
+    const c=ssoCalc(r.wage,SSO.year);
+    wage+=Number(r.wage)||0; employee+=c.employee; employer+=c.employer;
+  }
+  const rnd=v=>Math.round(v*100)/100;
+  return {count:SSO.rows.length, wage:rnd(wage), employee:rnd(employee), employer:rnd(employer), total:rnd(employee+employer)};
+}
+
+
+/* ── นำเข้า CSV / Excel ────────────────────────────────────────── */
+const SSO_COLS={
+  prefix:['คำนำหน้า','คํานําหน้า','prefix','title'],
+  first :['ชื่อ','ชื่อจริง','firstname','first_name','first','name'],
+  last  :['นามสกุล','สกุล','lastname','last_name','last','surname'],
+  id13  :['เลขบัตรประชาชน','เลขประจำตัวประชาชน','เลขประจําตัวประชาชน','บัตรประชาชน','id','idcard','citizen_id','national_id'],
+  wage  :['ค่าจ้าง','เงินเดือน','ค่าจ้างรวม','salary','wage'],
+  tax   :['ภาษี','ภาษีหัก ณ ที่จ่าย','tax','wht'],
+};
+function _ssoNorm(x){ return String(x==null?'':x).toLowerCase().replace(/[\s_\-\.]/g,''); }
+function _ssoMapHeader(headers){
+  const map={};
+  headers.forEach((h,i)=>{
+    const n=_ssoNorm(h);
+    for(const key in SSO_COLS){
+      if(map[key]!==undefined) continue;
+      if(SSO_COLS[key].some(c=>_ssoNorm(c)===n)) { map[key]=i; break; }
+    }
+  });
+  return map;
+}
+/* CSV parser รองรับเครื่องหมายคำพูดและคอมมาในค่า */
+function _ssoParseCSV(text){
+  text=String(text).replace(/^﻿/,'');
+  const rows=[]; let row=[], cell='', q=false;
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(q){
+      if(ch==='"'){ if(text[i+1]==='"'){cell+='"';i++;} else q=false; }
+      else cell+=ch;
+    }else{
+      if(ch==='"') q=true;
+      else if(ch===','||ch===';'||ch==='\t'){ row.push(cell); cell=''; }
+      else if(ch==='\n'){ row.push(cell); rows.push(row); row=[]; cell=''; }
+      else if(ch!=='\r') cell+=ch;
+    }
+  }
+  if(cell!==''||row.length){ row.push(cell); rows.push(row); }
+  return rows.filter(r=>r.some(c=>String(c).trim()!==''));
+}
+function _ssoIngest(rows){
+  if(!rows.length){ $('ssoErr').innerHTML='<div class="warnrow">&#9888; ไฟล์ว่าง</div>'; return; }
+  const map=_ssoMapHeader(rows[0].map(x=>String(x)));
+  if(map.wage===undefined || (map.first===undefined&&map.last===undefined)){
+    $('ssoErr').innerHTML='<div class="warnrow">&#9888; หาคอลัมน์ไม่เจอ ต้องมีอย่างน้อย "ชื่อ" และ "ค่าจ้าง" &mdash; กด "ดาวน์โหลดไฟล์ตัวอย่าง" เพื่อดูรูปแบบที่ถูกต้อง</div>';
+    return;
+  }
+  const get=(r,k)=> map[k]===undefined ? '' : String(r[map[k]]==null?'':r[map[k]]).trim();
+  const out=[];
+  for(let i=1;i<rows.length;i++){
+    const r=rows[i];
+    let first=get(r,'first'), last=get(r,'last'), prefix=get(r,'prefix');
+    if(!last && first){                       // ช่องเดียวมีทั้งชื่อและสกุล
+      const parts=first.split(/\s+/);
+      if(parts.length>=2){ last=parts.slice(1).join(' '); first=parts[0]; }
+    }
+    if(!prefix){                              // คำนำหน้าติดมากับชื่อ
+      const hit=SSO_PREFIX.find(([p])=>first.indexOf(p)===0);
+      if(hit){ prefix=hit[0]; first=first.slice(hit[0].length).trim(); }
+    }
+    if(!first&&!last) continue;
+    out.push({
+      prefix: SSO_PREFIX.some(([p])=>p===prefix)?prefix:'นาย',
+      first, last,
+      id13: get(r,'id13').replace(/\D/g,'').slice(0,13),
+      wage: Number(get(r,'wage').replace(/[^\d.]/g,''))||0,
+      tax:  Number(get(r,'tax').replace(/[^\d.]/g,''))||0,
+    });
+  }
+  if(!out.length){ $('ssoErr').innerHTML='<div class="warnrow">&#9888; ไม่พบรายชื่อในไฟล์</div>'; return; }
+  SSO.rows=out;
+  $('ssoErr').innerHTML='<div class="mini" style="margin-top:8px">นำเข้าแล้ว '+out.length+' รายชื่อ &mdash; ตรวจสอบและแก้ไขในตารางได้</div>';
+  ssoRender();
+}
+function _ssoLoadScript(src){
+  return new Promise((ok,err)=>{ const t=document.createElement('script'); t.src=src; t.onload=ok; t.onerror=err; document.head.appendChild(t); });
+}
+async function ssoOnFile(e){
+  const f=e.target.files&&e.target.files[0]; if(!f) return;
+  $('ssoErr').innerHTML='<div class="mini" style="margin-top:8px">กำลังอ่านไฟล์…</div>';
+  try{
+    if(/\.(xlsx|xls)$/i.test(f.name)){
+      if(!window.XLSX) await _ssoLoadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+      const buf=await f.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array'});
+      const sheet=wb.Sheets[wb.SheetNames[0]];
+      _ssoIngest(XLSX.utils.sheet_to_json(sheet,{header:1,raw:false,defval:''}));
+    }else{
+      _ssoIngest(_ssoParseCSV(await f.text()));
+    }
+  }catch(err){
+    console.error(err);
+    $('ssoErr').innerHTML='<div class="warnrow">&#9888; อ่านไฟล์ไม่สำเร็จ: '+esc(err.message||err)+'</div>';
+  }
+  e.target.value='';
+}
+function _ssoDownload(name, blob){
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},400);
+}
+function ssoTemplate(){
+  const csv='﻿'+['คำนำหน้า,ชื่อ,นามสกุล,เลขบัตรประชาชน,ค่าจ้าง,ภาษีหัก ณ ที่จ่าย',
+    'นาย,สมชาย,ใจดี,1101700207277,25000,0',
+    'นางสาว,สมหญิง,รักงาน,1101700207285,18000,0'].join('\n');
+  _ssoDownload('ตัวอย่างรายชื่อลูกจ้าง.csv', new Blob([csv],{type:'text/csv;charset=utf-8'}));
+}
+
+/* ── ไฟล์อัปโหลด e-Service (fixed-width 135 ตัวอักษร) ──────────── */
+function _padR(v,n){ const s=String(v==null?'':v); return s.length>n ? s.slice(0,n) : s+' '.repeat(n-s.length); }
+function _padL0(v,n){ const s=String(v); return s.length>n ? s.slice(-n) : '0'.repeat(n-s.length)+s; }
+function _amt(v,n){ return _padL0(Math.round((Number(v)||0)*100), n); }   // หน่วยสตางค์ ไม่มีจุดทศนิยม
+/* TIS-620: อักขระไทย U+0E01–U+0E5B ตรงกับไบต์ 0xA1–0xFB (offset 0x0E00 → 0xA0) */
+function _toTIS620(str){
+  const out=[];
+  for(const ch of String(str)){
+    const cp=ch.codePointAt(0);
+    if(cp<0x80) out.push(cp);
+    else if(cp>=0x0E01&&cp<=0x0E5B) out.push(cp-0x0E00+0xA0);
+    else out.push(0x3F);   // '?'
+  }
+  return new Uint8Array(out);
+}
+function ssoTxtContent(){
+  const yearMode=$('ssoYearMode').value;
+  const yy=v=>String(yearMode==='be'?v:(v-543)).slice(-2);
+  const pay=$('ssoPayDate').value ? new Date($('ssoPayDate').value) : new Date();
+  const payBE=pay.getFullYear()+543;
+  const payStr=_padL0(pay.getDate(),2)+_padL0(pay.getMonth()+1,2)+yy(payBE);      // ddMMyy
+  const period=_padL0(SSO.month,2)+yy(SSO.year);                                  // MMyy
+  const t=ssoTotals();
+  const header='1'
+    + _padL0(($('ssoAcct').value||'').replace(/\D/g,''),10)
+    + _padL0(($('ssoBranch').value||'').replace(/\D/g,''),6)
+    + payStr + period
+    + _padR($('ssoName').value||'',45)
+    + _padL0(Math.round(ssoTier(SSO.year).rate*10000),4)     // 5% → 0500
+    + _padL0(t.count,6)
+    + _amt(t.wage,15) + _amt(t.total,14)
+    + _amt(t.employee,12) + _amt(t.employer,12);
+  const lines=[header];
+  for(const r of SSO.rows){
+    const c=ssoCalc(r.wage,SSO.year);
+    lines.push('2'
+      + _padL0((r.id13||'').replace(/\D/g,''),13)
+      + ssoPrefixCode(r.prefix)
+      + _padR(r.first||'',30) + _padR(r.last||'',35)
+      + _amt(r.wage,14) + _amt(c.employee,12)
+      + ' '.repeat(27));
+  }
+  const bad=lines.filter(l=>l.length!==135);
+  if(bad.length) console.warn('[SSO] บรรทัดยาวไม่เท่ากับ 135:', bad.length);
+  return lines.join('\r\n')+'\r\n';
+}
+function ssoTxt(){
+  if(!SSO.rows.length){ toast('ยังไม่มีรายชื่อลูกจ้าง'); return; }
+  const noId=SSO.rows.filter(r=>!r.id13||r.id13.length!==13).length;
+  if(noId){ toast('ยังมี '+noId+' คนที่เลขบัตรไม่ครบ 13 หลัก'); return; }
+  const txt=ssoTxtContent();
+  const enc=$('ssoEnc').value;
+  const blob = enc==='tis620'
+    ? new Blob([_toTIS620(txt)],{type:'text/plain'})
+    : new Blob(['﻿'+txt],{type:'text/plain;charset=utf-8'});
+  _ssoDownload('สปส1-10_'+_padL0(SSO.month,2)+SSO.year+'.txt', blob);
+  toast('ดาวน์โหลดแล้ว ✓ ทดลองอัปโหลดใน e-Service เพื่อยืนยันรูปแบบ');
+}
+
+/* ── ปฏิทินเตือนกำหนดยื่น ── */
+function ssoIcs(){
+  const due=ssoDueDate();
+  const p2=n=>String(n).padStart(2,'0');
+  const d=`${due.getFullYear()}${p2(due.getMonth()+1)}${p2(due.getDate())}`;
+  const dEnd=new Date(due.getTime()+864e5);
+  const dE=`${dEnd.getFullYear()}${p2(dEnd.getMonth()+1)}${p2(dEnd.getDate())}`;
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').split('.')[0]+'Z';
+  const t=ssoTotals();
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//SignDee//SSO//TH','CALSCALE:GREGORIAN','BEGIN:VEVENT',
+    'UID:signdee-sso-'+d+'@signdee.com','DTSTAMP:'+stamp,'DTSTART;VALUE=DATE:'+d,'DTEND;VALUE=DATE:'+dE,
+    'SUMMARY:ยื่น สปส.1-10 งวด '+SSO_MONTHS[SSO.month-1]+' '+SSO.year,
+    'DESCRIPTION:นำส่งเงินสมทบประกันสังคม รวม '+ssoMoney(t.total)+' บาท (ผู้ประกันตน '+t.count+' คน)\\nยื่นที่ e-Service ของสำนักงานประกันสังคม',
+    'BEGIN:VALARM','TRIGGER:-P3D','ACTION:DISPLAY','DESCRIPTION:อีก 3 วันครบกำหนดยื่น สปส.1-10','END:VALARM',
+    'END:VEVENT','END:VCALENDAR'].join('\r\n');
+  _ssoDownload('เตือนยื่น-สปส1-10.ics', new Blob([ics],{type:'text/calendar;charset=utf-8'}));
+}
+
+
+/* ── ออก PDF: สปส.1-10 และสลิปเงินเดือน ─────────────────────────── */
+async function _ssoRenderPdf(pagesHtml, filename){
+  const pd=$('printDoc'); pd.className='pd-render'; pd.innerHTML=pagesHtml;
+  await new Promise(r=>setTimeout(r,240));
+  try{
+    const Ctor=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF;
+    const pdf=new Ctor('p','mm','a4');
+    const els=[...pd.querySelectorAll('.pd-page')];
+    for(let i=0;i<els.length;i++){
+      const cv=await html2canvas(els[i],{scale:2,backgroundColor:'#ffffff',useCORS:true,logging:false});
+      const img=cv.toDataURL('image/jpeg',0.92);
+      if(i) pdf.addPage();
+      const hmm=cv.height*210/cv.width;
+      if(hmm<=297) pdf.addImage(img,'JPEG',0,0,210,hmm);
+      else { const sc=297/hmm; pdf.addImage(img,'JPEG',(210-210*sc)/2,0,210*sc,297); }
+    }
+    pdf.save(filename);
+    toast('ดาวน์โหลดแล้ว ✓');
+  }catch(e){ console.error(e); toast('สร้าง PDF ไม่สำเร็จ: '+(e.message||e)); }
+  pd.innerHTML=''; pd.className='';
+}
+const _SS_TH='padding:6px 5px;border:1px solid #999;background:#f2f1ec;font-size:12px;font-weight:700;text-align:center';
+const _SS_TD='padding:5px;border:1px solid #999;font-size:12.5px';
+function _ssoHead(sub){
+  return `<div style="text-align:center;margin-bottom:14px">
+      <div style="font-family:'Anuphan';font-size:19px;font-weight:700">แบบรายการแสดงการส่งเงินสมทบ</div>
+      <div style="font-size:14px;margin-top:2px">(สปส. 1-10 ${sub})</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:12px">
+      <tr><td style="${_SS_TD};width:38%">เลขที่บัญชีนายจ้าง</td><td style="${_SS_TD}">${esc($('ssoAcct').value||'—')}</td>
+          <td style="${_SS_TD};width:20%">ลำดับที่สาขา</td><td style="${_SS_TD}">${esc($('ssoBranch').value||'—')}</td></tr>
+      <tr><td style="${_SS_TD}">ชื่อสถานประกอบการ</td><td style="${_SS_TD}" colspan="3">${esc($('ssoName').value||'—')}</td></tr>
+      <tr><td style="${_SS_TD}">ประจำงวดค่าจ้างเดือน</td><td style="${_SS_TD}">${SSO_MONTHS[SSO.month-1]} พ.ศ. ${SSO.year}</td>
+          <td style="${_SS_TD}">วันที่ชำระเงิน</td><td style="${_SS_TD}">${esc(_thDateFull($('ssoPayDate').value)||'—')}</td></tr>
+    </table>`;
+}
+function ssoPdf(){
+  if(!SSO.rows.length){ toast('ยังไม่มีรายชื่อลูกจ้าง'); return; }
+  const t=ssoTotals(), tier=ssoTier(SSO.year);
+  /* ── ส่วนที่ 1: สรุป ── */
+  let pages=`<div class="pd-page">${_ssoHead('ส่วนที่ 1')}
+    <table style="width:100%;border-collapse:collapse;margin-top:18px">
+      <tr><th style="${_SS_TH}">รายการ</th><th style="${_SS_TH};width:34%">จำนวน</th></tr>
+      <tr><td style="${_SS_TD}">จำนวนผู้ประกันตนที่นำส่งเงินสมทบ</td><td style="${_SS_TD};text-align:right">${t.count} คน</td></tr>
+      <tr><td style="${_SS_TD}">รวมค่าจ้างที่ใช้คำนวณเงินสมทบ</td><td style="${_SS_TD};text-align:right">${ssoMoney(t.wage)} บาท</td></tr>
+      <tr><td style="${_SS_TD}">เงินสมทบส่วนของผู้ประกันตน (ร้อยละ 5)</td><td style="${_SS_TD};text-align:right">${ssoMoney(t.employee)} บาท</td></tr>
+      <tr><td style="${_SS_TD}">เงินสมทบส่วนของนายจ้าง (ร้อยละ 5)</td><td style="${_SS_TD};text-align:right">${ssoMoney(t.employer)} บาท</td></tr>
+      <tr><td style="${_SS_TD};font-weight:700">รวมเงินสมทบที่นำส่งทั้งสิ้น</td><td style="${_SS_TD};text-align:right;font-weight:700">${ssoMoney(t.total)} บาท</td></tr>
+    </table>
+    <div style="font-size:12px;margin-top:12px;line-height:1.7">
+      ฐานค่าจ้างที่ใช้คำนวณ ปี พ.ศ. ${SSO.year}: ${ssoMoney(tier.floor)} &ndash; ${ssoMoney(tier.ceiling)} บาท
+      &middot; เงินสมทบสูงสุดฝ่ายละ ${ssoMoney(tier.ceiling*tier.rate)} บาทต่อคนต่อเดือน<br>
+      กำหนดนำส่ง: ภายในวันที่ 15 ของเดือนถัดจากเดือนที่หักเงินสมทบ
+    </div>
+    <div style="margin-top:60px;text-align:center">
+      <div style="border-top:1px solid #000;width:280px;margin:0 auto;padding-top:8px;font-size:13px">ลงชื่อ ...................................... นายจ้าง</div>
+      <div style="font-size:13px;margin-top:4px">( ................................................ )</div>
+      <div style="font-size:12px;margin-top:10px;color:#555">วันที่ ................................................</div>
+    </div>
+  </div>`;
+  /* ── ส่วนที่ 2: รายชื่อ แบ่งหน้าละ 22 คน ── */
+  const PER=22;
+  for(let start=0; start<SSO.rows.length; start+=PER){
+    const chunk=SSO.rows.slice(start,start+PER);
+    let sw=0, sc=0;
+    const body=chunk.map((r,k)=>{
+      const c=ssoCalc(r.wage,SSO.year); sw+=Number(r.wage)||0; sc+=c.employee;
+      return `<tr>
+        <td style="${_SS_TD};text-align:center">${start+k+1}</td>
+        <td style="${_SS_TD};font-family:'IBM Plex Mono';font-size:12px">${esc(r.id13||'—')}</td>
+        <td style="${_SS_TD}">${esc((r.prefix||'')+' '+(r.first||'')+' '+(r.last||''))}</td>
+        <td style="${_SS_TD};text-align:right">${ssoMoney(r.wage)}</td>
+        <td style="${_SS_TD};text-align:right">${ssoMoney(c.employee)}</td></tr>`;
+    }).join('');
+    pages+=`<div class="pd-page">
+      ${start===0?_ssoHead('ส่วนที่ 2 &mdash; รายละเอียดผู้ประกันตน'):`<div style="font-size:13px;margin-bottom:10px">สปส. 1-10 ส่วนที่ 2 (ต่อ) &middot; ${esc($('ssoName').value||'')} &middot; งวด ${SSO_MONTHS[SSO.month-1]} ${SSO.year}</div>`}
+      <table style="width:100%;border-collapse:collapse">
+        <tr><th style="${_SS_TH};width:8%">ลำดับ</th><th style="${_SS_TH};width:22%">เลขประจำตัวประชาชน</th>
+            <th style="${_SS_TH}">ชื่อ &ndash; นามสกุล</th><th style="${_SS_TH};width:17%">ค่าจ้าง</th><th style="${_SS_TH};width:17%">เงินสมทบ</th></tr>
+        ${body}
+        <tr><td style="${_SS_TD};text-align:right;font-weight:700" colspan="3">รวมหน้านี้</td>
+            <td style="${_SS_TD};text-align:right;font-weight:700">${ssoMoney(sw)}</td>
+            <td style="${_SS_TD};text-align:right;font-weight:700">${ssoMoney(sc)}</td></tr>
+      </table>
+      <div style="font-size:11.5px;color:#666;margin-top:10px;text-align:right">หน้า ${Math.floor(start/PER)+1} จาก ${Math.ceil(SSO.rows.length/PER)}</div>
+    </div>`;
+  }
+  _ssoRenderPdf(pages,'สปส1-10_'+String(SSO.month).padStart(2,'0')+SSO.year+'.pdf');
+}
+
+function ssoSlips(){
+  if(!SSO.rows.length){ toast('ยังไม่มีรายชื่อลูกจ้าง'); return; }
+  const period=SSO_MONTHS[SSO.month-1]+' พ.ศ. '+SSO.year;
+  const slip=r=>{
+    const c=ssoCalc(r.wage,SSO.year);
+    const tax=Number(r.tax)||0;
+    const net=Math.round(((Number(r.wage)||0)-c.employee-tax)*100)/100;
+    const line=(k,v,b)=>`<tr><td style="padding:5px 6px;font-size:13px">${k}</td>
+      <td style="padding:5px 6px;font-size:13px;text-align:right;font-family:'IBM Plex Mono'${b?';font-weight:700':''}">${v}</td></tr>`;
+    return `<div style="border:1px solid #999;border-radius:6px;padding:16px 18px;margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #ccc;padding-bottom:9px;margin-bottom:9px">
+        <div><div style="font-family:'Anuphan';font-weight:700;font-size:15px">ใบแจ้งเงินเดือน</div>
+          <div style="font-size:12px;color:#555">${esc($('ssoName').value||'')}</div></div>
+        <div style="text-align:right;font-size:12px;color:#555">งวด ${period}</div>
+      </div>
+      <div style="font-size:13.5px;margin-bottom:8px"><b>${esc((r.prefix||'')+' '+(r.first||'')+' '+(r.last||''))}</b>
+        <span style="color:#666;font-size:12px">&nbsp;เลขประจำตัวประชาชน ${esc(r.id13||'—')}</span></div>
+      <table style="width:100%;border-collapse:collapse">
+        ${line('ค่าจ้าง', ssoMoney(r.wage))}
+        ${line('หัก เงินสมทบประกันสังคม (5%)', '-'+ssoMoney(c.employee))}
+        ${tax?line('หัก ภาษีเงินได้ ณ ที่จ่าย','-'+ssoMoney(tax)):''}
+        <tr><td colspan="2" style="border-top:1px solid #999;padding:0"></td></tr>
+        ${line('เงินได้สุทธิ', ssoMoney(net), true)}
+      </table>
+      <div style="font-size:11px;color:#666;margin-top:9px;line-height:1.6">
+        ฐานคำนวณเงินสมทบ ${ssoMoney(c.base)} บาท &middot; นายจ้างสมทบเพิ่มอีก ${ssoMoney(c.employer)} บาท (ไม่หักจากค่าจ้าง)<br>
+        การหักเงินสมทบเป็นไปตามพระราชบัญญัติประกันสังคม พ.ศ. 2533
+      </div>
+    </div>`;
+  };
+  let pages=''; const PER=3;
+  for(let i=0;i<SSO.rows.length;i+=PER){
+    pages+=`<div class="pd-page">${SSO.rows.slice(i,i+PER).map(slip).join('')}</div>`;
+  }
+  _ssoRenderPdf(pages,'สลิปเงินเดือน_'+String(SSO.month).padStart(2,'0')+SSO.year+'.pdf');
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════
+   ทะเบียนสัญญา (localStorage) + แดชบอร์ดนายจ้าง
+   ไม่มีระบบบัญชีผู้ใช้ — ทะเบียนนี้ผูกกับเบราว์เซอร์เครื่องนี้เท่านั้น
+   ═══════════════════════════════════════════════════════════════════ */
+const EMP_REG_KEY='signdee_emp_contracts';
+function empRegList(){
+  try{ const a=JSON.parse(localStorage.getItem(EMP_REG_KEY)||'[]'); return Array.isArray(a)?a:[]; }
+  catch(_){ return []; }
+}
+function empRegSave(list){ try{ localStorage.setItem(EMP_REG_KEY, JSON.stringify(list)); }catch(_){} }
+function empRegPut(entry){
+  if(!entry||!entry.id) return;
+  const list=empRegList();
+  const i=list.findIndex(x=>x.id===entry.id);
+  if(i>=0) list[i]=Object.assign({},list[i],entry);
+  else list.unshift(Object.assign({createdAt:new Date().toISOString()},entry));
+  empRegSave(list);
+}
+function empRegDel(id){ empRegSave(empRegList().filter(x=>x.id!==id)); dashInit(true); }
+/* ย้ายคีย์เดี่ยวแบบเดิมเข้าทะเบียน (ทำครั้งเดียว) */
+function empRegMigrate(){
+  try{
+    const id=localStorage.getItem('emp_contract_row_id'), tk=localStorage.getItem('emp_creator_token');
+    if(id&&tk&&!empRegList().some(x=>x.id===id))
+      empRegPut({id,token:tk,no:localStorage.getItem('emp_contract_no')||''});
+  }catch(_){}
+}
+
+function _dashStatus(row){
+  if(row.a_signed_at&&row.b_signed_at) return {k:'done',t:'ลงนามครบแล้ว'};
+  if(row.a_signed_at||row.b_signed_at) return {k:'wait',t:'รออีกฝ่ายลงนาม'};
+  if(row.payment_completed)            return {k:'wait',t:'ชำระแล้ว รอลงนาม'};
+  return {k:'draft',t:'ยังไม่ชำระเงิน'};
+}
+function _dashDays(from,plusDays){
+  if(!from) return null;
+  const d=new Date(from); if(isNaN(d)) return null;
+  d.setDate(d.getDate()+(plusDays||0));
+  const now=new Date(); const t0=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  return {date:d, days:Math.round((d-t0)/864e5)};
+}
+
+let DASH={rows:[],loading:false};
+async function dashInit(force){
+  if(DASH.loading) return;
+  dashRenderLogin();
+  empRegMigrate();
+  const ses=empSession();
+
+  // ล็อกอินแล้ว → ดึงจากเซิร์ฟเวอร์ (เห็นทุกเครื่อง)
+  if(ses){
+    if(DASH.rows.length && !force){ dashRender(); return; }
+    DASH.loading=true;
+    $('dashBody').innerHTML='<div class="mini" style="padding:18px 0">กำลังโหลด…</div>';
+    const j=await _empApi({action:'emp_my_contracts', session:ses});
+    DASH.loading=false;
+    if(j&&j.ok){
+      DASH.rows=(j.contracts||[]).map(r=>Object.assign({},r,{_reg:{id:r.id,token:r.creator_token,no:r.contract_no}}));
+      // ซิงก์กลับเข้าทะเบียนในเครื่อง เพื่อให้เปิดสัญญาได้แม้ออกจากระบบ
+      DASH.rows.forEach(r=>empRegPut({id:r.id,token:r.creator_token,no:r.contract_no,
+        employee:(r.party_b&&r.party_b.name)||'',position:r.position_th||''}));
+      dashRender(); return;
+    }
+    if(j&&j.code==='bad_session'){ empSetSession('',''); dashRenderLogin(); toast('เซสชันหมดอายุ กรุณาผูกบัญชีใหม่'); }
+  }
+
+  const reg=empRegList();
+  if(!reg.length){
+    $('dashBody').innerHTML='<div class="dash-card"><div class="meta">ยังไม่มีสัญญาในเครื่องนี้ &mdash; กด "+ สร้างสัญญาใหม่" เพื่อเริ่ม</div></div>';
+    $('dashSub').textContent='สรุปสัญญา ลูกจ้าง และสิ่งที่ต้องทำ';
+    return;
+  }
+  if(DASH.rows.length && !force){ dashRender(); return; }
+  DASH.loading=true;
+  $('dashBody').innerHTML='<div class="mini" style="padding:18px 0">กำลังโหลดข้อมูล '+reg.length+' สัญญา…</div>';
+  const out=[];
+  for(const e of reg){
+    try{
+      const {data}=await sb.rpc('emp_get_contract',{p_id:e.id,p_token:e.token});
+      if(data&&data.ok&&data.row) out.push(Object.assign({},data.row,{_reg:e}));
+      else out.push({id:e.id,contract_no:e.no,_reg:e,_gone:true});
+    }catch(_){ out.push({id:e.id,contract_no:e.no,_reg:e,_gone:true}); }
+  }
+  DASH.rows=out; DASH.loading=false;
+  dashRender();
+}
+
+function dashRender(){
+  const rows=DASH.rows.filter(r=>!r._gone);
+  const gone=DASH.rows.filter(r=>r._gone);
+  const signed=rows.filter(r=>r.a_signed_at&&r.b_signed_at);
+  const tier=ssoTier(new Date().getFullYear()+543);
+
+  /* ── ต้นทุนแรงงาน ── */
+  let salary=0, allowance=0, ssoEr=0;
+  for(const r of signed){
+    const sal=Number(r.salary)||0, alw=Number(r.allowance)||0;
+    salary+=sal; allowance+=alw;
+    ssoEr+=ssoCalc(sal+alw, new Date().getFullYear()+543).employer;
+  }
+  const totalCost=Math.round((salary+allowance+ssoEr)*100)/100;
+
+  /* ── แจ้งเตือน ── */
+  const alerts=[];
+  for(const r of rows){
+    const nm=(r.party_b&&r.party_b.name)||'ลูกจ้าง';
+    if(!(r.a_signed_at&&r.b_signed_at)&&r.payment_completed)
+      alerts.push({lv:'mid',ic:'✍️',t:`สัญญา ${esc(r.contract_no||'')} (${esc(nm)}) ยังลงนามไม่ครบ`});
+    const pb=Number(r.probation_days)||0;
+    if(pb>0&&r.start_date){
+      const p=_dashDays(r.start_date,pb);
+      if(p&&p.days>=0&&p.days<=21)
+        alerts.push({lv:'hi',ic:'⏰',t:`<b>${esc(nm)}</b> ครบทดลองงาน ${pb} วัน ในอีก <b>${p.days} วัน</b> (${esc(_thDateFull(p.date.toISOString().slice(0,10)))}) &mdash; ต้องประเมินและแจ้งผลก่อนครบกำหนด`});
+      const c120=_dashDays(r.start_date,120);
+      if(c120&&c120.days>=0&&c120.days<=21)
+        alerts.push({lv:'mid',ic:'⚖️',t:`<b>${esc(nm)}</b> จะทำงานครบ 120 วันในอีก ${c120.days} วัน &mdash; หลังจากนั้นการเลิกจ้างโดยลูกจ้างไม่มีความผิดต้องจ่ายค่าชดเชย 30 วัน`});
+    }
+    for(const [k,label] of [['party_a','นายจ้าง'],['party_b','ลูกจ้าง']]){
+      const exp=(r[k]&&r[k].expiry)||'';
+      const d=exp?_parseCardDate(exp):null;
+      if(d){
+        const now=new Date(); const diff=Math.round((d-new Date(now.getFullYear(),now.getMonth(),now.getDate()))/864e5);
+        if(diff<0) alerts.push({lv:'mid',ic:'🪪',t:`บัตรประชาชน${label} ในสัญญา ${esc(r.contract_no||'')} หมดอายุแล้ว`});
+        else if(diff<=60) alerts.push({lv:'low',ic:'🪪',t:`บัตรประชาชน${label} ในสัญญา ${esc(r.contract_no||'')} จะหมดอายุในอีก ${diff} วัน`});
+      }
+    }
+  }
+  if(signed.length){
+    const due=(function(){ const n=new Date(); let m=n.getMonth()+2, y=n.getFullYear(); if(m>12){m=1;y++;} return new Date(y,m-1,15); })();
+    const dd=Math.round((due-new Date())/864e5);
+    alerts.push({lv:dd<=7?'mid':'low',ic:'🏛️',t:`กำหนดยื่น สปส.1-10 งวดล่าสุด ภายในวันที่ 15 ${SSO_MONTHS[due.getMonth()]} &mdash; อีก ${dd} วัน &middot; <a href="#" onclick="dashToSso();return false">เตรียมข้อมูล</a>`});
+  }
+  const order={hi:0,mid:1,low:2};
+  alerts.sort((a,b)=>order[a.lv]-order[b.lv]);
+
+  /* ── ประกอบหน้า ── */
+  let html=`<div class="dash-kpi">
+      <div><div class="k">สัญญาทั้งหมด</div><div class="v">${rows.length}</div><div class="s">ลงนามครบ ${signed.length}</div></div>
+      <div><div class="k">ลูกจ้างปัจจุบัน</div><div class="v">${signed.length}</div><div class="s">นับจากสัญญาที่ลงนามครบ</div></div>
+      <div><div class="k">ค่าจ้างรวม/เดือน</div><div class="v">${ssoMoney(salary+allowance)}</div><div class="s">รวมค่าตำแหน่ง</div></div>
+      <div><div class="k">ต้นทุนรวม/เดือน</div><div class="v">${ssoMoney(totalCost)}</div><div class="s">+ สมทบนายจ้าง ${ssoMoney(ssoEr)}</div></div>
+    </div>`;
+
+  html+=`<div class="dash-sec"><h3>สิ่งที่ต้องทำ</h3>`;
+  html+= alerts.length
+    ? alerts.map(a=>`<div class="alert-row ${a.lv}"><span class="ic">${a.ic}</span><span>${a.t}</span></div>`).join('')
+    : '<div class="alert-row low"><span class="ic">✓</span><span>ตอนนี้ยังไม่มีเรื่องเร่งด่วน</span></div>';
+  html+=`</div>`;
+
+  html+=`<div class="dash-sec"><h3>ทะเบียนลูกจ้าง</h3>
+    <div class="hint">นับจากสัญญาที่ลงนามครบทั้งสองฝ่าย</div>`;
+  if(!signed.length) html+='<div class="dash-card"><div class="meta">ยังไม่มีสัญญาที่ลงนามครบ</div></div>';
+  else{
+    html+=signed.map(r=>{
+      const nm=(r.party_b&&r.party_b.name)||'—';
+      const c=ssoCalc((Number(r.salary)||0)+(Number(r.allowance)||0), new Date().getFullYear()+543);
+      return `<div class="dash-card"><div class="top">
+          <div><div class="nm">${esc(nm)}</div>
+            <div class="meta">${esc(r.position_th||'')} &middot; เริ่มงาน ${esc(_thDateFull(r.start_date)||'—')}<br>
+              ค่าจ้าง ${ssoMoney(r.salary)}${Number(r.allowance)?(' + ค่าตำแหน่ง '+ssoMoney(r.allowance)):''} บาท/เดือน &middot; สมทบประกันสังคม ${ssoMoney(c.employee)} บาท</div></div>
+          <span class="badge2 done">ทำงานอยู่</span></div></div>`;
+    }).join('');
+    html+=`<button class="btn ghost sm" type="button" onclick="dashToSso()" style="margin-top:4px">ส่งรายชื่อ ${signed.length} คนเข้าโมดูลประกันสังคม &#8594;</button>`;
+  }
+  html+=`</div>`;
+
+  html+=`<div class="dash-sec"><h3>สัญญาทั้งหมด</h3>`;
+  html+=rows.map(r=>{
+    const st=_dashStatus(r);
+    const nm=(r.party_b&&r.party_b.name)||'—';
+    const links=[];
+    if(r.payment_completed&&r.a_read_token&&!r.a_signed_at) links.push(`<button class="btn ghost sm" type="button" onclick="dashCopy('${r.id}','a')">คัดลอกลิงก์นายจ้าง</button>`);
+    if(r.payment_completed&&r.b_read_token&&!r.b_signed_at) links.push(`<button class="btn ghost sm" type="button" onclick="dashCopy('${r.id}','b')">คัดลอกลิงก์ลูกจ้าง</button>`);
+    links.push(`<button class="btn ghost sm" type="button" onclick="dashOpen('${r.id}')">เปิดสัญญา</button>`);
+    return `<div class="dash-card"><div class="top">
+        <div><div class="nm">${esc(r.contract_no||'—')} &middot; ${esc(nm)}</div>
+          <div class="meta">${esc(r.position_th||'')} &middot; สร้างเมื่อ ${esc(_thDateFull((r.created_at||'').slice(0,10))||'—')}</div></div>
+        <span class="badge2 ${st.k}">${st.t}</span></div>
+      <div class="btn-row" style="margin-top:9px">${links.join('')}</div></div>`;
+  }).join('');
+  if(gone.length) html+=`<div class="mini" style="margin-top:8px">มี ${gone.length} รายการที่เปิดไม่ได้ (อาจถูกลบอัตโนมัติหลัง 60 วัน) <a href="#" onclick="dashPrune();return false">ล้างออกจากรายการ</a></div>`;
+  html+=`</div>`;
+
+  $('dashSub').textContent=`สัญญา ${rows.length} ฉบับ · ลูกจ้าง ${signed.length} คน`;
+  $('dashBody').innerHTML=html;
+  $('dashScope').innerHTML = empSession()
+    ? '&#128274; ผูกกับบัญชี LINE แล้ว &mdash; เห็นสัญญาทุกฉบับจากทุกเครื่อง'
+    : '&#128274; ยังไม่ได้ผูกบัญชี &mdash; เห็นเฉพาะสัญญาที่สร้างจากเบราว์เซอร์นี้ ล้างข้อมูลเบราว์เซอร์แล้วจะหาย';
+}
+function dashPrune(){ const keep=new Set(DASH.rows.filter(r=>!r._gone).map(r=>r.id)); empRegSave(empRegList().filter(x=>keep.has(x.id))); DASH.rows=DASH.rows.filter(r=>!r._gone); dashRender(); }
+async function dashCopy(id,party){
+  const r=DASH.rows.find(x=>x.id===id); if(!r) return;
+  const tk=party==='a'?r.a_read_token:r.b_read_token;
+  if(!tk){ toast('ยังไม่มีลิงก์สำหรับฝ่ายนี้'); return; }
+  const url=location.origin+location.pathname+'?e='+encodeURIComponent(id)+'&t='+encodeURIComponent(tk)+'&p='+party;
+  toast(await _copyText(url) ? 'คัดลอกลิงก์แล้ว ✓' : 'คัดลอกไม่สำเร็จ');
+}
+async function dashOpen(id){
+  const e=empRegList().find(x=>x.id===id); if(!e) return;
+  S.rowId=e.id; S.token=e.token; S.contractNo=e.no||'';
+  try{ localStorage.setItem('emp_contract_row_id',S.rowId); localStorage.setItem('emp_creator_token',S.token); }catch(_){}
+  await resumeContract();
+}
+/* ส่งลูกจ้างที่ลงนามครบเข้าโมดูลประกันสังคม */
+function dashToSso(){
+  const signed=DASH.rows.filter(r=>!r._gone&&r.a_signed_at&&r.b_signed_at);
+  if(!signed.length){ toast('ยังไม่มีลูกจ้างที่ลงนามครบ'); return; }
+  go('sso');
+  SSO.rows=signed.map(r=>{
+    const p=r.party_b||{};
+    const full=String(p.name||'').trim();
+    let prefix='นาย', rest=full;
+    const hit=SSO_PREFIX.find(([x])=>full.indexOf(x)===0);
+    if(hit){ prefix=hit[0]; rest=full.slice(hit[0].length).trim(); }
+    const parts=rest.split(/\s+/);
+    return { prefix, first:parts[0]||'', last:parts.slice(1).join(' '),
+             id13:String(p.id13||'').replace(/\D/g,'').slice(0,13),
+             wage:(Number(r.salary)||0)+(Number(r.allowance)||0), tax:0 };
+  });
+  ssoRender();
+  toast('นำเข้า '+SSO.rows.length+' รายชื่อแล้ว ✓');
+}
+
+
+/* ── เข้าสู่ระบบด้วย LINE (รหัสผูกบัญชีผ่านแชต OA) ───────────────
+   ไม่ต้องมี LIFF app — ใช้ LINE_CHANNEL_TOKEN ที่มีอยู่แล้ว
+   session เป็น HMAC จาก backend เก็บใน localStorage อายุ 90 วัน */
+const EMP_SES_KEY='signdee_emp_session';
+function empSession(){ try{ return localStorage.getItem(EMP_SES_KEY)||''; }catch(_){ return ''; } }
+function empSessionName(){ try{ return localStorage.getItem(EMP_SES_KEY+'_name')||''; }catch(_){ return ''; } }
+function empSetSession(tok,name){ try{
+  if(tok){ localStorage.setItem(EMP_SES_KEY,tok); localStorage.setItem(EMP_SES_KEY+'_name',name||''); }
+  else { localStorage.removeItem(EMP_SES_KEY); localStorage.removeItem(EMP_SES_KEY+'_name'); }
+}catch(_){} }
+
+async function _empApi(payload){
+  const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  return r.json().catch(()=>({}));
+}
+let _linkPoll=null, _linkCode='';
+function dashRenderLogin(){
+  const box=$('dashLogin'); if(!box) return;
+  if(empSession()){
+    box.innerHTML=`<div class="dash-card" style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div><div class="nm">เข้าสู่ระบบแล้ว</div>
+          <div class="meta">${esc(empSessionName()||'บัญชี LINE')} &middot; สัญญาที่สร้างจากเครื่องไหนก็เห็นทั้งหมด</div></div>
+        <button class="btn ghost sm" type="button" onclick="dashLogout()">ออกจากระบบ</button>
+      </div>`;
+  }else{
+    box.innerHTML=`<div class="dash-card">
+        <div class="nm">เข้าสู่ระบบเพื่อดูสัญญาทุกเครื่อง</div>
+        <div class="meta">ตอนนี้เห็นเฉพาะสัญญาที่สร้างจากเบราว์เซอร์นี้ &mdash; ผูกบัญชี LINE แล้วจะเห็นครบทุกฉบับจากทุกเครื่อง</div>
+        <button class="btn line" type="button" onclick="dashLinkStart()" style="margin-top:10px">ผูกบัญชีด้วย LINE</button>
+        <div id="dashLinkBox"></div>
+      </div>`;
+  }
+}
+async function dashLinkStart(){
+  const j=await _empApi({action:'emp_link_start'});
+  if(!j||!j.ok){ toast('ขอรหัสไม่สำเร็จ'+((j&&j.message_th)?(' — '+j.message_th):'')); return; }
+  _linkCode=j.code;
+  $('dashLinkBox').innerHTML=`<div style="margin-top:12px;padding:14px;background:var(--surf2);border-radius:var(--r)">
+      <div class="mini">รหัสผูกบัญชีของคุณ</div>
+      <div style="font-family:'IBM Plex Mono';font-size:30px;font-weight:600;letter-spacing:.16em;margin:6px 0 10px">${esc(j.code)}</div>
+      <div class="mini" style="line-height:1.7">1. กดปุ่มด้านล่างเพื่อเปิดแชต SignDee ใน LINE<br>2. ส่งข้อความที่เตรียมไว้ให้ (หรือพิมพ์ <b>ผูกบัญชี ${esc(j.code)}</b>)<br>3. กลับมาหน้านี้ ระบบจะเข้าสู่ระบบให้เอง</div>
+      <div class="btn-row" style="margin-top:10px">
+        <a class="btn line sm" href="${esc(j.msg_url)}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center">เปิดแชต SignDee</a>
+        <button class="btn ghost sm" type="button" onclick="dashLinkCheck()">ผูกแล้ว ตรวจสอบ</button>
+      </div>
+      <div class="mini" id="dashLinkSt" style="margin-top:8px">กำลังรอ… รหัสมีอายุ 24 ชั่วโมง</div>
+    </div>`;
+  if(_linkPoll) clearInterval(_linkPoll);
+  let n=0;
+  _linkPoll=setInterval(()=>{ if(++n>100){ clearInterval(_linkPoll); return; } dashLinkCheck(true); },3000);
+}
+async function dashLinkCheck(quiet){
+  if(!_linkCode) return;
+  const j=await _empApi({action:'emp_link_poll', code:_linkCode});
+  if(j&&j.ok&&j.linked&&j.session){
+    if(_linkPoll) clearInterval(_linkPoll);
+    empSetSession(j.session, j.name);
+    toast('เข้าสู่ระบบแล้ว ✓');
+    await dashClaimLocal();
+    DASH.rows=[]; dashRenderLogin(); dashInit(true);
+    return;
+  }
+  if(!quiet){
+    const st=$('dashLinkSt');
+    if(st) st.textContent = (j&&j.code==='not_found') ? 'รหัสหมดอายุ — กดขอรหัสใหม่' : 'ยังไม่พบการผูกบัญชี ลองส่งข้อความในแชตอีกครั้ง';
+  }
+}
+function dashLogout(){
+  empSetSession('',''); DASH.rows=[]; dashRenderLogin(); dashInit(true);
+  toast('ออกจากระบบแล้ว');
+}
+/* ผูกสัญญาที่มีในเครื่องนี้เข้ากับบัญชี (ทำครั้งเดียวตอนล็อกอิน) */
+async function dashClaimLocal(){
+  const ses=empSession(); if(!ses) return;
+  for(const e of empRegList()){
+    try{ await _empApi({action:'emp_claim', session:ses, row_id:e.id}); }catch(_){}
+  }
+}
+/* เรียกตอนสร้างสัญญาใหม่ — ผูกให้อัตโนมัติถ้าล็อกอินอยู่ */
+async function empClaimIfLoggedIn(rowId){
+  const ses=empSession(); if(!ses||!rowId) return;
+  try{ await _empApi({action:'emp_claim', session:ses, row_id:rowId}); }catch(_){}
+}
+
+/* ═══════════════ INIT ═══════════════ */
+function _urlParam(k){ try{ return new URLSearchParams(location.search).get(k)||''; }catch(_){ return ''; } }
+
+async function init(){
+  $('fileInput').addEventListener('change',_onFile);
+  $('certInput').addEventListener('change',_onCert);
+  posChips();
+  _loadDraft();
+  if(S.position){ $('posInput').value=S.position.th; if((S.jd.responsibilities||[]).length) renderJD(); }
+  _updS1();
+
+  const e=(_urlParam('e')||'').trim(), t=(_urlParam('t')||'').trim();
+  const pRaw=(_urlParam('p')||'').trim().toLowerCase();
+  const p=(pRaw==='a'||pRaw==='b')?pRaw:'';        // เผื่อ URL มีอักขระเกินจากการคัดลอก
+  if(e&&t){ await initRemote(e,t,p); return; }     // ฝ่ายไหนดูจาก role ที่ backend คืนมา
+
+  const reload=_urlParam('reload');
+  if(reload&&S.token){ S.rowId=reload; await resumeContract(); return; }
+  if(S.rowId&&S.token){
+    // มี draft ค้างอยู่ — ถามผู้ใช้ผ่านปุ่มบน landing
+    try{
+      const {data}=await sb.rpc('emp_sign_status',{p_id:S.rowId,p_token:S.token});
+      if(data&&data.ok&&data.payment_completed){
+        const b=document.createElement('button');
+        b.className='btn ghost'; b.textContent='กลับไปที่สัญญาที่ค้างอยู่ →';
+        b.onclick=resumeContract;
+        $('ph-landing').querySelector('.card').appendChild(b);
+      }
+    }catch(_){}
+  }
+  _empChrome('landing');
+}
+async function resumeContract(){
+  const ok=await loadFullContent();
+  if(!ok){ toast('เปิดสัญญาที่ค้างไม่สำเร็จ'); return; }
+  const {data}=await sb.rpc('emp_sign_status',{p_id:S.rowId,p_token:S.token});
+  if(data&&data.ok){ S.sig.a=data.a_signature||null; S.sig.b=data.b_signature||null; S.certNo=data.cert_no||''; }
+  if(data&&data.a_signed_at&&data.b_signed_at){ $('certNoDisp').textContent=S.certNo||'—'; go('done'); return; }
+  go('review');
+}
+function newContract(){
+  ['emp_contract_row_id','emp_creator_token','emp_contract_no','signdee_emp_draft'].forEach(k=>{ try{localStorage.removeItem(k);}catch(_){}} );
+  location.href=location.origin+location.pathname;
+}
+window.addEventListener('DOMContentLoaded',init);
+
+</script>
+<script>
+/* ── SignDee — Thai Address (แยกบรรทัด + autocomplete) — พอร์ตจาก index.html ── */
+(function(){
+  const SRC = [
+    'https://cdn.jsdelivr.net/gh/earthchie/jquery.Thailand.js@master/jquery.Thailand.js/database/raw_database/raw_database.json',
+    'https://cdn.jsdelivr.net/npm/thai-address-database@0.4.0/database/raw_database.json'
+  ];
+  let DB = null, loading = null;
+  async function loadDB(){
+    if (DB) return DB;
+    if (loading) return loading;
+    loading = (async () => {
+      for (const url of SRC){
+        try {
+          const ctrl = new AbortController();
+          const t = setTimeout(()=>ctrl.abort(), 9000);
+          const r = await fetch(url, { signal: ctrl.signal });
+          clearTimeout(t);
+          if (!r.ok) continue;
+          const j = await r.json();
+          if (Array.isArray(j) && j.length){
+            DB = j.map(x => ({
+              sub:  x.district || x.subdistrict || '',
+              dist: x.amphoe   || '',
+              prov: x.province || '',
+              zip:  String(x.zipcode || x.zip_code || '')
+            })).filter(x => x.sub && x.prov);
+            return DB;
+          }
+        } catch(e){}
+      }
+      DB = [];
+      return DB;
+    })();
+    return loading;
+  }
+  function search(q, limit){
+    limit = limit || 7;
+    if (!DB || !DB.length || !q || q.length < 2) return [];
+    const s = q.trim(), starts = [], contains = [];
+    for (const r of DB){
+      if (starts.length >= limit) break;
+      if (r.sub.indexOf(s) === 0 || r.zip.indexOf(s) === 0) starts.push(r);
+      else if (contains.length < limit && (r.sub.includes(s) || r.dist.includes(s) || r.prov.includes(s))) contains.push(r);
+    }
+    return starts.concat(contains).slice(0, limit);
+  }
+  function dropdown(input){
+    const box = document.createElement('div');
+    box.style.cssText = 'display:none;position:absolute;z-index:9999;left:0;right:0;top:100%;margin-top:6px;background:#fff;border:1px solid var(--line,#E6ECF2);border-radius:14px;box-shadow:0 12px 32px -10px rgba(11,18,32,.25);overflow:hidden;max-height:250px;overflow-y:auto;';
+    const holder = input.parentNode;
+    if (getComputedStyle(holder).position === 'static') holder.style.position = 'relative';
+    holder.appendChild(box);
+    return box;
+  }
+  function fill(box, items, onPick){
+    box.innerHTML = items.map(r =>
+      '<div style="padding:11px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line,#eee);line-height:1.5;">'
+      + '<b style="color:var(--text,#0F2135);">'+r.sub+'</b>'
+      + '<span style="color:var(--muted,#5B6B7B);"> &gt; '+r.dist+' &gt; '+r.prov+' &gt; '+r.zip+'</span></div>').join('');
+    box.style.display = items.length ? 'block' : 'none';
+    Array.from(box.children).forEach((el,i) => {
+      el.onmouseenter = () => el.style.background = 'rgba(46,134,198,.08)';
+      el.onmouseleave = () => el.style.background = 'transparent';
+      el.onmousedown = e => { e.preventDefault(); onPick(items[i]); box.style.display = 'none'; };
+    });
+  }
+  function wireAuto(subEl, onPick){
+    const box = dropdown(subEl);
+    subEl.setAttribute('autocomplete','off');
+    subEl.addEventListener('focus', () => loadDB());
+    subEl.addEventListener('input', async () => {
+      await loadDB();
+      fill(box, search(subEl.value.trim()), onPick);
+    });
+    subEl.addEventListener('blur', () => setTimeout(()=>{ box.style.display='none'; }, 160));
+  }
+  // รองรับทั้งคำเต็มและตัวย่อ (ต./อ./จ./ถ.) ที่ OCR บัตรมักอ่านได้
+  function parseAddr(v){
+    const o = { house:'', road:'', sub:'', dist:'', prov:'', zip:'' };
+    if (!v) return o;
+    let s = String(v).trim();
+    const mz = s.match(/(\d{5})\s*$/);                             if (mz){ o.zip = mz[1]; s = s.slice(0, mz.index).trim(); }
+    const mp = s.match(/(?:จังหวัด|จ\.)\s*(\S+)|กรุงเทพมหานคร|กทม\.?/);
+    if (mp){ o.prov = mp[1] || (/(กรุงเทพมหานคร|กทม)/.test(mp[0]) ? 'กรุงเทพมหานคร' : ''); s = s.replace(mp[0],'').trim(); }
+    const md = s.match(/(?:อำเภอ|อ\.|เขต)\s*(\S+)/);                if (md){ o.dist = md[1]; s = s.replace(md[0],'').trim(); }
+    const ms = s.match(/(?:ตำบล|ต\.|แขวง)\s*(\S+)/);                if (ms){ o.sub = ms[1];  s = s.replace(ms[0],'').trim(); }
+    const mr = s.match(/(?:ถนน|ถ\.)\s*\S+|อาคาร\s*\S+/);            if (mr){ o.road = mr[0]; s = s.replace(mr[0],'').trim(); }
+    o.house = s.trim();
+    return o;
+  }
+  window.sdAddrSplitField = function(id){
+    const orig = document.getElementById(id);
+    if (!orig || orig.dataset.sdSplit) return;
+    orig.dataset.sdSplit = '1';
+    const cur = parseAddr(orig.value);
+    orig.style.display = 'none';
+    const box = document.createElement('div');
+    box.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+    const mk = (key, ph, half) => {
+      const w = document.createElement('div');
+      w.style.cssText = 'position:relative;' + (half ? 'flex:1;min-width:0;' : '');
+      const i = document.createElement('input');
+      i.type='text'; i.placeholder=ph; i.value=cur[key]||''; i.id=id+'__'+key;
+      i.setAttribute('autocomplete','off');
+      i.className = orig.className;
+      i.style.width = '100%';
+      i.style.boxSizing = 'border-box';
+      w.appendChild(i);
+      return { w, i };
+    };
+    const house = mk('house','บ้านเลขที่ / หมู่');
+    const road  = mk('road','ถนน (ถ้ามี)');
+    const sub   = mk('sub','แขวง / ตำบล');
+    const dist  = mk('dist','เขต / อำเภอ', true);
+    const prov  = mk('prov','จังหวัด', true);
+    const zip   = mk('zip','รหัสไปรษณีย์');
+    zip.i.setAttribute('inputmode','numeric'); zip.i.maxLength = 5;
+    zip.w.style.maxWidth = '190px';
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:9px;';
+    row.appendChild(dist.w); row.appendChild(prov.w);
+    box.appendChild(house.w); box.appendChild(road.w); box.appendChild(sub.w); box.appendChild(row); box.appendChild(zip.w);
+    orig.parentNode.insertBefore(box, orig.nextSibling);
+    function compose(){
+      const bkk = /กรุงเทพ/.test(prov.i.value);
+      const p = [];
+      const h=house.i.value.trim(); if(h) p.push(h);
+      const r=road.i.value.trim();  if(r) p.push(r);
+      const s=sub.i.value.trim();   if(s) p.push((bkk?'แขวง':'ตำบล')+s);
+      const d=dist.i.value.trim();  if(d) p.push((bkk?'เขต':'อำเภอ')+d);
+      const v=prov.i.value.trim();  if(v) p.push(bkk ? v : 'จังหวัด'+v);
+      const z=zip.i.value.trim();   if(z) p.push(z);
+      orig.value = p.join(' ');
+      orig.dispatchEvent(new Event('input', { bubbles:true }));
+    }
+    [house.i, road.i, sub.i, dist.i, prov.i, zip.i].forEach(el => el.addEventListener('input', compose));
+    wireAuto(sub.i, r => { sub.i.value=r.sub; dist.i.value=r.dist; prov.i.value=r.prov; zip.i.value=r.zip; compose(); });
+    compose();
+  };
+})();
+</script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=_cfTurnstileOnload" async defer></script>
+</body>
+</html>
