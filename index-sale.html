@@ -11,6 +11,17 @@
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="/img-safe.js"></script>
+<!-- ws-link.js — ผูกสัญญากลับเข้า Workspace ของ Agreement OS (ทาง A)
+
+     ปิดอยู่จนกว่าจะตั้งค่า: ถ้าไม่มี window.AGREEMENT_OS_BASE ไฟล์นี้จะไม่ยิง
+     เน็ตเลยแม้แต่ครั้งเดียว และไม่กระทบ flow ของหน้านี้แม้แต่นิดเดียว
+
+     เปิดใช้เมื่อ deploy Agreement OS แล้ว โดยใส่บรรทัดนี้ "ก่อน" script ด้านล่าง:
+       <script>window.AGREEMENT_OS_BASE = 'https://<โดเมน-agreement-os>';</script>
+
+     ⚠️ ทดสอบบน Vercel Preview URL ก่อนเสมอ และอย่าลืมเติมโดเมนของหน้านี้
+     ลงใน HANDOFF_ALLOWED_ORIGINS ฝั่ง Agreement OS ไม่งั้นจะโดน CORS บล็อก -->
+<script src="/ws-link.js"></script>
 <script>
 /* CDN สำรอง — ถ้า jsdelivr โหลดไม่ได้ (ISP บล็อก/ล่ม) ให้ดึงจาก unpkg แทน */
 (function(){
@@ -1036,12 +1047,20 @@ async function saveToSupabase() {
       if (error) throw error;
       window.contractRowId = _newId;
       try { localStorage.setItem('signdee_sale_row_id', _newId); } catch(_){}
+      // ── ผูกกลับเข้า Workspace ถ้ามาจาก Agreement OS (ทาง A) ──
+      // ⚠️ ห้าม await — การบันทึกสัญญาต้องไม่รอระบบภายนอก
+      // window.SignDeeWS เป็นการอ่าน property จึงไม่ ReferenceError แม้ ws-link.js โหลดไม่ขึ้น
+      try { if (window.SignDeeWS) window.SignDeeWS.bind(_newId); } catch (e) {}
       return _newId;
     }
     const { data, error } = await sb.from('sale_contracts').insert(payload).select('id').single();
     if (error) throw error;
     window.contractRowId = data.id;
     try { localStorage.setItem('signdee_sale_row_id', data.id); } catch(_){}
+      // ── ผูกกลับเข้า Workspace ถ้ามาจาก Agreement OS (ทาง A) ──
+      // ⚠️ ห้าม await — การบันทึกสัญญาต้องไม่รอระบบภายนอก
+      // window.SignDeeWS เป็นการอ่าน property จึงไม่ ReferenceError แม้ ws-link.js โหลดไม่ขึ้น
+      try { if (window.SignDeeWS) window.SignDeeWS.bind(data.id); } catch (e) {}
     return data.id;
   } catch(e) { console.error('saveToSupabase failed:', e); return null; }
 }
