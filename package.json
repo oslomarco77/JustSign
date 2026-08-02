@@ -1,1 +1,15 @@
-{"name":"justsign-api","version":"1.0.0","private":true,"dependencies":{"@supabase/supabase-js":"^2.49.4"}}
+{
+  "name": "justsign-api",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.7"
+  }
+}

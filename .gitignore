@@ -1,5 +1,6 @@
 node_modules/
 .vercel
+.vitest-cache/
 
 # ไฟล์ทดสอบ / scratch — ไม่ต้องขึ้น repo
 _apply-imgsafe.js
