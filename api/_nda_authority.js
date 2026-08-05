@@ -8,6 +8,7 @@ const MAX_CANONICAL_BYTES = 256 * 1024;
 const MAX_REQUEST_BYTES = 300 * 1024;
 const MAX_SIGN_REQUEST_BYTES = 4 * 1024;
 const MAX_BIND_REQUEST_BYTES = 4 * 1024;
+const MAX_EVIDENCE_REQUEST_BYTES = 4 * 1024;
 const SIGNING_CONSENT_SCHEMA = 'signdee.nda.signing-consent.v1';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VERSION_TRANSITIONS = Object.freeze({
@@ -219,6 +220,30 @@ function bindingRequest(input, actorPrincipal) {
   };
 }
 
+function signedEvidenceRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('invalid_request');
+  if (input.action === 'issue_signed_evidence') {
+    const allowed = new Set(['action', 'nda_id', 'version_id']);
+    if (Object.keys(input).some((key) => !allowed.has(key))) throw new TypeError('invalid_request');
+    for (const field of ['nda_id', 'version_id']) {
+      if (typeof input[field] !== 'string' || !UUID_PATTERN.test(input[field])) {
+        throw new TypeError('invalid_' + field);
+      }
+    }
+    return { action: input.action, ndaId: input.nda_id.toLowerCase(), versionId: input.version_id.toLowerCase() };
+  }
+  if (input.action === 'resolve_signed_evidence') {
+    const allowed = new Set(['action', 'signed_document_reference']);
+    if (Object.keys(input).some((key) => !allowed.has(key))
+        || typeof input.signed_document_reference !== 'string'
+        || !/^sde_[0-9a-f]{64}$/.test(input.signed_document_reference)) {
+      throw new TypeError('invalid_signed_document_reference');
+    }
+    return { action: input.action, signedDocumentReference: input.signed_document_reference };
+  }
+  throw new TypeError('invalid_request');
+}
+
 function secretMatches(provided, expected) {
   if (!provided || !expected) return false;
   const a = createHash('sha256').update(String(provided), 'utf8').digest();
@@ -247,6 +272,7 @@ module.exports = {
   MAX_REQUEST_BYTES,
   MAX_SIGN_REQUEST_BYTES,
   MAX_BIND_REQUEST_BYTES,
+  MAX_EVIDENCE_REQUEST_BYTES,
   SIGNING_CONSENT_SCHEMA,
   VERSION_TRANSITIONS,
   isVersionTransitionAllowed,
@@ -256,6 +282,7 @@ module.exports = {
   digestCapability,
   signingRequest,
   bindingRequest,
+  signedEvidenceRequest,
   secretMatches,
   createAuthorityPackage,
 };

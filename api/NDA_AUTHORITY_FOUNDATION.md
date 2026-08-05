@@ -141,3 +141,28 @@ audit event. A different target is rejected and audited. One NDA and one
 completed version are protected by database uniqueness and an exact
 version/hash foreign key. Direct binding-table access remains revoked from
 `anon`, `authenticated`, and `service_role`.
+
+## Durable signed-evidence authority (SD-407A.2C)
+
+`nda_signed_evidence_authority.sql` adds an immutable authority record whose
+opaque `sde_<256-bit random value>` reference means that the exact completed NDA
+version, canonical document hash, authoritative completion time, and frozen
+required-signer evidence manifest were revalidated and captured together. It
+is not the Workspace binding `authority_package_reference`, a PDF, certificate,
+or download URL.
+
+Issuance locks and reloads the aggregate and exact completed version,
+recomputes canonical SHA-256, requires matching completion timestamps, and
+locks all version-bound signers. Every required signer must have the expected
+consent schema, signing timestamp, and a digest that recomputes from the
+existing signing-evidence format. The ordered immutable manifest contains only
+stable signer/party references, role/order, signing time, consent schema, and
+evidence digest. Its representation is independently SHA-256 digested.
+
+A unique `(nda_id, version_id)` constraint plus the locked version row makes
+duplicate and concurrent issuance converge on one stable authority. Direct
+table access remains revoked. Reviewed service-role RPCs issue and resolve only
+the minimized verification representation; database eligibility remains
+mandatory even when the HTTP caller has the internal authority credential.
+Legacy `nda_contracts`, browser completion state, PDFs, Workspace reservations,
+and Workspace authority are not consulted or changed.

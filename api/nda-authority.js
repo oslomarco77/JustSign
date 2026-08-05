@@ -103,6 +103,37 @@ async function persistBinding(binding) {
   return response.json();
 }
 
+async function persistSignedEvidence(request) {
+  const rpc = request.action === 'issue_signed_evidence'
+    ? 'nda_authority_issue_signed_evidence' : 'nda_authority_resolve_signed_evidence';
+  const body = request.action === 'issue_signed_evidence'
+    ? { p_nda_id: request.ndaId, p_version_id: request.versionId }
+    : { p_signed_document_reference: request.signedDocumentReference };
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
+    method: 'POST',
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    let databaseCode = '';
+    try { databaseCode = String((await response.json()).message || ''); } catch (_) { /* sanitized below */ }
+    const error = new Error('signed_evidence_persistence_failed');
+    if (databaseCode === 'nda_signed_evidence_not_eligible') {
+      error.publicStatus = 403;
+      error.publicCode = 'signed_evidence_not_eligible';
+    } else if (databaseCode === 'nda_signed_evidence_not_found') {
+      error.publicStatus = 404;
+      error.publicCode = 'signed_evidence_not_found';
+    }
+    throw error;
+  }
+  return response.json();
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') return reply(res, 405, { ok: false, code: 'method_not_allowed' });
   const contentType = String(req.headers['content-type'] || '').toLowerCase();
@@ -124,8 +155,32 @@ async function handler(req, res) {
   if (bodyBytes > Authority.MAX_REQUEST_BYTES) {
     return reply(res, 413, { ok: false, code: 'request_too_large' });
   }
-  if (!['create_initial_version', 'sign', 'reserve_workspace_binding'].includes(body.action)) {
+  if (!['create_initial_version', 'sign', 'reserve_workspace_binding',
+    'issue_signed_evidence', 'resolve_signed_evidence'].includes(body.action)) {
     return reply(res, 400, { ok: false, code: 'unsupported_action' });
+  }
+
+  if (body.action === 'issue_signed_evidence' || body.action === 'resolve_signed_evidence') {
+    if (bodyBytes > Authority.MAX_EVIDENCE_REQUEST_BYTES) {
+      return reply(res, 413, { ok: false, code: 'request_too_large' });
+    }
+    if (!AUTHORITY_KEY) return reply(res, 503, { ok: false, code: 'authority_not_configured' });
+    if (!Authority.secretMatches(req.headers['x-signdee-authority-key'], AUTHORITY_KEY)) {
+      return reply(res, 403, { ok: false, code: 'authorization_failed' });
+    }
+    try {
+      const result = await persistSignedEvidence(Authority.signedEvidenceRequest(body));
+      return reply(res, body.action === 'issue_signed_evidence' && result.created ? 201 : 200,
+        { ok: true, ...result });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        const candidate = String(error.message || '');
+        const code = /^(?:invalid_)/.test(candidate) ? candidate : 'invalid_request';
+        return reply(res, 400, { ok: false, code });
+      }
+      if (error.publicStatus) return reply(res, error.publicStatus, { ok: false, code: error.publicCode });
+      return reply(res, 500, { ok: false, code: 'internal_error' });
+    }
   }
 
   if (body.action === 'sign') {
@@ -225,3 +280,4 @@ module.exports = handler;
 module.exports.persistAuthority = persistAuthority;
 module.exports.persistSignature = persistSignature;
 module.exports.persistBinding = persistBinding;
+module.exports.persistSignedEvidence = persistSignedEvidence;
