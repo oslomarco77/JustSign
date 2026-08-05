@@ -7,6 +7,7 @@ const CAPABILITY_BYTES = 32;
 const MAX_CANONICAL_BYTES = 256 * 1024;
 const MAX_REQUEST_BYTES = 300 * 1024;
 const MAX_SIGN_REQUEST_BYTES = 4 * 1024;
+const MAX_BIND_REQUEST_BYTES = 4 * 1024;
 const SIGNING_CONSENT_SCHEMA = 'signdee.nda.signing-consent.v1';
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VERSION_TRANSITIONS = Object.freeze({
@@ -200,6 +201,24 @@ function signingRequest(input) {
   };
 }
 
+function bindingRequest(input, actorPrincipal) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('invalid_request');
+  const allowed = new Set(['action', 'nda_id', 'version_id', 'workspace_id']);
+  if (Object.keys(input).some((key) => !allowed.has(key))) throw new TypeError('invalid_request');
+  for (const field of ['nda_id', 'version_id', 'workspace_id']) {
+    if (typeof input[field] !== 'string' || !UUID_PATTERN.test(input[field])) throw new TypeError('invalid_' + field);
+  }
+  if (typeof actorPrincipal !== 'string' || !/^[A-Za-z0-9._:-]{3,128}$/.test(actorPrincipal)) {
+    throw new TypeError('invalid_binding_principal');
+  }
+  return {
+    ndaId: input.nda_id.toLowerCase(),
+    versionId: input.version_id.toLowerCase(),
+    workspaceId: input.workspace_id.toLowerCase(),
+    actorPrincipal,
+  };
+}
+
 function secretMatches(provided, expected) {
   if (!provided || !expected) return false;
   const a = createHash('sha256').update(String(provided), 'utf8').digest();
@@ -227,6 +246,7 @@ module.exports = {
   CAPABILITY_BYTES,
   MAX_REQUEST_BYTES,
   MAX_SIGN_REQUEST_BYTES,
+  MAX_BIND_REQUEST_BYTES,
   SIGNING_CONSENT_SCHEMA,
   VERSION_TRANSITIONS,
   isVersionTransitionAllowed,
@@ -235,6 +255,7 @@ module.exports = {
   issueCapability,
   digestCapability,
   signingRequest,
+  bindingRequest,
   secretMatches,
   createAuthorityPackage,
 };

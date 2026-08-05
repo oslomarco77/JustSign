@@ -105,3 +105,39 @@ Direct authority-table access remains revoked from `anon`, `authenticated`,
 and `service_role`; only `service_role` may execute the security-definer signing
 RPC. This extension does not connect the legacy browser signing UI, Workspace,
 Claim/Redeem, PDFs, certificates, downloads, invitations, or notifications.
+
+## Workspace binding authority reservation (SD-407B.1)
+
+`nda_workspace_binding_authority.sql` adds an e-sign-side reservation record;
+it does not create or mutate a Workspace. A dedicated trusted backend caller
+may request one stable Workspace UUID for the exact completed NDA/version. The
+database locks and reloads the parent authority and version, verifies their
+matching completion timestamps, required signer completion, canonical payload,
+and SHA-256, then creates one `reserved` binding authority record.
+
+Signing lifecycle and binding lifecycle remain separate. `completed` means the
+canonical NDA version has all required signatures. `reserved` means only that
+this repository has accepted one target Workspace for later processing. It
+must not be represented externally as `bound` until SD-407B.2 authoritatively
+validates the Workspace side and performs the Workspace mutation.
+
+The repository has no Workspace membership or ownership source. Consequently,
+the reservation endpoint requires `NDA_WORKSPACE_BINDING_API_KEY`; its actor is
+derived from `NDA_WORKSPACE_BINDING_PRINCIPAL`, not request data. The trusted
+SD-407B.2 caller must validate target Workspace existence and its own authority
+before requesting a reservation. No authenticated-browser fallback exists.
+
+The binding stores only NDA/version/Workspace identifiers, the canonical hash,
+an internal `nda-authority:<nda>/<version>` authority reference, the trusted
+principal, and timestamps. That reference proves which authority package was
+reserved; it is not a PDF, certificate, download URL, or signed-document
+artifact. The shared cross-repository contract requires
+`signed_document_reference` for completed events, but this repository does not
+yet have such an artifact. SD-407B.2 must resolve that contract gap rather than
+mislabel this internal reference.
+
+Same-target retries return the same reservation and append an idempotent-replay
+audit event. A different target is rejected and audited. One NDA and one
+completed version are protected by database uniqueness and an exact
+version/hash foreign key. Direct binding-table access remains revoked from
+`anon`, `authenticated`, and `service_role`.

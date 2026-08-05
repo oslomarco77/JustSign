@@ -5,6 +5,8 @@ const Authority = require('./_nda_authority.js');
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const AUTHORITY_KEY = process.env.NDA_AUTHORITY_API_KEY || '';
+const BINDING_KEY = process.env.NDA_WORKSPACE_BINDING_API_KEY || '';
+const BINDING_PRINCIPAL = process.env.NDA_WORKSPACE_BINDING_PRINCIPAL || '';
 
 function reply(res, status, body) {
   res.setHeader('Cache-Control', 'no-store');
@@ -73,6 +75,34 @@ async function persistSignature(signing) {
   return response.json();
 }
 
+async function persistBinding(binding) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/nda_authority_reserve_workspace_binding`, {
+    method: 'POST',
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_nda_id: binding.ndaId,
+      p_version_id: binding.versionId,
+      p_workspace_id: binding.workspaceId,
+      p_actor_principal: binding.actorPrincipal,
+    }),
+  });
+  if (!response.ok) {
+    let databaseCode = '';
+    try { databaseCode = String((await response.json()).message || ''); } catch (_) { /* sanitized below */ }
+    const error = new Error('binding_persistence_failed');
+    if (databaseCode === 'nda_binding_not_eligible') {
+      error.publicStatus = 403;
+      error.publicCode = 'binding_not_authorized';
+    }
+    throw error;
+  }
+  return response.json();
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') return reply(res, 405, { ok: false, code: 'method_not_allowed' });
   const contentType = String(req.headers['content-type'] || '').toLowerCase();
@@ -94,7 +124,7 @@ async function handler(req, res) {
   if (bodyBytes > Authority.MAX_REQUEST_BYTES) {
     return reply(res, 413, { ok: false, code: 'request_too_large' });
   }
-  if (body.action !== 'create_initial_version' && body.action !== 'sign') {
+  if (!['create_initial_version', 'sign', 'reserve_workspace_binding'].includes(body.action)) {
     return reply(res, 400, { ok: false, code: 'unsupported_action' });
   }
 
@@ -116,6 +146,43 @@ async function handler(req, res) {
       if (error instanceof TypeError) {
         const candidate = String(error.message || '');
         const code = /^(?:invalid_|consent_required$)/.test(candidate) ? candidate : 'invalid_request';
+        return reply(res, 400, { ok: false, code });
+      }
+      if (error.publicStatus) return reply(res, error.publicStatus, { ok: false, code: error.publicCode });
+      return reply(res, 500, { ok: false, code: 'internal_error' });
+    }
+  }
+
+  if (body.action === 'reserve_workspace_binding') {
+    if (bodyBytes > Authority.MAX_BIND_REQUEST_BYTES) {
+      return reply(res, 413, { ok: false, code: 'request_too_large' });
+    }
+    if (!BINDING_KEY || !BINDING_PRINCIPAL) {
+      return reply(res, 503, { ok: false, code: 'binding_not_configured' });
+    }
+    if (!Authority.secretMatches(req.headers['x-signdee-binding-key'], BINDING_KEY)) {
+      return reply(res, 403, { ok: false, code: 'authorization_failed' });
+    }
+    try {
+      const result = await persistBinding(Authority.bindingRequest(body, BINDING_PRINCIPAL));
+      if (result.outcome === 'conflict') {
+        return reply(res, 409, { ok: false, code: 'workspace_binding_conflict' });
+      }
+      return reply(res, result.created ? 201 : 200, {
+        ok: true,
+        binding_id: result.binding_id,
+        nda_id: result.nda_id,
+        version_id: result.version_id,
+        workspace_id: result.workspace_id,
+        binding_status: result.binding_status,
+        document_hash: result.document_hash,
+        authority_package_reference: result.authority_package_reference,
+        created: result.created,
+      });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        const candidate = String(error.message || '');
+        const code = /^(?:invalid_)/.test(candidate) ? candidate : 'invalid_request';
         return reply(res, 400, { ok: false, code });
       }
       if (error.publicStatus) return reply(res, error.publicStatus, { ok: false, code: error.publicCode });
@@ -157,3 +224,4 @@ async function handler(req, res) {
 module.exports = handler;
 module.exports.persistAuthority = persistAuthority;
 module.exports.persistSignature = persistSignature;
+module.exports.persistBinding = persistBinding;
