@@ -6,9 +6,13 @@ const CANONICAL_SCHEMA = 'signdee.nda.document.v1';
 const CAPABILITY_BYTES = 32;
 const MAX_CANONICAL_BYTES = 256 * 1024;
 const MAX_REQUEST_BYTES = 300 * 1024;
+const MAX_SIGN_REQUEST_BYTES = 4 * 1024;
+const SIGNING_CONSENT_SCHEMA = 'signdee.nda.signing-consent.v1';
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const VERSION_TRANSITIONS = Object.freeze({
   draft: Object.freeze(['issued', 'void']),
-  issued: Object.freeze(['void', 'superseded']),
+  issued: Object.freeze(['completed', 'void', 'superseded']),
+  completed: Object.freeze([]),
   void: Object.freeze([]),
   superseded: Object.freeze([]),
 });
@@ -166,6 +170,36 @@ function issueCapability(now, ttlSeconds) {
   };
 }
 
+function digestCapability(plaintext) {
+  if (typeof plaintext !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(plaintext)) {
+    throw new TypeError('invalid_signing_capability');
+  }
+  let decoded;
+  try { decoded = Buffer.from(plaintext, 'base64url'); }
+  catch (_) { throw new TypeError('invalid_signing_capability'); }
+  if (decoded.length !== CAPABILITY_BYTES || decoded.toString('base64url') !== plaintext) {
+    throw new TypeError('invalid_signing_capability');
+  }
+  return createHash('sha256').update(plaintext, 'utf8').digest('hex');
+}
+
+function signingRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('invalid_request');
+  const allowed = new Set(['action', 'nda_id', 'version_id', 'signer_id', 'capability', 'consent']);
+  if (Object.keys(input).some((key) => !allowed.has(key))) throw new TypeError('invalid_request');
+  for (const field of ['nda_id', 'version_id', 'signer_id']) {
+    if (typeof input[field] !== 'string' || !UUID_PATTERN.test(input[field])) throw new TypeError('invalid_' + field);
+  }
+  if (input.consent !== true) throw new TypeError('consent_required');
+  return {
+    ndaId: input.nda_id.toLowerCase(),
+    versionId: input.version_id.toLowerCase(),
+    signerId: input.signer_id.toLowerCase(),
+    capabilityDigest: digestCapability(input.capability),
+    consentSchema: SIGNING_CONSENT_SCHEMA,
+  };
+}
+
 function secretMatches(provided, expected) {
   if (!provided || !expected) return false;
   const a = createHash('sha256').update(String(provided), 'utf8').digest();
@@ -192,11 +226,15 @@ module.exports = {
   CANONICAL_SCHEMA,
   CAPABILITY_BYTES,
   MAX_REQUEST_BYTES,
+  MAX_SIGN_REQUEST_BYTES,
+  SIGNING_CONSENT_SCHEMA,
   VERSION_TRANSITIONS,
   isVersionTransitionAllowed,
   canonicalize,
   buildCanonicalDocument,
   issueCapability,
+  digestCapability,
+  signingRequest,
   secretMatches,
   createAuthorityPackage,
 };

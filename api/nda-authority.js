@@ -41,6 +41,38 @@ async function persistAuthority(pkg) {
   if (!response.ok) throw new Error('authority_persistence_failed');
 }
 
+async function persistSignature(signing) {
+  const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/nda_authority_sign_version`, {
+    method: 'POST',
+    headers: {
+      apikey: SERVICE_KEY,
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_nda_id: signing.ndaId,
+      p_version_id: signing.versionId,
+      p_signer_id: signing.signerId,
+      p_capability_digest: signing.capabilityDigest,
+      p_consent_schema: signing.consentSchema,
+    }),
+  });
+  if (!response.ok) {
+    let databaseCode = '';
+    try { databaseCode = String((await response.json()).message || ''); } catch (_) { /* sanitized below */ }
+    const error = new Error('signature_persistence_failed');
+    if (databaseCode === 'nda_signing_conflict') {
+      error.publicStatus = 409;
+      error.publicCode = 'signing_conflict';
+    } else if (databaseCode === 'nda_signing_not_authorized') {
+      error.publicStatus = 403;
+      error.publicCode = 'signing_not_authorized';
+    }
+    throw error;
+  }
+  return response.json();
+}
+
 async function handler(req, res) {
   if (req.method !== 'POST') return reply(res, 405, { ok: false, code: 'method_not_allowed' });
   const contentType = String(req.headers['content-type'] || '').toLowerCase();
@@ -49,11 +81,8 @@ async function handler(req, res) {
   if (Number.isFinite(declaredLength) && declaredLength > Authority.MAX_REQUEST_BYTES) {
     return reply(res, 413, { ok: false, code: 'request_too_large' });
   }
-  if (!SUPABASE_URL || !SERVICE_KEY || !AUTHORITY_KEY) {
+  if (!SUPABASE_URL || !SERVICE_KEY) {
     return reply(res, 503, { ok: false, code: 'authority_not_configured' });
-  }
-  if (!Authority.secretMatches(req.headers['x-signdee-authority-key'], AUTHORITY_KEY)) {
-    return reply(res, 403, { ok: false, code: 'authorization_failed' });
   }
 
   let body;
@@ -65,8 +94,38 @@ async function handler(req, res) {
   if (bodyBytes > Authority.MAX_REQUEST_BYTES) {
     return reply(res, 413, { ok: false, code: 'request_too_large' });
   }
-  if (body.action !== 'create_initial_version') {
+  if (body.action !== 'create_initial_version' && body.action !== 'sign') {
     return reply(res, 400, { ok: false, code: 'unsupported_action' });
+  }
+
+  if (body.action === 'sign') {
+    if (bodyBytes > Authority.MAX_SIGN_REQUEST_BYTES) {
+      return reply(res, 413, { ok: false, code: 'request_too_large' });
+    }
+    try {
+      const result = await persistSignature(Authority.signingRequest(body));
+      return reply(res, 200, {
+        ok: true,
+        nda_id: result.nda_id,
+        version_id: result.version_id,
+        signer_id: result.signer_id,
+        signed_at: result.signed_at,
+        completed: result.completed,
+      });
+    } catch (error) {
+      if (error instanceof TypeError) {
+        const candidate = String(error.message || '');
+        const code = /^(?:invalid_|consent_required$)/.test(candidate) ? candidate : 'invalid_request';
+        return reply(res, 400, { ok: false, code });
+      }
+      if (error.publicStatus) return reply(res, error.publicStatus, { ok: false, code: error.publicCode });
+      return reply(res, 500, { ok: false, code: 'internal_error' });
+    }
+  }
+
+  if (!AUTHORITY_KEY) return reply(res, 503, { ok: false, code: 'authority_not_configured' });
+  if (!Authority.secretMatches(req.headers['x-signdee-authority-key'], AUTHORITY_KEY)) {
+    return reply(res, 403, { ok: false, code: 'authorization_failed' });
   }
 
   try {
@@ -97,3 +156,4 @@ async function handler(req, res) {
 
 module.exports = handler;
 module.exports.persistAuthority = persistAuthority;
+module.exports.persistSignature = persistSignature;

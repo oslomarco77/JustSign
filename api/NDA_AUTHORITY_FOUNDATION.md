@@ -73,3 +73,35 @@ hash, and blank signature lines are not independent pre-signing material.
 Signatures, consent evidence, signing timestamps, certificate data, audit data,
 and completed-document evidence are deliberately excluded from the pre-signing
 hash.
+
+## Transactional signing extension (SD-407A.2B)
+
+`nda_authority_signing.sql` is applied after the foundation migration. The
+public endpoint accepts `POST` action `sign` with the three authority UUIDs, a
+one-time capability, and explicit `consent: true`. This signer operation does
+not use the internal creation credential: possession of the exact random
+capability is the narrowly scoped authorization. The server validates its
+base64url encoding, derives SHA-256, discards the plaintext, and sends only the
+digest to the reviewed database RPC. Sign requests are limited to 4 KiB and
+responses remain `no-store`.
+
+The signing RPC locks and revalidates the exact issued version, version-bound
+signer, and digest-bound capability. It records a database timestamp, consent
+schema, and SHA-256 evidence digest; consumes the capability; and appends
+`signer.signed` and `capability.consumed` audit events in the same transaction.
+No handwritten signature, image, base64 data, request body, capability, or
+capability digest is audit metadata.
+
+Existing signers become required by default. A version completes only when it
+has at least one required signer and no required signer on that exact NDA and
+version remains pending. The final signer transaction moves that version and
+its parent authority contract to `completed` and appends version/authority
+completion events. `completed`, `void`, and `superseded` versions are terminal;
+canonical payload and hash remain immutable. Row locks, status constraints,
+the one-row signer state, and the capability state transition make repeated or
+concurrent submissions conflict without partial state.
+
+Direct authority-table access remains revoked from `anon`, `authenticated`,
+and `service_role`; only `service_role` may execute the security-definer signing
+RPC. This extension does not connect the legacy browser signing UI, Workspace,
+Claim/Redeem, PDFs, certificates, downloads, invitations, or notifications.
