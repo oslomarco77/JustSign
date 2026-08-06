@@ -104,11 +104,18 @@ async function persistBinding(binding) {
 }
 
 async function persistSignedEvidence(request) {
-  const rpc = request.action === 'issue_signed_evidence'
-    ? 'nda_authority_issue_signed_evidence' : 'nda_authority_resolve_signed_evidence';
-  const body = request.action === 'issue_signed_evidence'
-    ? { p_nda_id: request.ndaId, p_version_id: request.versionId }
-    : { p_signed_document_reference: request.signedDocumentReference };
+  const operations = {
+    issue_signed_evidence: ['nda_authority_issue_signed_evidence',
+      { p_nda_id: request.ndaId, p_version_id: request.versionId }],
+    resolve_signed_evidence: ['nda_authority_resolve_signed_evidence',
+      { p_signed_document_reference: request.signedDocumentReference }],
+    resolve_workspace_acceptance: ['nda_authority_resolve_workspace_acceptance',
+      { p_binding_id: request.bindingId, p_signed_document_reference: request.signedDocumentReference }],
+    confirm_workspace_acceptance: ['nda_authority_confirm_workspace_acceptance',
+      { p_binding_id: request.bindingId, p_workspace_id: request.workspaceId,
+        p_workspace_result_reference: request.workspaceResultReference }],
+  };
+  const [rpc, body] = operations[request.action];
   const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${rpc}`, {
     method: 'POST',
     headers: {
@@ -122,12 +129,16 @@ async function persistSignedEvidence(request) {
     let databaseCode = '';
     try { databaseCode = String((await response.json()).message || ''); } catch (_) { /* sanitized below */ }
     const error = new Error('signed_evidence_persistence_failed');
-    if (databaseCode === 'nda_signed_evidence_not_eligible') {
+    if (databaseCode === 'nda_signed_evidence_not_eligible'
+        || databaseCode === 'nda_workspace_acceptance_not_authorized') {
       error.publicStatus = 403;
       error.publicCode = 'signed_evidence_not_eligible';
     } else if (databaseCode === 'nda_signed_evidence_not_found') {
       error.publicStatus = 404;
       error.publicCode = 'signed_evidence_not_found';
+    } else if (databaseCode === 'nda_workspace_confirmation_conflict') {
+      error.publicStatus = 409;
+      error.publicCode = 'workspace_confirmation_conflict';
     }
     throw error;
   }
@@ -156,11 +167,13 @@ async function handler(req, res) {
     return reply(res, 413, { ok: false, code: 'request_too_large' });
   }
   if (!['create_initial_version', 'sign', 'reserve_workspace_binding',
-    'issue_signed_evidence', 'resolve_signed_evidence'].includes(body.action)) {
+    'issue_signed_evidence', 'resolve_signed_evidence', 'resolve_workspace_acceptance',
+    'confirm_workspace_acceptance'].includes(body.action)) {
     return reply(res, 400, { ok: false, code: 'unsupported_action' });
   }
 
-  if (body.action === 'issue_signed_evidence' || body.action === 'resolve_signed_evidence') {
+  if (['issue_signed_evidence','resolve_signed_evidence','resolve_workspace_acceptance',
+    'confirm_workspace_acceptance'].includes(body.action)) {
     if (bodyBytes > Authority.MAX_EVIDENCE_REQUEST_BYTES) {
       return reply(res, 413, { ok: false, code: 'request_too_large' });
     }
