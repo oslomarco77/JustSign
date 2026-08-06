@@ -120,8 +120,17 @@ create function public.employment_authority_issue_version(
   p_employment_id uuid,p_version_id uuid,p_source_updated_at timestamptz,
   p_canonical_schema text,p_canonical_payload text,p_canonical_document jsonb,p_document_hash text
 ) returns jsonb language plpgsql security definer set search_path=public,pg_temp as $$
-declare v public.employment_authority_versions%rowtype;r public.emp_contracts%rowtype;
+declare authority public.employment_authority_contracts%rowtype;
+  v public.employment_authority_versions%rowtype;r public.emp_contracts%rowtype;
 begin
+  select * into v from public.employment_authority_versions
+    where employment_id=p_employment_id and id=p_version_id;
+  if not found then raise exception 'employment_version_not_found';end if;
+  select * into r from public.emp_contracts where id=v.legacy_contract_id for update;
+  if not found then raise exception 'employment_version_source_stale';end if;
+  select * into authority from public.employment_authority_contracts
+    where id=p_employment_id for update;
+  if not found then raise exception 'employment_version_not_found';end if;
   select * into v from public.employment_authority_versions
     where employment_id=p_employment_id and id=p_version_id for update;
   if not found then raise exception 'employment_version_not_found';end if;
@@ -131,8 +140,7 @@ begin
         'version_number',v.version_number,'lifecycle_status','issued','document_hash','sha256:'||p_document_hash);end if;
     raise exception 'employment_version_conflict';
   end if;
-  select * into r from public.emp_contracts where id=v.legacy_contract_id for update;
-  if not found or r.updated_at<>v.source_updated_at or r.updated_at<>p_source_updated_at
+  if r.updated_at<>v.source_updated_at or r.updated_at<>p_source_updated_at
     then raise exception 'employment_version_source_stale';end if;
   if p_canonical_schema<>'signdee.employment.document.v1'
     or p_canonical_schema<>v.canonical_schema

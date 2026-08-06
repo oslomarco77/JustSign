@@ -1,6 +1,6 @@
 'use strict';
 
-const { createHash, timingSafeEqual, randomUUID } = require('node:crypto');
+const { createHash, timingSafeEqual, randomUUID, randomBytes } = require('node:crypto');
 const Employment = require('./_employment_authority.js');
 
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').replace(/\/$/,'');
@@ -34,6 +34,18 @@ async function issueEmploymentVersion(legacyId){
     p_canonical_document:canonical.document,p_document_hash:canonical.hash});
 }
 
+async function authorizeEmploymentSigners(versionId){
+  const expiresAt=new Date(Date.now()+72*60*60*1000).toISOString();
+  const signers=['employer','employee'].map((role)=>{
+    const capability=randomBytes(32).toString('base64url');
+    return {id:randomUUID(),capability_id:randomUUID(),role,capability,
+      capability_digest:createHash('sha256').update(capability,'utf8').digest('hex'),expires_at:expiresAt};
+  });
+  const result=await rpc('employment_authority_authorize_signers',{p_version_id:versionId,
+    p_signers:signers.map(({capability,...signer})=>signer)});
+  return {...result,signers:signers.map(({id,role,capability})=>({signer_id:id,role,capability,expires_at:expiresAt}))};
+}
+
 async function handler(req,res){
   if(req.method!=='POST')return reply(res,405,{ok:false,code:'method_not_allowed'});
   if(!String(req.headers['content-type']||'').toLowerCase().startsWith('application/json'))return reply(res,415,{ok:false,code:'unsupported_media_type'});
@@ -42,12 +54,16 @@ async function handler(req,res){
   if(!secretMatches(req.headers['x-signdee-employment-authority-key'],AUTHORITY_KEY))return reply(res,403,{ok:false,code:'authorization_failed'});
   let body;try{body=typeof req.body==='string'?JSON.parse(req.body):(req.body||{});}catch{return reply(res,400,{ok:false,code:'malformed_request'});}
   if(Buffer.byteLength(JSON.stringify(body),'utf8')>MAX_BODY_BYTES)return reply(res,413,{ok:false,code:'request_too_large'});
-  let request;try{request=Employment.versionRequest(body);}catch{return reply(res,400,{ok:false,code:'invalid_request'});}
-  try{const result=await issueEmploymentVersion(request.legacyContractId);return reply(res,result.created?201:200,{ok:true,...result});}
+  let request;try{request=body.action==='authorize_signers'
+    ?Employment.signerAuthorizationRequest(body):Employment.versionRequest(body);}catch{return reply(res,400,{ok:false,code:'invalid_request'});}
+  try{const result=body.action==='authorize_signers'
+    ?await authorizeEmploymentSigners(request.versionId):await issueEmploymentVersion(request.legacyContractId);
+    return reply(res,body.action==='authorize_signers'?201:(result.created?201:200),{ok:true,...result});}
   catch(error){if(error instanceof TypeError)return reply(res,400,{ok:false,code:'invalid_employment_document'});if(error.message==='employment_source_not_found')return reply(res,404,{ok:false,code:'source_not_found'});return reply(res,409,{ok:false,code:'employment_version_not_issued'});}
 }
 
 module.exports=handler;
 module.exports.issueEmploymentVersion=issueEmploymentVersion;
+module.exports.authorizeEmploymentSigners=authorizeEmploymentSigners;
 module.exports.loadLegacyEmployment=loadLegacyEmployment;
 module.exports.secretMatches=secretMatches;

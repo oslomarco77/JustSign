@@ -210,5 +210,28 @@ function versionRequest(input) {
   return { legacyContractId: input.legacy_contract_id.toLowerCase() };
 }
 
+function signerAuthorizationRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)
+    || Object.keys(input).sort().join(',') !== 'action,version_id'
+    || input.action !== 'authorize_signers' || typeof input.version_id !== 'string'
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input.version_id)) {
+    throw new TypeError('invalid_request');
+  }
+  return { versionId: input.version_id.toLowerCase() };
+}
+
+function signingRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)
+    || Object.keys(input).sort().join(',') !== 'capability,consent,signature_input'
+    || typeof input.capability !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(input.capability)
+    || input.consent !== true || typeof input.signature_input !== 'string'
+    || input.signature_input.length < 1 || Buffer.byteLength(input.signature_input, 'utf8') > 262144) {
+    throw new TypeError('invalid_request');
+  }
+  return { capability: input.capability, signatureInput: input.signature_input,
+    consentSchema: 'signdee.employment.signing-consent.v1' };
+}
+
 module.exports = { CANONICAL_SCHEMA, MAX_CANONICAL_BYTES, PRESENTATION_TEXT, canonicalize,
-  buildEmploymentSourceDocument, buildCanonicalEmploymentDocument, digestReferencedImage, versionRequest };
+  buildEmploymentSourceDocument, buildCanonicalEmploymentDocument, digestReferencedImage, versionRequest,
+  signerAuthorizationRequest, signingRequest };
