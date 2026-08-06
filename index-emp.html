@@ -814,7 +814,7 @@ function _pdDateTh(iso){
 function fmtUTC(ts){ if(!ts) return '—'; try{ return new Date(ts).toISOString().replace('T',' ').slice(0,19)+' UTC'; }catch(_){ return '—'; } }
 function _pdLocal(ts){ if(!ts) return '—'; try{ return new Date(ts).toLocaleString('th-TH',{dateStyle:'medium',timeStyle:'short'}); }catch(_){ return '—'; } }
 function _pdDevice(ua){ if(!ua) return '—'; const s=String(ua); let os=/Windows/.test(s)?'Windows':/iPhone|iPad|iOS/.test(s)?'iPhone/iPad':/Android/.test(s)?'Android':/Mac/.test(s)?'Mac':''; let br=/Chrome/.test(s)?'Chrome':/Safari/.test(s)?'Safari':/Firefox/.test(s)?'Firefox':/Edg/.test(s)?'Edge':''; return [os,br].filter(Boolean).join(' · ')||'—'; }
-function _pdAge(card){ try{ const dob=card&&card.ocr_raw&&card.ocr_raw.date_of_birth; if(!dob) return ''; const d=new Date(dob); if(isNaN(d)) return ''; const n=new Date(); let a=n.getFullYear()-d.getFullYear(); const m=n.getMonth()-d.getMonth(); if(m<0||(m===0&&n.getDate()<d.getDate()))a--; return (a>0&&a<130)?String(a):''; }catch(_){ return ''; } }
+function _pdAge(card,referenceDate){ try{ const dob=card&&card.ocr_raw&&card.ocr_raw.date_of_birth; if(!dob||!referenceDate) return ''; const d=new Date(dob),n=new Date(referenceDate+'T00:00:00.000Z'); if(isNaN(d)||isNaN(n)) return ''; let a=n.getUTCFullYear()-d.getUTCFullYear(); const m=n.getUTCMonth()-d.getUTCMonth(); if(m<0||(m===0&&n.getUTCDate()<d.getUTCDate()))a--; return (a>=0&&a<130)?String(a):''; }catch(_){ return ''; } }
 function _pdClauseHtml(txt){
   return String(txt||'').split(/\n/).map(l=>{
     const t=_normSp(l);
@@ -1880,8 +1880,8 @@ async function buildEvidencePDF(){
     const jur=(A&&A.jur)||null;
     const hash=row.doc_hash||S.docHash||'';
     const cno=row.cert_no||S.certNo||('SDE-'+(new Date().getFullYear()+543)+'-'+hash.slice(0,12).toUpperCase());
-    let paidIso=row.paid_at; if(!paidIso){ try{ paidIso=localStorage.getItem('emp_paid_at_'+row.id)||null; }catch(_){} }
-    const dateTh=_pdDateTh(paidIso||row.created_at);
+    const documentDate=String(row.created_at||'').slice(0,10);
+    const dateTh=_pdDateTh(documentDate);
     const n=(S.clauseCount)||(cl.c19?19:18);
 
     const placeArr = jur
@@ -1889,14 +1889,14 @@ async function buildEvidencePDF(){
          [jur.subdistrict?('ต.'+jur.subdistrict):'',jur.district?('อ.'+jur.district):'',jur.province?('จ.'+jur.province):''].filter(Boolean).join(' ')]
       : _addrTwoLines((A.address||'').trim());
 
-    const pl=(p,role)=>{
+    const pl=(p,role,age)=>{
       const nm=(p&&p.name)||'________________';
       const id=(p&&p.id13)||'________________';
       const ad=(p&&p.address)||'________________';
-      return `${esc(nm)} บัตรประจำตัวประชาชนเลขที่ ${esc(id)} อยู่บ้านเลขที่ ${esc(ad)} ต่อไปนี้เรียกว่า "${role}"`;
+      return `${esc(nm)}${age?(' อายุ '+esc(age)+' ปี'):''} บัตรประจำตัวประชาชนเลขที่ ${esc(id)} อยู่บ้านเลขที่ ${esc(ad)} ต่อไปนี้เรียกว่า "${role}"`;
     };
-    const jurLine = jur ? `${esc(jur.name||'')} ทะเบียนนิติบุคคลเลขที่ ${esc(jur.regNo||'')} โดย ${esc(jur.signer||'')} ตำแหน่ง ${esc(jur.signerTitle||'ผู้มีอำนาจลงนาม')} ต่อไปนี้เรียกว่า "นายจ้าง"` : pl(A,'นายจ้าง');
-    const ageB=_pdAge(bCard); const ageA=_pdAge(aCard);
+    const ageA=_pdAge(aCard,documentDate),ageB=_pdAge(bCard,documentDate);
+    const jurLine = jur ? `${esc(jur.name||'')} ทะเบียนนิติบุคคลเลขที่ ${esc(jur.regNo||'')} โดย ${esc(jur.signer||'')} ตำแหน่ง ${esc(jur.signerTitle||'ผู้มีอำนาจลงนาม')} ต่อไปนี้เรียกว่า "นายจ้าง"` : pl(A,'นายจ้าง',ageA);
 
     const sigBlock=(sig,name,role)=>`<div class="col">
         <div class="pd-sig-img">${sig?`<img src="${sig}">`:''}</div>
@@ -1929,7 +1929,7 @@ async function buildEvidencePDF(){
       ${placeArr[1]?`<div class="pd-place" style="margin-top:0">${esc(placeArr[1])}</div>`:''}
       <div class="pd-date">วันที่ ${esc(dateTh||'....................')}</div>
       <div class="pd-clause"><b>ระหว่าง:</b> ${jurLine} ฝ่ายหนึ่ง</div>
-      <div class="pd-clause"><b>กับ</b> ${pl(B,'ลูกจ้าง')}${ageB?(' อายุ '+esc(ageB)+' ปี'):''} อีกฝ่ายหนึ่ง</div>
+      <div class="pd-clause"><b>กับ</b> ${pl(B,'ลูกจ้าง',ageB)} อีกฝ่ายหนึ่ง</div>
       <div class="pd-clause">คู่สัญญาทั้งสองฝ่ายตกลงทำสัญญาจ้างกันโดยมีข้อความ ดังต่อไปนี้</div>`;
 
     /* ทุกข้อต้องห่อด้วย .pd-clause — CSS ทั้งหมดอยู่ใต้ selector นี้ ถ้าไม่ห่อจะไม่มีสไตล์เลย */
@@ -1950,7 +1950,7 @@ async function buildEvidencePDF(){
 
     /* ปิดท้าย + ลายเซ็น = บล็อกเดียว ไม่ให้ลายเซ็นหลุดไปอยู่คนละหน้ากับข้อความปิดท้าย */
     blocks.push(`<div class="pd-clause">
-        <div class="pd-para">คู่สัญญาทั้งสองฝ่ายได้อ่านและเข้าใจข้อความในสัญญานี้โดยตลอดแล้ว เห็นว่าถูกต้องตรงตามเจตนา จึงได้ลงลายมือชื่ออิเล็กทรอนิกส์ไว้เป็นสำคัญ พร้อมด้วยเอกสารแนบท้าย ก. และเอกสารแนบท้าย ข. ซึ่งถือเป็นส่วนหนึ่งของสัญญานี้</div>
+        <div class="pd-para">คู่สัญญาทั้งสองฝ่ายได้อ่านและเข้าใจข้อความในสัญญานี้โดยตลอดแล้ว เห็นว่าถูกต้องตรงตามเจตนา จึงได้ลงลายมือชื่ออิเล็กทรอนิกส์ไว้เป็นสำคัญ พร้อมด้วยเอกสารแนบท้าย ก. รายละเอียดตำแหน่งงาน และเอกสารแนบท้าย ข. สำเนาบัตรประจำตัวประชาชนของคู่สัญญา ซึ่งถือเป็นส่วนหนึ่งของสัญญานี้</div>
         <div class="pd-sig">${sigBlock(row.a_signature,(jur&&jur.signer)||A.name,'นายจ้าง')}${sigBlock(row.b_signature,B.name,'ลูกจ้าง')}</div>
         ${(jur&&jur.sealImg)?`<div style="text-align:center;margin-top:20px"><img src="${jur.sealImg}" style="height:96px;width:auto;object-fit:contain"><div style="font-size:11.5px;color:#666;margin-top:4px">(ตราประทับนิติบุคคล)</div></div>`:''}
       </div>`);
