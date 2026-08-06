@@ -6,6 +6,8 @@ const Employment = require('./_employment_authority.js');
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').replace(/\/$/,'');
 const SERVICE_KEY=process.env.SUPABASE_SERVICE_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||'';
 const AUTHORITY_KEY=process.env.EMPLOYMENT_AUTHORITY_API_KEY||'';
+const BINDING_KEY=process.env.EMPLOYMENT_WORKSPACE_BINDING_API_KEY||'';
+const BINDING_PRINCIPAL=process.env.EMPLOYMENT_WORKSPACE_BINDING_PRINCIPAL||'';
 const MAX_BODY_BYTES=2048;
 
 function secretMatches(a,b){if(!a||!b)return false;const x=createHash('sha256').update(String(a)).digest();const y=createHash('sha256').update(String(b)).digest();return timingSafeEqual(x,y);}
@@ -68,27 +70,71 @@ async function persistEmploymentSignedEvidence(request){
   }
 }
 
+async function persistEmploymentWorkspaceBinding(request){
+  const operations={
+    reserve_workspace_binding:['employment_authority_reserve_workspace_binding',{
+      p_employment_id:request.employmentId,p_version_id:request.versionId,
+      p_workspace_id:request.workspaceId,p_actor_principal:request.actorPrincipal}],
+    resolve_workspace_acceptance:['employment_authority_resolve_workspace_acceptance',{
+      p_binding_id:request.bindingId,p_signed_document_reference:request.signedDocumentReference}],
+    confirm_workspace_acceptance:['employment_authority_confirm_workspace_acceptance',{
+      p_binding_id:request.bindingId,p_workspace_id:request.workspaceId,
+      p_workspace_result_reference:request.workspaceResultReference}],
+  };
+  const [name,body]=operations[request.action];
+  try{return await rpc(name,body);}catch(error){
+    const response=error.response;let databaseCode='';
+    if(response)try{databaseCode=String((await response.json()).message||'');}catch{/* sanitized */}
+    const failure=new Error('employment_workspace_binding_failed');
+    if(databaseCode==='employment_binding_not_eligible'){
+      failure.publicStatus=403;failure.publicCode='binding_not_authorized';
+    }else if(databaseCode==='employment_workspace_acceptance_not_authorized'){
+      failure.publicStatus=403;failure.publicCode='workspace_acceptance_not_authorized';
+    }else if(databaseCode==='employment_workspace_confirmation_conflict'){
+      failure.publicStatus=409;failure.publicCode='workspace_confirmation_conflict';
+    }
+    throw failure;
+  }
+}
+
 async function handler(req,res){
   if(req.method!=='POST')return reply(res,405,{ok:false,code:'method_not_allowed'});
   if(!String(req.headers['content-type']||'').toLowerCase().startsWith('application/json'))return reply(res,415,{ok:false,code:'unsupported_media_type'});
   const declared=Number(req.headers['content-length']||0);if(Number.isFinite(declared)&&declared>MAX_BODY_BYTES)return reply(res,413,{ok:false,code:'request_too_large'});
-  if(!SUPABASE_URL||!SERVICE_KEY||!AUTHORITY_KEY)return reply(res,503,{ok:false,code:'authority_not_configured'});
-  if(!secretMatches(req.headers['x-signdee-employment-authority-key'],AUTHORITY_KEY))return reply(res,403,{ok:false,code:'authorization_failed'});
+  if(!SUPABASE_URL||!SERVICE_KEY)return reply(res,503,{ok:false,code:'authority_not_configured'});
   let body;try{body=typeof req.body==='string'?JSON.parse(req.body):(req.body||{});}catch{return reply(res,400,{ok:false,code:'malformed_request'});}
   if(Buffer.byteLength(JSON.stringify(body),'utf8')>MAX_BODY_BYTES)return reply(res,413,{ok:false,code:'request_too_large'});
-  let request;try{request=['issue_signed_evidence','resolve_signed_evidence'].includes(body.action)
-    ?Employment.signedEvidenceRequest(body):(body.action==='authorize_signers'
-      ?Employment.signerAuthorizationRequest(body):Employment.versionRequest(body));}
+  const bindingActions=['reserve_workspace_binding','resolve_workspace_acceptance','confirm_workspace_acceptance'];
+  const isReservation=body.action==='reserve_workspace_binding';
+  if(isReservation){
+    if(!BINDING_KEY||!BINDING_PRINCIPAL)return reply(res,503,{ok:false,code:'binding_not_configured'});
+    if(!secretMatches(req.headers['x-signdee-employment-binding-key'],BINDING_KEY))
+      return reply(res,403,{ok:false,code:'authorization_failed'});
+  }else{
+    if(!AUTHORITY_KEY)return reply(res,503,{ok:false,code:'authority_not_configured'});
+    if(!secretMatches(req.headers['x-signdee-employment-authority-key'],AUTHORITY_KEY))
+      return reply(res,403,{ok:false,code:'authorization_failed'});
+  }
+  let request;try{request=bindingActions.includes(body.action)
+    ?Employment.workspaceBindingRequest(body,isReservation?BINDING_PRINCIPAL:undefined)
+    :(['issue_signed_evidence','resolve_signed_evidence'].includes(body.action)
+      ?Employment.signedEvidenceRequest(body):(body.action==='authorize_signers'
+        ?Employment.signerAuthorizationRequest(body):Employment.versionRequest(body)));}
   catch{return reply(res,400,{ok:false,code:'invalid_request'});}
-  try{const result=['issue_signed_evidence','resolve_signed_evidence'].includes(body.action)
-    ?await persistEmploymentSignedEvidence(request):(body.action==='authorize_signers'
-      ?await authorizeEmploymentSigners(request.versionId):await issueEmploymentVersion(request.legacyContractId));
+  try{const result=bindingActions.includes(body.action)
+    ?await persistEmploymentWorkspaceBinding(request)
+    :(['issue_signed_evidence','resolve_signed_evidence'].includes(body.action)
+      ?await persistEmploymentSignedEvidence(request):(body.action==='authorize_signers'
+        ?await authorizeEmploymentSigners(request.versionId):await issueEmploymentVersion(request.legacyContractId)));
+    if(result.outcome==='conflict')return reply(res,409,{ok:false,code:'workspace_binding_conflict'});
     return reply(res,body.action==='authorize_signers'||(body.action==='issue_signed_evidence'&&result.created)
+      ||(body.action==='reserve_workspace_binding'&&result.created)
       ?201:(result.created?201:200),{ok:true,...result});}
   catch(error){if(error instanceof TypeError)return reply(res,400,{ok:false,code:'invalid_employment_document'});
     if(error.publicStatus)return reply(res,error.publicStatus,{ok:false,code:error.publicCode});
     if(error.message==='employment_source_not_found')return reply(res,404,{ok:false,code:'source_not_found'});
     if(error.message==='employment_signed_evidence_failed')return reply(res,500,{ok:false,code:'internal_error'});
+    if(error.message==='employment_workspace_binding_failed')return reply(res,500,{ok:false,code:'internal_error'});
     return reply(res,409,{ok:false,code:'employment_version_not_issued'});}
 }
 
@@ -96,5 +142,6 @@ module.exports=handler;
 module.exports.issueEmploymentVersion=issueEmploymentVersion;
 module.exports.authorizeEmploymentSigners=authorizeEmploymentSigners;
 module.exports.persistEmploymentSignedEvidence=persistEmploymentSignedEvidence;
+module.exports.persistEmploymentWorkspaceBinding=persistEmploymentWorkspaceBinding;
 module.exports.loadLegacyEmployment=loadLegacyEmployment;
 module.exports.secretMatches=secretMatches;
