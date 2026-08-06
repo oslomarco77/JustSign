@@ -232,6 +232,32 @@ function signingRequest(input) {
     consentSchema: 'signdee.employment.signing-consent.v1' };
 }
 
+function signedEvidenceRequest(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new TypeError('invalid_request');
+  if (input.action === 'issue_signed_evidence') {
+    if (Object.keys(input).sort().join(',') !== 'action,employment_id,version_id') {
+      throw new TypeError('invalid_request');
+    }
+    for (const field of ['employment_id', 'version_id']) {
+      if (typeof input[field] !== 'string'
+        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(input[field])) {
+        throw new TypeError('invalid_' + field);
+      }
+    }
+    return { action: input.action, employmentId: input.employment_id.toLowerCase(),
+      versionId: input.version_id.toLowerCase() };
+  }
+  if (input.action === 'resolve_signed_evidence') {
+    if (Object.keys(input).sort().join(',') !== 'action,signed_document_reference'
+      || typeof input.signed_document_reference !== 'string'
+      || !/^sde_emp_[0-9a-f]{64}$/.test(input.signed_document_reference)) {
+      throw new TypeError('invalid_signed_document_reference');
+    }
+    return { action: input.action, signedDocumentReference: input.signed_document_reference };
+  }
+  throw new TypeError('invalid_request');
+}
+
 module.exports = { CANONICAL_SCHEMA, MAX_CANONICAL_BYTES, PRESENTATION_TEXT, canonicalize,
   buildEmploymentSourceDocument, buildCanonicalEmploymentDocument, digestReferencedImage, versionRequest,
-  signerAuthorizationRequest, signingRequest };
+  signerAuthorizationRequest, signingRequest, signedEvidenceRequest };
