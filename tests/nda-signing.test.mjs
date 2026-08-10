@@ -30,7 +30,7 @@ function signingBody(overrides = {}) {
 }
 
 function loadEndpoint() {
-  const path = resolve(ROOT, "api/nda-authority.js");
+  const path = resolve(ROOT, "lib/nda-authority-handler.js");
   delete require.cache[require.resolve(path)];
   return require(path);
 }

@@ -62,6 +62,12 @@ const EMP_TABLE  = 'emp_contracts';
 const EMP_JD_MODEL = process.env.EMP_JD_MODEL || NDA_GEN_MODEL;
 const LINE_TOKEN    = process.env.LINE_CHANNEL_TOKEN || '';
 
+// ── SD-407B1: NDA Authority, hosted here to stay within the Hobby 12-function
+//    limit. The public contract is still POST /api/nda-authority; vercel.json
+//    rewrites it here internally. This file does not implement any of that
+//    endpoint's logic and must not — it only hands the request over untouched.
+const ndaAuthorityHandler = require('../lib/nda-authority-handler.js');
+
 const EXTRACT_PROMPT = [
   'You are an OCR extractor for Thai identity documents (Thai national ID card or passport).',
   'Read the document in the image and return ONLY a JSON object, no markdown, no backticks, no commentary.',
@@ -1057,6 +1063,17 @@ async function handleEmpMyContracts(req, res, body) {
 }
 
 module.exports = async (req, res) => {
+  // ── SD-407B1 private internal route ──────────────────────────────────────
+  // Set only by the vercel.json rewrite of /api/nda-authority. It must be the
+  // very first thing here: before the CORS headers, before the OPTIONS 200,
+  // and before any body.action dispatch, so the Authority handler owns the
+  // whole response — including its own method, content-type, size, API-key and
+  // binding-key checks. This marker grants no access on its own; every request
+  // still has to satisfy the Authority handler's own authentication.
+  if (req.query && req.query.__sd_route === 'nda-authority') {
+    return ndaAuthorityHandler(req, res);
+  }
+
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
