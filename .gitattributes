@@ -1,0 +1,21 @@
+# บังคับ LF ใน repo เสมอ — กัน CRLF churn จากเครื่อง Windows
+# (สาเหตุที่ create-charge.js / reminder.yml ขึ้นเป็น "แก้ไข" ทั้งไฟล์ทั้งที่เนื้อหาไม่ต่าง)
+* text=auto eol=lf
+
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.sql  text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.md   text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+
+# ไบนารี — ห้ามแตะ
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.pdf  binary
+*.mp4  binary
+*.docx binary

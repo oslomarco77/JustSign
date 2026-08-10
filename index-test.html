@@ -3083,6 +3083,17 @@ footer{border-top:1px solid var(--border);padding:40px 0;}
 
 <!-- ตัวจัดการรูปกลาง — ต้องโหลดก่อนสคริปต์หลักที่เรียก SignDeeImg -->
 <script src="/img-safe.js"></script>
+<!-- ws-link.js — ผูกสัญญากลับเข้า Workspace ของ Agreement OS (ทาง A)
+
+     ปิดอยู่จนกว่าจะตั้งค่า: ถ้าไม่มี window.AGREEMENT_OS_BASE ไฟล์นี้จะไม่ยิง
+     เน็ตเลยแม้แต่ครั้งเดียว และไม่กระทบ flow ของหน้านี้แม้แต่นิดเดียว
+
+     เปิดใช้เมื่อ deploy Agreement OS แล้ว โดยใส่บรรทัดนี้ "ก่อน" script ด้านล่าง:
+       <script>window.AGREEMENT_OS_BASE = 'https://<โดเมน-agreement-os>';</script>
+
+     ⚠️ ทดสอบบน Vercel Preview URL ก่อนเสมอ และอย่าลืมเติมโดเมนของหน้านี้
+     ลงใน HANDOFF_ALLOWED_ORIGINS ฝั่ง Agreement OS ไม่งั้นจะโดน CORS บล็อก -->
+<script src="/ws-link.js"></script>
 
 <script>
 // ═══ STATE ═══
@@ -7113,6 +7124,11 @@ async function saveToSupabase() {
       // เก็บ row id ไว้ใช้ครั้งต่อไป
       contractRowId = newId;
       localStorage.setItem('ps_contract_row_id', contractRowId);
+
+      // ── ผูกกลับเข้า Workspace ถ้ามาจาก Agreement OS (ทาง A) ──
+      // ⚠️ ห้าม await — การบันทึกสัญญาต้องไม่รอระบบภายนอก
+      // window.SignDeeWS เป็นการอ่าน property จึงไม่ ReferenceError แม้ ws-link.js โหลดไม่ขึ้น
+      try { if (window.SignDeeWS) window.SignDeeWS.bind(newId); } catch (e) {}
     }
 
     console.log('[SignDee] Supabase saved ✓ step', payload.current_step);

@@ -1,5 +1,6 @@
 node_modules/
 .vercel
+.vitest-cache/
 
 # ไฟล์ทดสอบ / scratch — ไม่ต้องขึ้น repo
 _apply-imgsafe.js
@@ -17,3 +18,9 @@ index.backup-*.html
 .env
 .env.*
 *.pem
+
+# โฟลเดอร์พักไฟล์รอลบ — ห้ามลบไฟล์ตรง ๆ ให้ย้ายมาที่นี่ก่อน
+_trash/
+
+# macOS
+.DS_Store
