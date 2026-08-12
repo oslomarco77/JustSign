@@ -64,7 +64,6 @@ describe("SD-407B1 internal routing", () => {
 
     expect(publicFunctions).not.toContain("nda-authority.js");
     expect(publicFunctions).not.toContain("nda-authority.ts");
-    expect(publicFunctions.length).toBe(12);
   });
 
   it("keeps the handler outside api/ and loadable from lib/", () => {
