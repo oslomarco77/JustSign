@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const A = require(resolve(ROOT, "api/_nda_authority.js"));
-const endpoint = require(resolve(ROOT, "api/nda-authority.js"));
+const endpoint = require(resolve(ROOT, "lib/nda-authority-handler.js"));
 const SQL = readFileSync(resolve(ROOT, "api/nda_authority_foundation.sql"), "utf8");
 const LEGACY_BACKEND = readFileSync(resolve(ROOT, "api/myip.js"), "utf8");
 const LEGACY_UI = readFileSync(resolve(ROOT, "index-nda.html"), "utf8");

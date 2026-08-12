@@ -44,6 +44,12 @@
       "maxDuration": 30
     }
   },
+  "rewrites": [
+    {
+      "source": "/api/nda-authority",
+      "destination": "/api/myip?__sd_route=nda-authority"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
