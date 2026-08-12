@@ -3,7 +3,7 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const container=process.env.SD408_DB_CONTAINER;
 if(!container||!/^sd408a2-[a-z0-9-]+$/.test(container))throw new Error('invalid disposable SD408_DB_CONTAINER');
-const args=['exec','-i',container,'psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-U','postgres'];
+const args=['exec','-i',container,'psql','-X','-A','-t','-v','ON_ERROR_STOP=1','-U','postgres','-d','sd408_clean'];
 function psql(sql){const child=spawn('docker',args,{stdio:['pipe','pipe','pipe']});let stdout='',stderr='';
   child.stdout.on('data',x=>stdout+=x);child.stderr.on('data',x=>stderr+=x);child.stdin.end(sql);
   return new Promise(resolve=>child.on('close',code=>resolve({code,stdout,stderr})));}

@@ -67,12 +67,12 @@ do $$declare accepted boolean:=false;d jsonb:=jsonb_build_object(
   'canonical_schema','signdee.employment.document.v1','authority',jsonb_build_object(
     'employment_id','82000000-0000-4000-8000-000000000002','legacy_contract_id','82000000-0000-4000-8000-000000000001',
     'version_id','82000000-0000-4000-8000-000000000004','version_number',2),
-  'document_header',jsonb_build_object('title','unrelated synthetic B'));h text;
+  'document_header',jsonb_build_object('title','unrelated synthetic B'));h text;source_updated_at timestamptz;
 begin
-  h:=encode(extensions.digest(convert_to(d::text,'UTF8'),'sha256'),'hex');
+  h:=encode(extensions.digest(convert_to(d::text,'UTF8'),'sha256'),'hex');select updated_at into source_updated_at from public.emp_contracts where id='82000000-0000-4000-8000-000000000001';
   begin execute 'set local role service_role';perform public.employment_authority_issue_version(
     '82000000-0000-4000-8000-000000000002','82000000-0000-4000-8000-000000000004',
-    '2026-08-06T01:00:00Z','signdee.employment.document.v1',d::text,d,h);accepted:=true;
+    source_updated_at,'signdee.employment.document.v1',d::text,d,h);accepted:=true;
   exception when others then
     if position('employment_version_canonical_mismatch' in sqlerrm)=0 then raise;end if;
   end;reset role;
