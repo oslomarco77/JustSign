@@ -266,6 +266,22 @@ function signedEvidenceRequest(input) {
       workspaceId: input.workspace_id.toLowerCase(),
       workspaceResultReference: input.workspace_result_reference.toLowerCase() };
   }
+  // SD-407C — outbound delivery. Exactly the two locators the Sign Dee
+  // receiver accepts, and nothing else: workspace_id is deliberately absent
+  // from the allowlist so this side can never assert a Workspace.
+  if (input.action === 'deliver_workspace_acceptance') {
+    const allowed = new Set(['action', 'binding_id', 'signed_document_reference']);
+    if (Object.keys(input).some((key) => !allowed.has(key))) throw new TypeError('invalid_request');
+    if (typeof input.binding_id !== 'string' || !UUID_PATTERN.test(input.binding_id)) {
+      throw new TypeError('invalid_binding_id');
+    }
+    if (typeof input.signed_document_reference !== 'string'
+        || !/^sde_[0-9a-f]{64}$/.test(input.signed_document_reference)) {
+      throw new TypeError('invalid_signed_document_reference');
+    }
+    return { action: input.action, bindingId: input.binding_id.toLowerCase(),
+      signedDocumentReference: input.signed_document_reference };
+  }
   throw new TypeError('invalid_request');
 }
 

@@ -2,6 +2,7 @@
 
 const { createHash, timingSafeEqual, randomUUID, randomBytes } = require('node:crypto');
 const Employment = require('./_employment_authority.js');
+const { deliverWorkspaceAcceptance } = require('../lib/workspace-delivery-client.js');
 
 const SUPABASE_URL=(process.env.SUPABASE_URL||'').replace(/\/$/,'');
 const SERVICE_KEY=process.env.SUPABASE_SERVICE_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY||'';
@@ -115,6 +116,31 @@ async function handler(req,res){
     if(!secretMatches(req.headers['x-signdee-employment-authority-key'],AUTHORITY_KEY))
       return reply(res,403,{ok:false,code:'authorization_failed'});
   }
+  // SD-407C — outbound delivery to the Sign Dee receiver. Handled before the
+  // persistence dispatch below because it performs no database write: it only
+  // forwards two already-durable identifiers. Guarded by the same authority
+  // key as the other non-reservation actions (approved for this first slice).
+  // No automatic retry — the caller decides, so a transient fault cannot fan
+  // out into duplicate Workspace effects.
+  if(body.action==='deliver_workspace_acceptance'){
+    let delivery;
+    try{delivery=Employment.workspaceBindingRequest(body);}
+    catch{return reply(res,400,{ok:false,code:'invalid_request'});}
+    try{const result=await deliverWorkspaceAcceptance('employment',{
+      binding_id:delivery.bindingId,
+      signed_document_reference:delivery.signedDocumentReference,
+    });
+    return reply(res,200,{ok:true,...result});}
+    catch(error){
+      // Fixed token only — never a secret, signature, URL, evidence reference
+      // or response body.
+      const code=error&&typeof error.code==='string'?error.code:'delivery_failed';
+      if(code==='delivery_not_configured'||code==='delivery_misconfigured')
+        return reply(res,503,{ok:false,code});
+      return reply(res,error&&error.retryable?502:409,{ok:false,code,retryable:Boolean(error&&error.retryable)});
+    }
+  }
+
   let request;try{request=bindingActions.includes(body.action)
     ?Employment.workspaceBindingRequest(body,isReservation?BINDING_PRINCIPAL:undefined)
     :(['issue_signed_evidence','resolve_signed_evidence'].includes(body.action)

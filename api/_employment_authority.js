@@ -289,6 +289,18 @@ function workspaceBindingRequest(input, actorPrincipal) {
     return { action: input.action, bindingId: uuid('binding_id'), workspaceId: uuid('workspace_id'),
       workspaceResultReference: uuid('workspace_result_reference') };
   }
+  // SD-407C — outbound delivery. Exactly the two locators the Sign Dee
+  // receiver accepts. workspace_id is deliberately absent from the allowlist
+  // so this side can never assert a Workspace.
+  if (input.action === 'deliver_workspace_acceptance') {
+    if (Object.keys(input).sort().join(',') !== 'action,binding_id,signed_document_reference'
+      || typeof input.signed_document_reference !== 'string'
+      || !/^sde_emp_[0-9a-f]{64}$/.test(input.signed_document_reference)) {
+      throw new TypeError('invalid_request');
+    }
+    return { action: input.action, bindingId: uuid('binding_id'),
+      signedDocumentReference: input.signed_document_reference };
+  }
   throw new TypeError('invalid_request');
 }
 
