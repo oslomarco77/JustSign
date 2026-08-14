@@ -48,6 +48,14 @@
     {
       "source": "/api/nda-authority",
       "destination": "/api/myip?__sd_route=nda-authority"
+    },
+    {
+      "source": "/api/employment-authority",
+      "destination": "/api/myip?__sd_route=employment-authority"
+    },
+    {
+      "source": "/api/employment-sign",
+      "destination": "/api/myip?__sd_route=employment-sign"
     }
   ],
   "headers": [
