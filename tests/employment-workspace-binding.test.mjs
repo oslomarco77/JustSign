@@ -15,7 +15,7 @@ const binding='95000000-0000-4000-8000-000000000004';
 const result='95000000-0000-4000-8000-000000000005';
 const evidence=`sde_emp_${'a'.repeat(64)}`;
 
-function loadEndpoint(){const path=resolve(ROOT,'api/employment-authority.js');
+function loadEndpoint(){const path=resolve(ROOT,'lib/employment-authority-handler.js');
   delete require.cache[require.resolve(path)];return require(path);}
 function response(){return{headers:{},statusCode:0,body:null,setHeader(k,v){this.headers[k]=v;},
   status(v){this.statusCode=v;return this;},json(v){this.body=v;return this;}};}

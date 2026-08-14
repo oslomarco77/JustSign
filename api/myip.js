@@ -68,6 +68,18 @@ const LINE_TOKEN    = process.env.LINE_CHANNEL_TOKEN || '';
 //    endpoint's logic and must not — it only hands the request over untouched.
 const ndaAuthorityHandler = require('../lib/nda-authority-handler.js');
 
+// ── SD-407D: Employment Authority and Employment Signing, hosted here for the
+//    same reason — the Hobby plan allows 12 Serverless Functions and these two
+//    were the 13th and 14th. Public URLs /api/employment-authority and
+//    /api/employment-sign are unchanged; vercel.json rewrites them here.
+//
+//    They stay two separate modules on purpose. They authenticate differently:
+//    the authority handler requires a header key, while the signing handler
+//    authenticates by the signer capability carried in the request body.
+//    Merging them would silently demand an authority key from signers.
+const employmentAuthorityHandler = require('../lib/employment-authority-handler.js');
+const employmentSignHandler = require('../lib/employment-sign-handler.js');
+
 const EXTRACT_PROMPT = [
   'You are an OCR extractor for Thai identity documents (Thai national ID card or passport).',
   'Read the document in the image and return ONLY a JSON object, no markdown, no backticks, no commentary.',
@@ -1101,6 +1113,18 @@ module.exports = async (req, res) => {
   // still has to satisfy the Authority handler's own authentication.
   if (req.query && req.query.__sd_route === 'nda-authority') {
     return ndaAuthorityHandler(req, res);
+  }
+
+  // ── SD-407D private internal routes ──────────────────────────────────────
+  // Same contract as the NDA marker above, and the same mandatory ordering:
+  // every method for a marked route is delegated, so the Employment handler —
+  // not myip — decides method validity and authentication. In particular a
+  // marked OPTIONS must keep returning the handler's 405, never myip's 200.
+  if (req.query && req.query.__sd_route === 'employment-authority') {
+    return employmentAuthorityHandler(req, res);
+  }
+  if (req.query && req.query.__sd_route === 'employment-sign') {
+    return employmentSignHandler(req, res);
   }
 
   res.setHeader('Access-Control-Allow-Origin', '*');

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import A from '../api/_employment_authority.js';
-import endpoint from '../api/employment-authority.js';
+import endpoint from '../lib/employment-authority-handler.js';
 
 const SQL = readFileSync(new URL('../api/employment_authority_version.sql', import.meta.url), 'utf8');
 const HTML = readFileSync(new URL('../index-emp.html', import.meta.url), 'utf8');

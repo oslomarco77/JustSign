@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { afterEach,describe,expect,it,vi } from 'vitest';
 import Authority from '../api/_employment_authority.js';
-import endpoint from '../api/employment-authority.js';
+import endpoint from '../lib/employment-authority-handler.js';
 
 const SQL=readFileSync(new URL('../api/employment_signed_evidence_authority.sql',import.meta.url),'utf8');
 const EMPLOYMENT='94000000-0000-4000-8000-000000000001';

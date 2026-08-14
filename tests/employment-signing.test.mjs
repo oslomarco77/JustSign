@@ -2,8 +2,8 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Authority from '../api/_employment_authority.js';
-import authorityEndpoint from '../api/employment-authority.js';
-import signingEndpoint from '../api/employment-sign.js';
+import authorityEndpoint from '../lib/employment-authority-handler.js';
+import signingEndpoint from '../lib/employment-sign-handler.js';
 
 const SQL=readFileSync(new URL('../api/employment_authority_signing.sql',import.meta.url),'utf8');
 const VERSION='91000000-0000-4000-8000-000000000001';
