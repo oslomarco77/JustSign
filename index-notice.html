@@ -1050,11 +1050,22 @@ function showStep(n){
   if(n===6) renderPreview();
   window.scrollTo(0,0);
 }
-function nextStep(){
+async function nextStep(){
   if(!validateStep(curStep)) return;
   collectStep(curStep);
-  if(curStep<TOTAL_STEPS){ showStep(curStep+1); saveCase(); }
-  else { saveCase(); go('pay'); renderPay(); }
+  /* ⚠️ ต้อง await ให้ saveCase เสร็จก่อนเปลี่ยนขั้น — ขั้น 6 (ตรวจสอบหนังสือ) เรียก fetchDoc ทันที
+     ถ้ายังไม่มี S.rowId จะขึ้น "โหลดเอกสารไม่สำเร็จ" ทั้งที่ระบบปกติ */
+  const _btn=$('btnNext'); const _label=_btn?_btn.textContent:'';
+  if(_btn){ _btn.disabled=true; _btn.textContent='กำลังบันทึก…'; }
+  const ok=await saveCase();
+  if(_btn){ _btn.disabled=false; _btn.textContent=_label; }
+  if(!ok){
+    const e=S._saveErr||{};
+    toast('บันทึกเคสไม่สำเร็จ'+(e.code?(' ['+e.code+']'):'')+' — กรุณาลองใหม่');
+    return;   // ไม่เดินหน้าต่อทั้งที่ยังไม่มีเคสในระบบ
+  }
+  if(curStep<TOTAL_STEPS){ showStep(curStep+1); }
+  else { go('pay'); renderPay(); }
 }
 function prevStep(){ goBack(false); }
 
@@ -1122,7 +1133,15 @@ async function saveCase(){
       const {error}=await sb.from(NOTICE_TABLE).update(d).eq('id',S.rowId);
       if(error) throw error;
     }
-  }catch(err){ console.warn('[notice] save failed:',err.message||err); toast('บันทึกไม่สำเร็จ — ตรวจการเชื่อมต่อ'); }
+    S._saveErr=null;
+    return true;
+  }catch(err){
+    S._saveErr=err||{};
+    /* log ให้ครบ — code/details/hint คือสิ่งที่บอกได้ว่าติด RLS หรือคอลัมน์ไม่ตรง */
+    console.warn('[notice] save failed:', err && err.code, '|', err && err.message, '|', err && err.details, '|', err && err.hint);
+    toast('บันทึกไม่สำเร็จ'+((err&&err.code)?(' ['+err.code+']'):'')+' — ตรวจการเชื่อมต่อ');
+    return false;
+  }
 }
 async function loadCase(id){
   const {data,error}=await sb.from(NOTICE_TABLE).select('*').eq('id',id).single();
@@ -1595,16 +1614,33 @@ function demandDoc(){
 /* ═══════════════ ดึงเอกสารจาก server (paywall อยู่ที่ server) ═══════════════ */
 S.docCache={};
 async function fetchDoc(kind,extra){
-  if(!S.rowId) return null;
+  S._docErr=null;
+  /* ยังไม่มีเคสใน DB (เช่นเข้าหน้ามาก่อนบันทึกเสร็จ) → บันทึกให้ก่อนแล้วค่อยยิง */
+  if(!S.rowId){ await saveCase(); }
+  if(!S.rowId){
+    const e=S._saveErr||{};
+    S._docErr='ยังบันทึกเคสลงระบบไม่สำเร็จ'+(e.code?(' ['+e.code+']'):'')+(e.message?(' — '+e.message):'');
+    toast(S._docErr);
+    return null;
+  }
   try{
     const r=await fetch(NOTICE_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({action:'notice_doc',row_id:S.rowId,doc:kind,extra:extra||null})});
     const j=await r.json();
-    if(!j.ok){ toast(j.message_th||'โหลดเอกสารไม่สำเร็จ'); return null; }
+    if(!j.ok){
+      S._docErr=(j.message_th||'โหลดเอกสารไม่สำเร็จ')+(j.code?(' ['+j.code+']'):'')+' (HTTP '+r.status+')';
+      console.warn('[notice] notice_doc failed:', r.status, j);
+      toast(S._docErr);
+      return null;
+    }
     S.docCache[kind]=j;
     if(j.case_no&&!S.caseNo) S.caseNo=j.case_no;
     return j;
-  }catch(err){ toast('โหลดเอกสารไม่สำเร็จ: '+(err.message||err)); return null; }
+  }catch(err){
+    S._docErr='โหลดเอกสารไม่สำเร็จ: '+(err.message||err);
+    toast(S._docErr);
+    return null;
+  }
 }
 /* render เอกสารจากรูปแบบกลางที่ server ส่งมา */
 /* ข้อความตัวอย่างสำหรับเบลอ (ไม่ใช่เนื้อหาจริง — ของจริงอยู่ที่ server) */
@@ -1654,11 +1690,21 @@ function renderPreview(){
 }
 async function renderServerDoc(kind,targetId,extra){
   const el=$(targetId); if(!el) return null;
+  S._lastDoc={kind:kind,targetId:targetId,extra:extra||null};
   el.innerHTML='<div class="doc"><div class="field-micro">กำลังโหลดเอกสาร…</div></div>';
   const j=await fetchDoc(kind,extra);
-  if(!j){ el.innerHTML='<div class="note warn">โหลดเอกสารไม่สำเร็จ</div>'; return null; }
+  if(!j){
+    el.innerHTML='<div class="note warn"><b>โหลดเอกสารไม่สำเร็จ</b>'
+      + (S._docErr?('<br><span style="font-size:12.5px">'+esc(S._docErr)+'</span>'):'')
+      + '<br><button class="btn-ghost" style="margin-top:10px" onclick="retryDoc()">ลองอีกครั้ง</button></div>';
+    return null;
+  }
   el.innerHTML='<div class="doc">'+docHTML(j.doc,'d',j.locked)+'</div>';
   return j;
+}
+function retryDoc(){
+  const d=S._lastDoc; if(!d) return;
+  return renderServerDoc(d.kind,d.targetId,d.extra);
 }
 async function pdfFromServer(kind,fileSuffix,extra){
   toast('กำลังสร้าง PDF…');
