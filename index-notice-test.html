@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignDee Notice — ทวงถามค่าเช่า &amp; บอกเลิกสัญญา (staging)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F1F0EA; --white:#FEFEFC; --surf:#FEFEFC; --surf2:#EAE8DF;
+  --border:#E6E4DC; --border2:#D2D0C6; --text:#14171F; --text2:#5B6270; --text3:#8E95A3;
+  --primary:#0B1220; --accent:#2E86C6; --accent2:#6EC3EA; --accent-d:rgba(46,134,198,0.10);
+  --green:#1a7f5a; --red:#c0392b; --amber:#B77A1B; --amber-d:rgba(183,122,27,.10);
+  --r:16px; --r-lg:24px;
+  --shadow:0 2px 10px rgba(11,18,32,0.06),0 1px 3px rgba(11,18,32,0.04);
+  --shadow-lg:0 20px 48px -18px rgba(11,18,32,0.24),0 2px 8px rgba(11,18,32,0.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased}
+h1,h2,h3,.step-title{font-family:'Anuphan',sans-serif}
+.mono{font-family:'IBM Plex Mono',monospace}
+
+/* ── shell ── */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(241,240,234,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);display:none}
+.topbar.on{display:block}
+.topbar-inner{max-width:640px;margin:0 auto;padding:14px 20px;display:flex;align-items:center;gap:12px}
+.back-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--border);background:var(--white);cursor:pointer;font-size:16px;color:var(--text2);flex:0 0 auto}
+.progress-wrap{flex:1}
+.progress-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:5px}
+.progress-bar{height:4px;background:var(--surf2);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);border-radius:99px;transition:width .35s}
+
+.wrap{max-width:640px;margin:0 auto;padding:28px 20px 130px}
+.phase{display:none}
+.phase.active{display:block;animation:fade .4s}
+.step{display:none}
+.step.active{display:block;animation:fade .4s}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.step-icon{width:52px;height:52px;border-radius:14px;background:var(--accent-d);display:flex;align-items:center;justify-content:center;font-size:26px;margin-bottom:16px}
+.step-title{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+.step-sub{color:var(--text2);font-size:15px;margin-bottom:22px}
+
+/* ── fields ── */
+.field{margin-bottom:16px}
+.field-label{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:6px;display:block}
+.req{color:var(--red)}
+.field-micro{font-size:12px;color:var(--text3);margin-top:5px}
+input,select,textarea{width:100%;padding:13px 14px;border:1px solid var(--border);border-radius:12px;font-family:'Sarabun',sans-serif;font-size:15px;color:var(--text);background:var(--white)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+input.bad{border-color:var(--red)}
+.row{display:flex;gap:12px}.row>*{flex:1}
+.chip-row{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:9px 15px;border:1px solid var(--border);border-radius:99px;background:var(--white);font-size:13.5px;cursor:pointer;color:var(--text2);font-family:'Sarabun',sans-serif}
+.chip.active{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+
+/* ── nav ── */
+.navbar{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(transparent,var(--bg) 30%);padding:16px 20px 22px;display:none}
+.navbar.on{display:block}
+.navbar-inner{max-width:640px;margin:0 auto}
+.btn-next{width:100%;padding:16px;border:none;border-radius:99px;background:var(--primary);color:#fff;font-family:'Anuphan',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+.btn-next:active{transform:scale(.99)}
+.btn-next[disabled]{opacity:.45}
+.nav-hint{text-align:center;font-size:12px;color:var(--text3);margin-top:9px}
+.btn-ghost{width:100%;padding:14px;border:1px solid var(--border);border-radius:99px;background:var(--white);font-family:'Anuphan',sans-serif;font-size:15px;font-weight:600;color:var(--accent);cursor:pointer;margin-top:12px}
+
+/* ── landing ── */
+.rc-wrap{max-width:560px;margin:0 auto;padding:44px 22px 60px}
+.rc-brand{text-align:center;margin-bottom:8px;font-family:'Anuphan',sans-serif;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.rc-brand span{color:var(--accent)}
+.rc-head{text-align:center;font-family:'Anuphan',sans-serif;font-size:25px;font-weight:800;margin:18px 0 6px;letter-spacing:-.02em}
+.rc-sub{text-align:center;font-size:15px;color:var(--text2);margin-bottom:30px;line-height:1.5}
+.rc-card{position:relative;background:var(--bg);border:none;border-radius:26px;padding:22px;margin-bottom:16px;text-align:left;display:flex;gap:16px;align-items:flex-start;
+  box-shadow:-5px -5px 12px rgba(255,255,255,.9),5px 5px 14px rgba(178,173,157,.5)}
+.rc-card.clickable{cursor:pointer;transition:.18s}
+.rc-card.clickable:active{box-shadow:inset 5px 5px 10px rgba(178,173,157,.5),inset -5px -5px 10px rgba(255,255,255,.9)}
+.rc-card.locked{opacity:.55}
+.rc-ico{flex:0 0 46px;width:46px;height:46px;border-radius:14px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;
+  box-shadow:inset 2px 2px 5px rgba(178,173,157,.4),inset -2px -2px 5px rgba(255,255,255,.9)}
+.rc-card-body{flex:1;min-width:0}
+.rc-card-title{font-size:16.5px;font-weight:700;margin-bottom:4px}
+.rc-card-desc{font-size:13.5px;color:var(--text2);line-height:1.5}
+.rc-card-tag{display:inline-block;margin-top:9px;font-size:11.5px;font-weight:600;color:var(--accent);background:var(--accent-d);padding:3px 10px;border-radius:20px}
+.rc-card-tag.lock{color:var(--text3);background:var(--surf2)}
+.rc-card-tag.done{color:var(--green);background:rgba(26,127,90,.10)}
+.rc-foot{text-align:center;font-size:12.5px;color:var(--text3);margin-top:14px}
+
+/* ── arrears list ── */
+.ar-row{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:11px;margin-bottom:9px}
+.ar-sel{display:flex;gap:8px;margin-bottom:8px}
+.ar-sel select{flex:1;padding:11px 10px;font-size:14px}
+#breachPick{background:var(--white)}
+#breachList .ar-row{background:var(--white)}
+.ar-amt{display:flex;gap:8px}
+.ar-amt input{flex:1;padding:11px 12px;font-size:14px}
+.ar-item{display:flex;gap:9px;align-items:flex-start;margin-bottom:9px}
+.ar-item .m{flex:1.3}.ar-item .a{flex:1}
+.ar-del{flex:0 0 40px;width:40px;height:46px;border:1px solid var(--border);border-radius:11px;background:var(--white);color:var(--red);cursor:pointer;font-size:16px}
+.ar-add{width:100%;padding:11px;border:1px dashed var(--border2);border-radius:11px;background:transparent;color:var(--accent);font-family:'Sarabun',sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;margin-top:2px}
+.total-box{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px;margin-top:16px}
+.total-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;color:var(--text2)}
+.total-row.grand{font-size:17px;font-weight:700;color:var(--text);border-top:1px solid var(--border);margin-top:7px;padding-top:11px;font-family:'Anuphan'}
+.total-words{font-size:12.5px;color:var(--text3);text-align:right;margin-top:3px}
+
+/* ── notes ── */
+.note{border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.6;margin:16px 0}
+.note.info{background:var(--accent-d);color:var(--text2)}
+.note.warn{background:var(--amber-d);color:#7a5310;border:1px solid rgba(183,122,27,.25)}
+.note b{font-family:'Anuphan'}
+
+/* ── doc preview (หน้าจอ) ── */
+.doc{background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:28px 26px;box-shadow:var(--shadow);font-size:14.5px;line-height:1.75}
+.doc .d-place{text-align:right;line-height:1.9}
+.doc .d-date{text-align:right;line-height:1.9;margin-bottom:18px}
+.doc .d-row{margin-bottom:9px}
+.doc .d-row b{font-family:'Anuphan'}
+.doc .d-para{margin-bottom:13px;text-align:justify;text-indent:2.5em}
+.doc .d-para.noind{text-indent:0}
+.doc .d-sign{text-align:center;margin-top:38px;line-height:2}
+
+/* ── consent / ocr / veil ── */
+.consent-row{display:flex;gap:11px;align-items:flex-start;margin:20px 0 4px;font-size:13.5px;color:var(--text2);line-height:1.55;cursor:pointer}
+.consent-row input{width:19px;height:19px;flex:0 0 auto;margin-top:2px;accent-color:var(--accent)}
+.consent-row a{color:var(--accent);text-decoration:none}
+.ocr-btn{width:100%;padding:13px;border:1.5px solid var(--accent);border-radius:12px;background:var(--accent-d);color:var(--accent);font-family:'Sarabun',sans-serif;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:14px}
+.ocr-btn:active{transform:scale(.99)}
+.ocr-note{padding:9px 12px;border-radius:10px;font-size:12.5px;font-weight:600;margin-bottom:12px}
+.ocr-note.ok{border:1px solid var(--green);background:rgba(26,127,90,.08);color:var(--green)}
+.ocr-note.busy{border:1px solid var(--border2);background:var(--white);color:var(--text2)}
+.ocr-note.err{border:1px solid var(--red);background:rgba(192,57,43,.07);color:var(--red)}
+.preview-shell{position:relative}
+.preview-shell.locked #docPreview{filter:blur(5px);user-select:none;pointer-events:none}
+.preview-veil{display:none;position:absolute;inset:0;align-items:center;justify-content:center;padding:20px}
+.preview-shell.locked .preview-veil{display:flex}
+.veil-card{background:var(--white);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow-lg);padding:26px 22px;text-align:center;max-width:330px}
+.veil-ico{font-size:30px}
+.veil-title{font-family:'Anuphan';font-weight:700;font-size:18px;margin:8px 0 6px}
+.veil-desc{font-size:13px;color:var(--text2);line-height:1.6}
+
+.addr-dd{display:none;position:absolute;z-index:60;left:0;right:0;top:100%;margin-top:6px;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:0 12px 32px -10px rgba(11,18,32,.25);overflow-y:auto;max-height:250px}
+.addr-op{padding:11px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--border);line-height:1.5}
+.addr-op:last-child{border-bottom:none}
+.addr-op:hover{background:var(--accent-d)}
+.addr-op b{color:var(--text);font-weight:600}
+.addr-op span{color:var(--text2)}
+
+/* ── postal (ป.133) ── */
+.post-head{font-family:'Anuphan';font-weight:700;font-size:16px;margin:26px 0 12px;padding-bottom:8px;border-bottom:2px solid var(--border)}
+.post-head span{font-weight:400;font-size:13px;color:var(--text3)}
+.copy-card{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px}
+.copy-card.recv{border-color:rgba(26,127,90,.35)}
+.copy-tag{display:inline-block;font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--accent-d);color:var(--accent);margin-bottom:10px}
+.copy-tag.ok{background:rgba(26,127,90,.10);color:var(--green)}
+.copy-addr{font-size:13px;color:var(--text2);background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:12px;line-height:1.6}
+.sub-head{font-size:12.5px;font-weight:700;color:var(--text3);margin:14px 0 8px;letter-spacing:.02em}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.grid2 .full{grid-column:1/-1}
+.grid2 input{padding:11px 12px;font-size:14px}
+.mini-label{font-size:11.5px;color:var(--text3);margin-bottom:3px;display:block}
+
+/* ── timeline ── */
+.tl-item{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:var(--surf2);color:var(--text3);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Anuphan';font-size:14px}
+.tl-item.done .tl-dot{background:var(--green);color:#fff}
+.tl-item.active .tl-dot{background:var(--accent);color:#fff}
+.tl-body{flex:1;min-width:0}
+.tl-title{font-weight:700;font-size:15px;font-family:'Anuphan'}
+.tl-desc{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.55}
+.tl-meta{font-size:12px;color:var(--text3);margin-top:5px}
+
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:var(--primary);color:#fff;padding:12px 20px;border-radius:24px;font-size:14px;box-shadow:var(--shadow-lg);z-index:9999;opacity:0;transition:.25s;pointer-events:none}
+.toast.show{opacity:1}
+
+/* ── dev toolbar (staging) ── */
+.dev-fab{position:fixed;right:14px;bottom:96px;z-index:9998;background:var(--primary);color:#fff;border:none;border-radius:50%;width:50px;height:50px;font-size:20px;box-shadow:var(--shadow-lg);cursor:pointer;display:none}
+.dev-fab.on{display:block}
+.dev-menu{position:fixed;right:14px;bottom:154px;z-index:9998;background:var(--white);border:1px solid var(--border);border-radius:14px;box-shadow:var(--shadow-lg);padding:8px;display:none;max-height:60vh;overflow:auto}
+.dev-menu.open{display:block}
+.dev-menu button{display:flex;align-items:center;gap:8px;width:212px;text-align:left;background:none;border:none;padding:9px 10px;border-radius:9px;font-family:inherit;font-size:13px;cursor:pointer;color:var(--text)}
+.dev-menu button:active{background:var(--bg)}
+.dev-num{width:20px;height:20px;border-radius:50%;background:var(--accent-d);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:0 0 auto}
+
+/* ══ PDF render target ══ */
+#printDoc{position:fixed;left:-9999px;top:0;width:794px;background:#fff}
+#printDoc.pd-render{font-family:'Sarabun',sans-serif;color:#000}
+#printDoc.pd-render .pd-page{width:794px;height:1123px;padding:76px;box-sizing:border-box;page-break-after:always;position:relative;overflow:hidden}
+#printDoc.pd-render .pd-place{text-align:right;font-size:14px;line-height:1.9}
+#printDoc.pd-render .pd-date{text-align:right;font-size:14px;line-height:1.9;margin-bottom:26px}
+#printDoc.pd-render .pd-row{font-size:14px;line-height:1.8;margin-bottom:8px}
+#printDoc.pd-render .pd-para{font-size:14px;line-height:1.85;margin-bottom:14px;text-align:justify;text-align-last:left;text-indent:2.5em}
+#printDoc.pd-render .pd-para.noind{text-indent:0}
+#printDoc.pd-render .pd-sign{text-align:center;margin-top:52px;font-size:14px;line-height:2.2}
+#printDoc.pd-render .pd-foot{position:absolute;left:76px;right:76px;bottom:40px;font-size:10.5px;color:#888;text-align:center;border-top:1px solid #eee;padding-top:10px}
+#printDoc.pd-render .pd-title133{font-family:'Anuphan';font-size:20px;font-weight:700;text-align:center}
+#printDoc.pd-render .pd-sub133{text-align:center;font-size:12.5px;color:#666;margin-bottom:20px}
+#printDoc.pd-render .pd-box{border:1px solid #bbb;border-radius:8px;padding:14px 16px;margin-bottom:14px}
+#printDoc.pd-render .pd-box-t{font-family:'Anuphan';font-weight:700;font-size:13.5px;margin-bottom:9px;padding-bottom:6px;border-bottom:1px solid #eee}
+#printDoc.pd-render .pd-kv{display:flex;font-size:13px;padding:5px 0;border-bottom:1px dotted #e5e5e5}
+#printDoc.pd-render .pd-kv span{flex:0 0 44%;color:#666}
+#printDoc.pd-render .pd-kv b{flex:1;font-weight:600}
+#printDoc.pd-render .pd-blank{font-size:12.5px;line-height:1.6;color:#333}
+/* ── ป้ายตัดแปะ: ขนาดกำหนดเป็น px ที่คำนวณจาก มม. ── */
+#printDoc.pd-render .lb-cap{font-size:10.5px;color:#777;margin:14px 0 4px}
+#printDoc.pd-render .lb{border:1px dashed #999;box-sizing:border-box;overflow:hidden;background:#fff}
+#printDoc.pd-render .lb-in{padding:9px 11px;font-size:11.5px;line-height:1.45;height:100%;box-sizing:border-box}
+#printDoc.pd-render .lb-in b{font-size:12.5px}
+#printDoc.pd-render .lb-env{display:flex;flex-direction:column;justify-content:space-between}
+#printDoc.pd-render .lb-from{font-size:9.5px;color:#555;line-height:1.4}
+#printDoc.pd-render .lb-to{font-size:12.5px;line-height:1.5;padding-left:30%}
+#printDoc.pd-render .lb-to b{font-size:14px}
+/* ไม้บรรทัดสอบเทียบ */
+#printDoc.pd-render .rl-wrap{margin:8px 0 4px}
+#printDoc.pd-render .rl-cap{font-size:10px;color:#777;margin-bottom:3px}
+#printDoc.pd-render .rl{position:relative;height:16px;border-left:1px solid #333;border-bottom:1px solid #333}
+#printDoc.pd-render .rl-t{position:absolute;top:0;width:1px;height:7px;background:#333}
+#printDoc.pd-render .rl-t span{position:absolute;top:8px;left:-4px;font-size:7.5px;color:#555}
+@media print{.topbar,.navbar,.dev-fab,.dev-menu{display:none!important}.wrap{padding:0}body{background:#fff}}
+</style>
+</head>
+<body>
+
+<div class="topbar" id="topbar">
+  <div class="topbar-inner">
+    <button class="back-btn" onclick="goBack(false)">←</button>
+    <div class="progress-wrap">
+      <div class="progress-meta"><span id="stepLabel">ข้อมูลผู้ให้เช่า</span><span id="stepCount">ขั้นตอน 1 จาก 6</span></div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:16%"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ LANDING ══════════ -->
+<section class="phase active" id="ph-landing">
+  <div class="rc-wrap">
+    <div class="rc-brand">SignDee <span>Notice</span></div>
+    <div class="rc-head">ระบบทวงถามและ<br>บอกเลิกสัญญาเช่าออนไลน์</div>
+    <div class="rc-sub">ครบทุกขั้นตอนที่กฎหมายต้องการ ก่อนไล่ผู้เช่าออก</div>
+
+    <div class="rc-card" id="lc1">
+      <div class="rc-ico">📄</div>
+      <div class="rc-card-body">
+        <div class="rc-card-title">1. หนังสือทวงถามค่าเช่า</div>
+        <div class="rc-card-desc">ทวงถามยอดค้างชำระให้ผู้เช่าชำระหนี้ภายในเวลาที่กำหนด — จุดเริ่มต้นก่อนที่จะบอกเลิกสัญญา</div>
+        <span class="rc-card-tag">เริ่มที่ขั้นนี้</span>
+      </div>
+    </div>
+
+    <div class="rc-card locked">
+      <div class="rc-ico">✉️</div>
+      <div class="rc-card-body">
+        <div class="rc-card-title">2. หนังสือบอกเลิกสัญญาเช่า</div>
+        <div class="rc-card-desc">เมื่อผู้เช่าไม่ชำระตามเวลาที่กำหนดในขั้นตอนที่ 1 ก็ถึงเวลาบอกเลิกสัญญาแล้ว</div>
+        <span class="rc-card-tag lock">🔒 รอครบกำหนดขั้นที่ 1</span>
+      </div>
+    </div>
+
+    <div class="rc-card locked">
+      <div class="rc-ico">🛡️</div>
+      <div class="rc-card-body">
+        <div class="rc-card-title">3. แจ้งความลงบันทึกประจำวัน / ฟ้องขับไล่</div>
+        <div class="rc-card-desc">ขั้นตอนสุดท้ายที่จะไล่ผู้เช่าออก ทั้งนี้ ขึ้นอยู่กับเงื่อนไขสัญญาเช่าของคุณ</div>
+        <span class="rc-card-tag lock">🔒 รอขั้นที่ 2</span>
+      </div>
+    </div>
+
+    <div class="note warn" style="margin-top:22px">
+      <b>⚠️ ทำเองพลการ ระวังโดนข้อหาบุกรุก</b><br>
+      บอกเลิกสัญญาเช่าให้ถูกต้อง ไล่ผู้เช่าออกได้ เพียงเริ่มต้นที่เรา เพียง 2,990 บาทต่อเคส<br>
+      <b style="color:var(--green)">แถมฟรี! หนังสือแจ้งตำรวจเพื่อลงบันทึกประจำวัน</b>
+    </div>
+
+    <label class="consent-row">
+      <input type="checkbox" id="agreeTos" onchange="updateAgree()">
+      <span>ฉันยอมรับและปฏิบัติตาม<a href="https://signdee.com/terms" target="_blank" rel="noopener">เงื่อนไขการให้บริการ</a>และ<a href="https://signdee.com/privacy" target="_blank" rel="noopener">ความเป็นส่วนตัว</a>ของ signdee.com</span>
+    </label>
+    <button class="btn-next" id="btnStart" style="margin-top:8px" onclick="startNew()" disabled>เริ่มเคสใหม่ →</button>
+    <button class="btn-ghost" id="btnResume" style="display:none" onclick="resumeCase()">เปิดเคสที่ค้างไว้</button>
+    <div class="rc-foot">฿2,990 / เคส — ครอบคลุมเอกสารทั้ง 3 ฉบับ</div>
+  </div>
+</section>
+
+<!-- ══════════ WIZARD ══════════ -->
+<section class="phase" id="ph-wizard">
+  <div class="wrap">
+
+    <!-- 1. ผู้ให้เช่า -->
+    <div class="step active" id="ws1">
+      <div class="step-icon">🏠</div>
+      <div class="step-title">ข้อมูลผู้ให้เช่า</div>
+      <div class="step-sub">อัปโหลดรูปบัตรเพื่อกรอกอัตโนมัติ หรือกรอกเองด้านล่าง</div>
+      <button type="button" class="ocr-btn" onclick="document.getElementById('llCardInput').click()">📷 อัปโหลดรูปบัตรประชาชน — กรอกให้อัตโนมัติ</button>
+      <input type="file" id="llCardInput" accept="image/*" style="display:none" onchange="onCardPick(event,'ll')">
+      <div id="llOcrPanel"></div>
+      <div class="field">
+        <label class="field-label">ชื่อ-นามสกุล <span class="req">*</span></label>
+        <input type="text" id="llName" placeholder="เช่น นายสมหมาย สองสี">
+      </div>
+      <div class="field">
+        <label class="field-label">เลขบัตรประชาชน</label>
+        <input type="text" id="llId" inputmode="numeric" maxlength="13" placeholder="13 หลัก">
+        <div class="field-micro">ไม่บังคับ — ใช้ประกอบสำนวนหากต้องฟ้องคดีภายหลัง</div>
+      </div>
+      <div class="field">
+        <label class="field-label">ที่อยู่ผู้ให้เช่า</label>
+        <div class="grid2">
+          <div class="full"><span class="mini-label">บ้านเลขที่ / หมู่</span><input type="text" id="llHouse" placeholder="เช่น 7/11 หมู่ 2" oninput="syncLlAddr()"></div>
+          <div class="full"><span class="mini-label">ถนน / ซอย (ถ้ามี)</span><input type="text" id="llRoad" oninput="syncLlAddr()"></div>
+          <div class="full"><span class="mini-label">ตำบล / แขวง</span><input type="text" id="llSub" placeholder="พิมพ์ชื่อตำบลเพื่อค้นหา" oninput="syncLlAddr()"></div>
+          <div><span class="mini-label">อำเภอ / เขต</span><input type="text" id="llDist" oninput="syncLlAddr()"></div>
+          <div><span class="mini-label">จังหวัด</span><input type="text" id="llProv" oninput="syncLlAddr()"></div>
+          <div><span class="mini-label">รหัสไปรษณีย์</span><input type="text" id="llZip" inputmode="numeric" maxlength="5" oninput="syncLlAddr()"></div>
+        </div>
+        <input type="hidden" id="llAddr">
+        <div class="field-micro" id="llAddrPreview">ที่อยู่ตามบัตรประชาชน</div>
+      </div>
+      <div class="field">
+        <label class="field-label">เบอร์โทรศัพท์</label>
+        <input type="text" id="llPhone" inputmode="tel" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+
+    <!-- 2. ผู้เช่า -->
+    <div class="step" id="ws2">
+      <div class="step-icon">👤</div>
+      <div class="step-title">ข้อมูลผู้เช่า</div>
+      <div class="step-sub">อัปโหลดรูปบัตรเพื่อกรอกอัตโนมัติ หรือกรอกเองด้านล่าง</div>
+      <button type="button" class="ocr-btn" onclick="document.getElementById('tnCardInput').click()">📷 อัปโหลดรูปบัตรประชาชน — กรอกให้อัตโนมัติ</button>
+      <input type="file" id="tnCardInput" accept="image/*" style="display:none" onchange="onCardPick(event,'tn')">
+      <div id="tnOcrPanel"></div>
+      <div class="field">
+        <label class="field-label">ชื่อ-นามสกุล ผู้เช่า <span class="req">*</span></label>
+        <input type="text" id="tnName" placeholder="เช่น นายมานะ ขยันดี">
+      </div>
+      <div class="field">
+        <label class="field-label">ผู้เช่าคนที่ 2 (ถ้ามี)</label>
+        <input type="text" id="tnName2" placeholder="เว้นว่างได้">
+      </div>
+      <div class="field">
+        <label class="field-label">ที่อยู่ตามบัตรประชาชนผู้เช่า <span class="req">*</span></label>
+        <div class="grid2">
+          <div class="full"><span class="mini-label">บ้านเลขที่ / หมู่</span><input type="text" id="tnHouse" placeholder="เช่น 99/1 หมู่ 3" oninput="syncTnAddr()"></div>
+          <div class="full"><span class="mini-label">ถนน / ซอย (ถ้ามี)</span><input type="text" id="tnRoad" placeholder="ถ.รัชดาภิเษก" oninput="syncTnAddr()"></div>
+          <div class="full"><span class="mini-label">ตำบล / แขวง</span><input type="text" id="tnSub" placeholder="พิมพ์ชื่อตำบลเพื่อค้นหา" oninput="syncTnAddr()"></div>
+          <div><span class="mini-label">อำเภอ / เขต</span><input type="text" id="tnDist" oninput="syncTnAddr()"></div>
+          <div><span class="mini-label">จังหวัด</span><input type="text" id="tnProv" oninput="syncTnAddr()"></div>
+          <div><span class="mini-label">รหัสไปรษณีย์</span><input type="text" id="tnZip" inputmode="numeric" maxlength="5" oninput="syncTnAddr()"></div>
+        </div>
+        <input type="hidden" id="tnAddrId">
+        <div class="field-micro" id="tnAddrPreview">ดูจากสำเนาบัตรที่แนบท้ายสัญญาเช่า</div>
+      </div>
+      <div class="note warn">
+        <b>ส่งตามที่อยู่ในบัตรประชาชน</b><br>
+        ระบบจะจ่าหน้าซองไปยังที่อยู่ตามบัตรที่กรอกไว้นี้ — ถ้าผู้เช่าย้ายออกจากห้องไปแล้ว การส่งตามทะเบียนบ้านคือช่องทางที่ปฏิเสธได้ยากที่สุด
+      </div>
+      <div class="field">
+        <label class="field-label">เบอร์โทรศัพท์ผู้เช่า</label>
+        <input type="text" id="tnPhone" inputmode="tel" placeholder="08x-xxx-xxxx">
+      </div>
+    </div>
+
+    <!-- 3. ทรัพย์ + สัญญาเช่า -->
+    <div class="step" id="ws3">
+      <div class="step-icon">📑</div>
+      <div class="step-title">ทรัพย์ที่เช่าและสัญญาเดิม</div>
+      <div class="step-sub">ข้อมูลที่จะใช้อ้างอิงในหนังสือ</div>
+      <div class="field">
+        <label class="field-label">ประเภททรัพย์ <span class="req">*</span></label>
+        <div class="chip-row" id="ptypeChips"></div>
+      </div>
+      <div class="field">
+        <label class="field-label">ชื่อโครงการ</label>
+        <input type="text" id="lsPno" placeholder="เช่น The Bangkok (ถ้ามี)">
+        <div class="field-micro">ไม่บังคับ — เลขที่ห้อง/บ้านเลขที่ กรอกในช่องที่อยู่ด้านล่าง</div>
+      </div>
+      <div class="field">
+        <label class="field-label">ที่อยู่ทรัพย์ที่ให้เช่า <span class="req">*</span></label>
+        <div class="grid2">
+          <div class="full"><span class="mini-label">บ้านเลขที่ / หมู่</span><input type="text" id="lsHouse" placeholder="เช่น 7 หมู่ 4" oninput="syncLsAddr()"></div>
+          <div class="full"><span class="mini-label">ถนน / ซอย (ถ้ามี)</span><input type="text" id="lsRoad" placeholder="ถ.รัชดา" oninput="syncLsAddr()"></div>
+          <div class="full"><span class="mini-label">ตำบล / แขวง</span><input type="text" id="lsSub" placeholder="พิมพ์ชื่อตำบลเพื่อค้นหา" oninput="syncLsAddr()"></div>
+          <div><span class="mini-label">อำเภอ / เขต</span><input type="text" id="lsDist" oninput="syncLsAddr()"></div>
+          <div><span class="mini-label">จังหวัด</span><input type="text" id="lsProv" oninput="syncLsAddr()"></div>
+          <div><span class="mini-label">รหัสไปรษณีย์</span><input type="text" id="lsZip" inputmode="numeric" maxlength="5" oninput="syncLsAddr()"></div>
+        </div>
+        <input type="hidden" id="lsPaddr">
+        <div class="field-micro" id="lsAddrPreview">ใช้เป็น "ทำที่" ของหนังสือ ตามแบบฟอร์มมาตรฐาน</div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label class="field-label">เลขที่สัญญาเช่า</label>
+          <input type="text" id="lsNo" placeholder="ถ้ามี">
+        </div>
+        <div class="field">
+          <label class="field-label">วันที่ทำสัญญาเช่า <span class="req">*</span></label>
+          <input type="date" id="lsDate">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label class="field-label">ชำระค่าเช่าทุกวันที่ <span class="req">*</span></label>
+          <input type="text" id="lsDueDay" inputmode="numeric" maxlength="2" placeholder="5">
+        </div>
+        <div class="field">
+          <label class="field-label">ค่าเช่า/เดือน (บาท) <span class="req">*</span></label>
+          <input type="text" id="lsRent" inputmode="numeric" placeholder="5000">
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ยอดค้างชำระ -->
+    <div class="step" id="ws4">
+      <div class="step-icon">💰</div>
+      <div class="step-title">ยอดค้างชำระ / ไม่ปฏิบัติตามสัญญา</div>
+      <div class="step-sub">เลือกเหตุแห่งการบอกเลิกสัญญา — จะเลือกอย่างใดอย่างหนึ่งหรือทั้งสองก็ได้</div>
+      <div class="note info">
+        <b>เหตุแห่งการบอกเลิกสัญญามี 2 ทาง</b><br>
+        ① ผู้เช่าค้างชำระค่าเช่า/ค่าสาธารณูปโภค &nbsp;&nbsp; ② ผู้เช่าไม่ปฏิบัติตามสัญญาเช่า<br>
+        ระบบจะปรับข้อความในหนังสือให้ตรงกับเหตุที่เลือกอัตโนมัติ
+      </div>
+
+      <label class="field-label">ค่าเช่าค้างชำระ</label>
+      <div id="rentList"></div>
+      <button class="ar-add" onclick="addArrear('rent')">+ เพิ่มเดือนที่ค้างค่าเช่า</button>
+
+      <label class="field-label" style="margin-top:22px">ค่าน้ำประปา / ค่าไฟฟ้าค้างชำระ</label>
+      <div id="utilList"></div>
+      <button class="ar-add" onclick="addArrear('util')">+ เพิ่มรายการค่าน้ำ/ค่าไฟ</button>
+
+      <div class="total-box">
+        <div class="total-row"><span>รวมค่าเช่าค้างชำระ</span><span id="sumRent">0 บาท</span></div>
+        <div class="total-row"><span>รวมค่าน้ำ/ค่าไฟ</span><span id="sumUtil">0 บาท</span></div>
+        <div class="total-row grand"><span>รวมทั้งสิ้น</span><span id="sumAll">0 บาท</span></div>
+        <div class="total-words" id="sumWords"></div>
+      </div>
+
+      <div class="post-head" style="margin-top:26px">② การไม่ปฏิบัติตามสัญญา <span>— ถ้ามี</span></div>
+      <div class="field">
+        <label class="field-label">เลือกข้อที่ผู้เช่าไม่ปฏิบัติตามสัญญา</label>
+        <select id="breachPick" onchange="addBreach(this.value);this.value=''"></select>
+        <div class="field-micro">เลือกได้หลายข้อ — ระบบจะระบุลงในหนังสือให้</div>
+      </div>
+      <div id="breachList"></div>
+
+    </div>
+
+    <!-- 5. กำหนดเวลา -->
+    <div class="step" id="ws5">
+      <div class="step-icon">⏳</div>
+      <div class="step-title">กำหนดเวลาให้ชำระ</div>
+      <div class="step-sub">นับจากวันที่ผู้เช่า<b>ได้รับ</b>หนังสือ ไม่ใช่วันที่ส่ง</div>
+      <div class="field">
+        <label class="field-label">ให้เวลาชำระภายใน <span class="req">*</span></label>
+        <div class="chip-row" id="daysChips"></div>
+        <div class="field-micro">แนะนำ 15 วัน — สั้นเกินไปอาจถูกโต้แย้งว่าไม่ให้โอกาสตามสมควร</div>
+      </div>
+      <div class="field">
+        <label class="field-label">วันที่ออกหนังสือ <span class="req">*</span></label>
+        <input type="date" id="dmIssueDate">
+      </div>
+      <div class="field">
+        <label class="field-label">ข้อความช่วงท้ายหนังสือ</label>
+        <div class="chip-row" id="toneChips"></div>
+        <div class="field-micro" id="toneHint"></div>
+      </div>
+      <div class="note warn">
+        <b>ข้อความมาตรฐานมีประเด็นต้องระวัง</b><br>
+        แบบฟอร์มเดิมระบุว่าจะ "ตัดการจ่ายสาธารณูปโภค การเข้าออกทรัพย์ที่ให้เช่า" ซึ่งเป็นการบังคับด้วยตนเองที่ทำจริงไม่ได้ และอาจถูกใช้เป็นหลักฐานว่าผู้ให้เช่าข่มขู่ ควรให้ทนายยืนยันก่อนใช้ฉบับมาตรฐาน
+      </div>
+    </div>
+
+    <!-- 6. ตรวจสอบ -->
+    <div class="step" id="ws6">
+      <div class="step-icon">🔍</div>
+      <div class="step-title">ตรวจสอบหนังสือ</div>
+      <div class="step-sub">ตรวจหัวเรื่องและยอดเงินให้ถูกต้อง — เนื้อหาฉบับเต็มจะเปิดหลังชำระเงิน</div>
+      <div class="preview-shell">
+        <div id="docPreview"></div>
+        <div class="preview-veil" id="previewVeil">
+          <div class="veil-card">
+            <div class="veil-ico">🔒</div>
+            <div class="veil-title">เนื้อหาฉบับเต็มถูกล็อกไว้</div>
+            <div class="veil-desc">ชำระ ฿2,990 เพื่อเปิดอ่านฉบับเต็ม ดาวน์โหลด PDF และใช้ต่อได้ครบทั้ง 3 ฉบับของเคสนี้</div>
+          </div>
+        </div>
+      </div>
+      <div class="note info" style="margin-top:18px">
+        เอกสารฉบับจริงจะออกเป็น PDF ขนาด A4 พร้อมช่องลงชื่อ และบันทึกการส่งไว้ในเคสเพื่อใช้อ้างอิงในขั้นถัดไป
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════ PAY ══════════ -->
+<section class="phase" id="ph-pay">
+  <div class="wrap">
+    <div class="step-icon">🔓</div>
+    <div class="step-title">ปลดล็อกเคสนี้</div>
+    <div class="step-sub">ชำระครั้งเดียว ใช้ได้ครบทั้ง 3 ฉบับของเคสนี้</div>
+    <div class="total-box">
+      <div class="total-row"><span>1. หนังสือทวงถามค่าเช่า</span><span>รวมอยู่ในแพ็ก</span></div>
+      <div class="total-row"><span>2. หนังสือบอกเลิกสัญญาเช่า</span><span>รวมอยู่ในแพ็ก</span></div>
+      <div class="total-row"><span>3. เอกสารหลักฐาน &amp; ทางบังคับ</span><span>รวมอยู่ในแพ็ก</span></div>
+      <div class="total-row grand"><span>รวม</span><span>฿2,990</span></div>
+    </div>
+    <div class="note info">ระบบจะเก็บเคสไว้ให้ต่อเนื่อง — เมื่อครบกำหนดขั้นที่ 1 จะแจ้งเตือนและปลดล็อกขั้นที่ 2 อัตโนมัติ</div>
+    <div id="payArea" style="margin-top:20px"></div>
+  </div>
+</section>
+
+<!-- ══════════ DOC + DELIVERY ══════════ -->
+<section class="phase" id="ph-doc">
+  <div class="wrap">
+    <div class="step-icon">📄</div>
+    <div class="step-title">หนังสือทวงถามพร้อมแล้ว</div>
+    <div class="step-sub" id="docCaseNo"></div>
+    <div id="docFull"></div>
+    <button class="btn-next" style="margin-top:20px" onclick="downloadDemandPDF()">⬇ ดาวน์โหลด PDF (A4)</button>
+    <button class="btn-ghost" onclick="go('post');renderPost()">ถัดไป — ส่งไปรษณีย์ลงทะเบียนตอบรับ →</button>
+  </div>
+</section>
+
+<!-- ══════════ ขั้นตอนไปรษณีย์ลงทะเบียนตอบรับ (ป.133) ══════════ -->
+<section class="phase" id="ph-post">
+  <div class="wrap">
+    <div class="step-icon">📮</div>
+    <div class="step-title">ส่งไปรษณีย์ลงทะเบียนตอบรับ</div>
+    <div class="step-sub">หัวใจของขั้นนี้ — ถ้าพิสูจน์การรับไม่ได้ หนังสือแทบใช้ในศาลไม่ได้</div>
+
+    <div class="note warn">
+      <b>ทำไมต้องลงทะเบียนตอบรับ</b><br>
+      ใบตอบรับ (ป.133) ที่มีลายมือชื่อผู้รับและวันที่ คือหลักฐานว่าผู้เช่าได้รับหนังสือจริง — เก็บตัวจริงไว้ ห้ามทิ้ง เพราะต้องใช้แนบสำนวนหากต้องฟ้องคดี
+    </div>
+
+    <!-- ผู้ฝากส่ง -->
+    <div class="post-head">① ผู้ฝากส่ง <span>— หน้าใบตอบรับ</span></div>
+    <div class="field">
+      <label class="field-label">ชื่อและที่อยู่ผู้ฝากส่ง</label>
+      <input type="text" id="psName" placeholder="ชื่อผู้ให้เช่า">
+      <input type="text" id="psAddr" style="margin-top:8px" placeholder="ที่อยู่ผู้ฝากส่ง">
+      <div class="row" style="margin-top:8px">
+        <input type="text" id="psZip" inputmode="numeric" maxlength="5" placeholder="รหัสไปรษณีย์">
+        <input type="text" id="psOffice" placeholder="ฝากส่ง ณ ที่ทำการไปรษณีย์">
+      </div>
+    </div>
+
+    <!-- ผู้รับ 2 ฉบับ -->
+    <div class="post-head">② ผู้รับ <span>— ตามที่อยู่ในบัตรประชาชน</span></div>
+    <div id="postCopies"></div>
+
+    <div class="post-head">③ ป้ายสำหรับตัดแปะ <span>— ปรับให้พอดีใบจริง</span></div>
+    <div class="note info">
+      พิมพ์ที่ <b>ขนาดจริง 100%</b> (อย่าเลือก "Fit to page") แล้ววัดไม้บรรทัดบนกระดาษ — ถ้าไม่ตรง 50 มม. ให้ปรับตัวเลขด้านล่างชดเชย
+    </div>
+    <div class="grid2">
+      <div><span class="mini-label">ป้ายผู้ฝากส่ง — กว้าง × สูง (มม.)</span>
+        <div class="ar-amt">
+          <input type="text" id="lbSw" inputmode="numeric" value="70" oninput="syncLabel()">
+          <input type="text" id="lbSh" inputmode="numeric" value="26" oninput="syncLabel()">
+        </div></div>
+      <div><span class="mini-label">ป้ายผู้รับ — กว้าง × สูง (มม.)</span>
+        <div class="ar-amt">
+          <input type="text" id="lbRw" inputmode="numeric" value="88" oninput="syncLabel()">
+          <input type="text" id="lbRh" inputmode="numeric" value="40" oninput="syncLabel()">
+        </div></div>
+    </div>
+
+    <div class="note info" id="deadlineNote">กรอก "วันที่ผู้รับได้รับ" จากใบตอบรับที่ส่งกลับมา เพื่อให้ระบบคำนวณวันครบกำหนด</div>
+
+    <button class="btn-next" onclick="downloadPostPDF()">⬇ พิมพ์ป้ายตัดแปะ + ใบช่วยกรอก ป.133</button>
+    <button class="btn-ghost" onclick="saveDelivery()">บันทึกการส่ง →</button>
+  </div>
+</section>
+
+<!-- ══════════ ขั้นที่ 2 — หนังสือบอกเลิกสัญญาเช่า ══════════ -->
+<section class="phase" id="ph-terminate">
+  <div class="wrap">
+    <div class="step-icon">✉️</div>
+    <div class="step-title">หนังสือบอกเลิกสัญญาเช่า</div>
+    <div class="step-sub">เตรียมไว้ล่วงหน้าได้ — แต่ต้องลงวันที่และส่งหลังครบกำหนดเท่านั้น</div>
+
+    <div class="note warn" id="tmTimingWarn"></div>
+
+    <div class="field">
+      <label class="field-label">วันที่ออกหนังสือ <span class="req">*</span></label>
+      <input type="date" id="tmIssueDate" oninput="renderTerminate()">
+      <div class="field-micro" id="tmDateHint"></div>
+    </div>
+    <div class="field">
+      <label class="field-label">ให้ขนย้ายและส่งมอบพื้นที่คืนภายใน <span class="req">*</span></label>
+      <div class="chip-row" id="tmDaysChips"></div>
+      <div class="field-micro">นับแต่วันที่ผู้เช่าได้รับหนังสือฉบับนี้</div>
+    </div>
+    <div class="field">
+      <label class="field-label">ข้อความช่วงท้ายหนังสือ</label>
+      <div class="chip-row" id="tmToneChips"></div>
+      <div class="field-micro" id="tmToneHint"></div>
+    </div>
+
+    <div id="tmPreview"></div>
+    <button class="btn-next" onclick="downloadTerminatePDF()">⬇ ดาวน์โหลด PDF (A4)</button>
+
+    <div class="post-head">บันทึกการส่ง <span>— ไปรษณีย์ลงทะเบียนตอบรับ</span></div>
+    <div class="note info">ส่งไปยังที่อยู่ตามบัตรประชาชนเดียวกับหนังสือทวงถาม และเก็บใบตอบรับ ป.133 ไว้เป็นหลักฐาน</div>
+    <div class="grid2">
+      <div class="full"><span class="mini-label">เลขที่สิ่งของ (EMS/ลงทะเบียน)</span>
+        <input type="text" id="tmTracking" placeholder="EB123456789TH"></div>
+      <div><span class="mini-label">วันที่ฝากส่ง</span><input type="date" id="tmSent"></div>
+      <div><span class="mini-label">วันที่ผู้เช่าได้รับ</span><input type="date" id="tmRecv" oninput="renderTerminate()"></div>
+    </div>
+    <div class="note info" id="tmMoveNote">กรอกวันที่ผู้เช่าได้รับ เพื่อคำนวณวันครบกำหนดย้ายออก</div>
+    <button class="btn-ghost" onclick="saveTerminate()">บันทึกเข้าเคส →</button>
+  </div>
+</section>
+
+<!-- ══════════ หนังสือแจ้งตำรวจ (ลงบันทึกประจำวัน) ══════════ -->
+<section class="phase" id="ph-police">
+  <div class="wrap">
+    <div class="step-icon">🛡️</div>
+    <div class="step-title">หนังสือแจ้งตำรวจ</div>
+    <div class="step-sub">นำไปยื่นที่สถานีตำรวจเพื่อลงบันทึกประจำวันไว้เป็นหลักฐาน</div>
+
+    <div class="note info">
+      <b>ใช้ทำอะไร</b><br>
+      สรุปข้อเท็จจริงทั้งหมดของเคส (สัญญาเช่า ยอดค้าง หนังสือที่ส่งไปแล้ว เลขพัสดุ วันที่ผู้เช่าได้รับ) ให้พนักงานสอบสวนบันทึกได้ครบและเร็ว — บันทึกประจำวันนี้ใช้เป็นหลักฐานประกอบการฟ้องคดีต่อไป
+    </div>
+
+    <div class="field">
+      <label class="field-label">สถานีตำรวจที่จะไปแจ้ง <span class="req">*</span></label>
+      <input type="text" id="pcStation" placeholder="เช่น สถานีตำรวจนครบาลลาดพร้าว">
+    </div>
+    <div class="field">
+      <label class="field-label">ที่อยู่สถานีตำรวจ</label>
+      <input type="text" id="pcStationAddr" placeholder="ไม่บังคับ">
+    </div>
+    <div class="row">
+      <div class="field">
+        <label class="field-label">วันที่จะไปแจ้ง <span class="req">*</span></label>
+        <input type="date" id="pcDate">
+      </div>
+      <div class="field">
+        <label class="field-label">เลขที่บันทึกประจำวัน</label>
+        <input type="text" id="pcBookNo" placeholder="กรอกหลังแจ้งแล้ว">
+      </div>
+    </div>
+
+    <div class="note warn">
+      <b>สิ่งที่ต้องเตรียมไปด้วย</b><br>
+      บัตรประชาชนตัวจริง · สำเนาสัญญาเช่า · สำเนาหนังสือทวงถาม · ใบตอบรับ ป.133 ตัวจริง · สำเนาบัตรผู้เช่า (ถ้ามี)
+    </div>
+
+    <div id="policePreview"></div>
+    <button class="btn-next" onclick="downloadPolicePDF()">⬇ ดาวน์โหลดหนังสือแจ้งตำรวจ (PDF)</button>
+    <button class="btn-ghost" onclick="savePolice()">บันทึกเข้าเคส →</button>
+  </div>
+</section>
+
+<!-- ══════════ TIMELINE ══════════ -->
+<section class="phase" id="ph-timeline">
+  <div class="wrap">
+    <div class="step-icon">🗂️</div>
+    <div class="step-title">สถานะเคส</div>
+    <div class="step-sub" id="tlCaseNo"></div>
+    <div class="total-box" style="padding:6px 16px" id="tlList"></div>
+    <button class="btn-next" style="margin-top:16px" onclick="go('terminate');renderTerminate()">✉️ ทำหนังสือบอกเลิกสัญญาเช่า</button>
+    <button class="btn-next" style="margin-top:10px" onclick="go('police');renderPolice()">🛡️ ออกหนังสือแจ้งตำรวจ (แถมฟรีในแพ็ก)</button>
+    <button class="btn-ghost" onclick="go('doc')">ดูหนังสือขั้นที่ 1 อีกครั้ง</button>
+    <div class="rc-foot" style="margin-top:16px">ระบบจะแจ้งเตือนเมื่อครบกำหนด — เก็บลิงก์นี้ไว้เปิดเคสต่อได้</div>
+  </div>
+</section>
+
+<div class="navbar" id="navbar">
+  <div class="navbar-inner">
+    <button class="btn-next" id="btnNext" onclick="nextStep()">ถัดไป →</button>
+    <div class="nav-hint" id="navHint"></div>
+  </div>
+</div>
+
+<div id="printDoc"></div>
+<button class="dev-fab" id="devFab" onclick="toggleDev()">⚡</button>
+<div class="dev-menu" id="devMenu">
+  <button onclick="devFill()"><span class="dev-num">1</span>เติมข้อมูลจำลองทั้งหมด</button>
+  <button onclick="devSkipPay()"><span class="dev-num">2</span>ข้ามการชำระเงิน</button>
+  <button onclick="go('timeline');buildTimeline()"><span class="dev-num">3</span>ดูสถานะเคส</button>
+  <button onclick="go('terminate');renderTerminate()"><span class="dev-num">4</span>หนังสือบอกเลิกสัญญา</button>
+  <button onclick="go('police');renderPolice()"><span class="dev-num">5</span>หนังสือแจ้งตำรวจ</button>
+  <button onclick="devReset()"><span class="dev-num">6</span>ล้างเคส (เริ่มใหม่)</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════ CONFIG ═══════════════ */
+const SUPABASE_URL  = 'https://vopercafgleteuahwvkf.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZvcGVyY2FmZ2xldGV1YWh3dmtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4ODczMTQsImV4cCI6MjA5NTQ2MzMxNH0.vsMqOTFc1kMuw1ZwQt9tlvlIcn9SpifAJo4VUzxy2_c';
+const NOTICE_TABLE  = 'notice_cases';
+const PRICE_THB     = 2990;
+
+/* ยิง API เข้า origin เดียวกับหน้าเว็บเสมอ (preview → backend ของ preview) */
+const NOTICE_API = (function(){
+  const h=(location.hostname||'').toLowerCase();
+  if(/\.vercel\.app$/.test(h) || /(^|\.)signdee\.com$/.test(h)) return '';
+  return 'https://justsign-api.vercel.app';
+})();
+
+function _isTestEnv(){ return true; }   // production (index-notice.html) → false
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ═══════════════ STATE ═══════════════ */
+const TOTAL_STEPS = 6;
+const STEP_LABELS = ['ข้อมูลผู้ให้เช่า','ข้อมูลผู้เช่า','ทรัพย์ที่เช่า','ยอดค้างชำระ','กำหนดเวลา','ตรวจสอบ'];
+let curStep = 1;
+
+const S = {
+  rowId: localStorage.getItem('notice_case_id') || null,
+  caseNo: '',
+  ptype: 'คอนโด',
+  days: 15,
+  softTone: false,
+  method: 'ไปรษณีย์ลงทะเบียนตอบรับ',
+  rentItems: [],
+  utilItems: [],
+  paid: false,
+  demand: null,
+  delivery: null,
+  copies: null,
+  label: {sw:70,sh:26,rw:88,rh:40},
+  evidence: null,
+  terminate: null, tmDelivery: null,
+  tmDays: 7, tmSoftTone: false,
+  breaches: [],
+};
+
+/* ═══════════════ UTIL ═══════════════ */
+function $(id){ return document.getElementById(id); }
+function val(id){ const e=$(id); return e?e.value.trim():''; }
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2600); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function money(n){ return (Number(n)||0).toLocaleString('th-TH'); }
+function num(v){ return Number(String(v||'').replace(/[^\d.]/g,''))||0; }
+
+const TH_MONTHS=['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+function thDate(iso){
+  if(!iso) return '';
+  const d=new Date(iso); if(isNaN(d.getTime())) return '';
+  return d.getDate()+' '+TH_MONTHS[d.getMonth()]+' พ.ศ. '+(d.getFullYear()+543);
+}
+function thDateParts(iso){
+  const d=iso?new Date(iso):new Date();
+  if(isNaN(d.getTime())) return {d:'........',m:'.....................',y:'...........'};
+  return {d:String(d.getDate()), m:TH_MONTHS[d.getMonth()], y:String(d.getFullYear()+543)};
+}
+function addDays(iso,n){
+  const d=new Date(iso); if(isNaN(d.getTime())) return null;
+  d.setDate(d.getDate()+Number(n||0));
+  return d.toISOString().slice(0,10);
+}
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+function bahtText(numV){
+  let n = Math.round(Number(numV)||0);
+  if(n===0) return 'ศูนย์บาทถ้วน';
+  const d=['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+  const p=['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+  function readGroup(g){
+    const str=String(g), len=str.length; let s='';
+    for(let i=0;i<len;i++){
+      const dig=parseInt(str[i],10), pos=len-1-i;
+      if(dig===0) continue;
+      if(pos===0&&dig===1&&len>1) s+='เอ็ด';
+      else if(pos===1&&dig===2) s+='ยี่สิบ';
+      else if(pos===1&&dig===1) s+='สิบ';
+      else s+=d[dig]+p[pos];
+    }
+    return s;
+  }
+  const millions=Math.floor(n/1000000), rest=n%1000000;
+  let out='';
+  if(millions>0) out+=readGroup(millions)+'ล้าน';
+  if(rest>0) out+=readGroup(rest);
+  return out+'บาทถ้วน';
+}
+function dash(v){ return (v&&String(v).trim())?String(v).trim():'........................'; }
+
+/* ═══════════════ NAV ═══════════════ */
+let _phase='landing';
+const _PHASE_BACK={wizard:'landing',pay:'wizard',doc:'pay',post:'doc',timeline:'post',terminate:'timeline',police:'timeline'};
+function go(name,push){
+  document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+  const el=$('ph-'+name); if(el) el.classList.add('active');
+  _phase=name;
+  const wiz=(name==='wizard');
+  $('topbar').classList.toggle('on', wiz);
+  $('navbar').classList.toggle('on', wiz);
+  if(push!==false){ try{ history.pushState({phase:name,step:curStep},''); }catch(_){} }
+  window.scrollTo(0,0);
+}
+window.addEventListener('popstate',function(){ goBack(true); });
+function goBack(fromHistory){
+  if(_phase==='wizard'){
+    if(curStep>1){ showStep(curStep-1); return; }
+    go('landing',!fromHistory); return;
+  }
+  const prev=_PHASE_BACK[_phase];
+  if(prev) go(prev,!fromHistory);
+}
+function showStep(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  const el=$('ws'+n); if(el) el.classList.add('active');
+  curStep=n;
+  $('stepLabel').textContent=STEP_LABELS[n-1];
+  $('stepCount').textContent='ขั้นตอน '+n+' จาก '+TOTAL_STEPS;
+  $('progressFill').style.width=Math.round(n/TOTAL_STEPS*100)+'%';
+  $('btnNext').textContent = n===TOTAL_STEPS ? 'ดำเนินการชำระเงิน →' : 'ถัดไป →';
+  $('navHint').textContent = n===TOTAL_STEPS ? '฿2,990 ครอบคลุมเอกสารทั้ง 3 ฉบับของเคสนี้' : '';
+  if(n===4){ buildBreachPick(); renderArrears(); renderBreaches(); }
+  if(n===6) renderPreview();
+  window.scrollTo(0,0);
+}
+function nextStep(){
+  if(!validateStep(curStep)) return;
+  collectStep(curStep);
+  if(curStep<TOTAL_STEPS){ showStep(curStep+1); saveCase(); }
+  else { saveCase(); go('pay'); renderPay(); }
+}
+function prevStep(){ goBack(false); }
+
+/* ═══════════════ VALIDATE / COLLECT ═══════════════ */
+function validateStep(n){
+  const need=(id,msg)=>{ if(!val(id)){ toast(msg); const e=$(id); if(e){e.classList.add('bad');e.focus();} return false; } $(id).classList.remove('bad'); return true; };
+  if(n===1) return need('llName','กรุณากรอกชื่อผู้ให้เช่า');
+  if(n===2){
+    if(!need('tnName','กรุณากรอกชื่อผู้เช่า')) return false;
+    if(!val('tnAddrId')){ toast('กรุณากรอกที่อยู่ตามบัตรประชาชนผู้เช่า'); const e=$('tnHouse'); if(e) e.focus(); return false; }
+    return true;
+  }
+  if(n===3){
+    if(!val('lsPaddr')){ toast('กรุณากรอกที่อยู่ทรัพย์ที่ให้เช่า'); const e=$('lsHouse'); if(e) e.focus(); return false; }
+    if(!need('lsDate','กรุณาระบุวันที่ทำสัญญาเช่า')) return false;
+    if(!need('lsDueDay','กรุณาระบุวันครบกำหนดชำระค่าเช่า')) return false;
+    if(!need('lsRent','กรุณาระบุค่าเช่าต่อเดือน')) return false;
+    return true;
+  }
+  if(n===4){
+    const t=arrearTotals();
+    const bl=breachText();
+    if(t.total<=0 && !bl.length){ toast('กรุณาระบุยอดค้างชำระ หรือเลือกข้อที่ผู้เช่าไม่ปฏิบัติตามสัญญา'); return false; }
+    if((S.breaches||[]).some(b=>b.type==='อื่นๆ โปรดระบุ'&&!(b.note||'').trim())){ toast('กรุณาระบุรายละเอียดในข้อ "อื่นๆ"'); return false; }
+    return true;
+  }
+  if(n===5) return need('dmIssueDate','กรุณาระบุวันที่ออกหนังสือ');
+  return true;
+}
+function collectStep(n){ /* เก็บผ่าน caseData() ตอน save */ }
+
+function arrearTotals(){
+  const rentTotal=S.rentItems.reduce((a,x)=>a+num(x.amount),0);
+  const utilTotal=S.utilItems.reduce((a,x)=>a+num(x.amount),0);
+  return {rentTotal,utilTotal,total:rentTotal+utilTotal};
+}
+function caseData(){
+  const t=arrearTotals();
+  const issue=val('dmIssueDate')||todayISO();
+  return {
+    landlord:{name:val('llName'),id13:val('llId').replace(/\D/g,''),addr:val('llAddr'),phone:val('llPhone')},
+    tenant:{name:val('tnName'),name2:val('tnName2'),addrId:val('tnAddrId'),phone:val('tnPhone')},
+    lease:{ptype:S.ptype,pno:val('lsPno'),house:val('lsHouse'),paddr:val('lsPaddr'),leaseNo:val('lsNo'),
+           leaseDate:val('lsDate'),dueDay:val('lsDueDay'),rent:num(val('lsRent'))},
+    arrears:{rentItems:S.rentItems,utilItems:S.utilItems,rentTotal:t.rentTotal,utilTotal:t.utilTotal,total:t.total},
+    breaches:S.breaches||[],
+    demand:{days:S.days,issuedDate:issue,softTone:S.softTone},
+  };
+}
+
+/* ═══════════════ SUPABASE ═══════════════ */
+async function saveCase(){
+  const d=caseData();
+  try{
+    if(!S.rowId){
+      const yr=new Date().getFullYear()+543;
+      S.caseNo='NTC-'+yr+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+      const {data,error}=await sb.from(NOTICE_TABLE)
+        .insert(Object.assign({case_no:S.caseNo,status:'draft'},d)).select('id,case_no').single();
+      if(error) throw error;
+      S.rowId=data.id; S.caseNo=data.case_no;
+      localStorage.setItem('notice_case_id',S.rowId);
+    }else{
+      const {error}=await sb.from(NOTICE_TABLE).update(d).eq('id',S.rowId);
+      if(error) throw error;
+    }
+  }catch(err){ console.warn('[notice] save failed:',err.message||err); toast('บันทึกไม่สำเร็จ — ตรวจการเชื่อมต่อ'); }
+}
+async function loadCase(id){
+  const {data,error}=await sb.from(NOTICE_TABLE).select('*').eq('id',id).single();
+  if(error||!data) return null;
+  S.rowId=data.id; S.caseNo=data.case_no||''; S.paid=!!data.payment_completed;
+  S.demand=data.demand||null; S.delivery=data.demand_delivery||null;
+  const L=data.landlord||{}, T=data.tenant||{}, LS=data.lease||{}, AR=data.arrears||{}, DM=data.demand||{};
+  const set=(id2,v)=>{ const e=$(id2); if(e&&v!=null) e.value=v; };
+  set('llName',L.name); set('llId',L.id13); set('llPhone',L.phone);
+  _applyAddr('ll',L.addr);
+  set('tnName',T.name); set('tnName2',T.name2); set('tnPhone',T.phone);
+  set('lsPno',LS.pno); set('lsNo',LS.leaseNo);
+  _applyAddr('ls',LS.paddr); _applyAddr('tn',T.addrId);
+  set('lsDate',LS.leaseDate); set('lsDueDay',LS.dueDay); set('lsRent',LS.rent);
+  if(LS.ptype){ S.ptype=LS.ptype; }
+  S.rentItems=AR.rentItems||[]; S.utilItems=AR.utilItems||[]; S.breaches=data.breaches||[];
+  if(DM.days){ S.days=DM.days; } S.softTone=!!DM.softTone;
+  set('dmIssueDate',DM.issuedDate||todayISO());
+  S.evidence=data.evidence||null;
+  S.terminate=data.terminate||null; S.tmDelivery=data.terminate_delivery||null;
+  if(S.terminate){
+    S.tmDays=S.terminate.days||7; S.tmSoftTone=!!S.terminate.softTone;
+    set('tmIssueDate',S.terminate.issuedDate);
+  }
+  if(S.tmDelivery){
+    set('tmTracking',S.tmDelivery.tracking); set('tmSent',S.tmDelivery.sentDate); set('tmRecv',S.tmDelivery.recvDate);
+  }
+  if(S.evidence&&S.evidence.police){
+    const P=S.evidence.police;
+    set('pcStation',P.station); set('pcStationAddr',P.stationAddr);
+    set('pcDate',P.date); set('pcBookNo',P.bookNo);
+  }
+  if(S.delivery){
+    if(Array.isArray(S.delivery.copies)) S.copies=S.delivery.copies;
+    const sd=S.delivery.sender||{};
+    set('psName',sd.name); set('psAddr',sd.addr); set('psZip',sd.zip); set('psOffice',sd.office);
+  }
+  buildChips();
+  return data;
+}
+
+/* ═══════════════ CONSENT ═══════════════ */
+function updateAgree(){
+  const ok=$('agreeTos').checked;
+  $('btnStart').disabled=!ok;
+  const r=$('btnResume'); if(r) r.style.opacity=ok?'1':'.45';
+}
+
+/* ═══════════════ OCR บัตรประชาชน (reuse /api/myip) ═══════════════ */
+function _ocrNote(who,cls,msg){ const el=$(who+'OcrPanel'); if(el) el.innerHTML='<div class="ocr-note '+cls+'">'+esc(msg)+'</div>'; }
+async function _compress(file,maxPx,q){
+  return new Promise((res,rej)=>{
+    const img=new Image(), rd=new FileReader();
+    rd.onload=()=>{ img.onload=()=>{
+      let w=img.width,h=img.height; const sc=Math.min(1,maxPx/Math.max(w,h));
+      w=Math.round(w*sc); h=Math.round(h*sc);
+      const cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h); res(cv.toDataURL('image/jpeg',q));
+    }; img.onerror=rej; img.src=rd.result; };
+    rd.onerror=rej; rd.readAsDataURL(file);
+  });
+}
+async function onCardPick(e,who){
+  const f=e.target.files&&e.target.files[0]; e.target.value='';
+  if(!f) return;
+  if(!f.type.startsWith('image/')){ _ocrNote(who,'err','กรุณาเลือกไฟล์รูปภาพของบัตร'); return; }
+  _ocrNote(who,'busy','⏳ กำลังอ่านบัตร…');
+  try{
+    const dataUrl=await _compress(f,1400,0.85);
+    const r=await fetch(NOTICE_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:dataUrl})});
+    const j=await r.json();
+    if(!j.ok||!j.fields) throw new Error(j.error||'ocr_failed');
+    const F=j.fields;
+    const set=(id,v)=>{ const el=$(id); if(el&&v) el.value=v; };
+    if(who==='ll'){
+      set('llName',F.full_name_th); set('llId',F.id_number);
+      _applyAddr('ll',F.address_th||'');
+    }else{
+      set('tnName',F.full_name_th);
+      const a=splitAddr(F.address_th||'');
+      set('tnHouse',[a.house,a.moo?('หมู่ '+a.moo):''].filter(Boolean).join(' '));
+      set('tnRoad',a.road); set('tnSub',a.sub); set('tnDist',a.dist); set('tnProv',a.prov); set('tnZip',a.zip);
+      syncTnAddr();
+    }
+    _ocrNote(who,'ok','✓ อ่านบัตรแล้ว — ตรวจความถูกต้องอีกครั้งก่อนไปต่อ');
+  }catch(err){
+    _ocrNote(who,'err','อ่านบัตรไม่สำเร็จ — กรอกเองด้านล่างได้');
+  }
+}
+
+/* ═══════════════ ค้นหาที่อยู่ไทย (autocomplete แบบ sale) ═══════════════ */
+const _ADDR_SRC=[
+  'https://cdn.jsdelivr.net/gh/earthchie/jquery.Thailand.js@master/jquery.Thailand.js/database/raw_database/raw_database.json',
+  'https://cdn.jsdelivr.net/npm/thai-address-database@0.4.0/database/raw_database.json'
+];
+let _ADDR_DB=null,_addrLoading=null;
+async function loadAddrDB(){
+  if(_ADDR_DB) return _ADDR_DB;
+  if(_addrLoading) return _addrLoading;
+  _addrLoading=(async()=>{
+    for(const url of _ADDR_SRC){
+      try{
+        const ctrl=new AbortController();
+        const t=setTimeout(()=>ctrl.abort(),9000);
+        const r=await fetch(url,{signal:ctrl.signal});
+        clearTimeout(t);
+        if(!r.ok) continue;
+        const j=await r.json();
+        if(Array.isArray(j)&&j.length){
+          _ADDR_DB=j.map(x=>({
+            sub:x.district||x.subdistrict||'', dist:x.amphoe||'',
+            prov:x.province||'', zip:String(x.zipcode||x.zip_code||'')
+          })).filter(x=>x.sub&&x.prov);
+          return _ADDR_DB;
+        }
+      }catch(e){}
+    }
+    _ADDR_DB=[]; return _ADDR_DB;
+  })();
+  return _addrLoading;
+}
+function searchAddr(q,limit){
+  limit=limit||8;
+  if(!_ADDR_DB||!_ADDR_DB.length||!q||q.length<2) return [];
+  const s=q.trim(),starts=[],contains=[];
+  for(const r of _ADDR_DB){
+    if(starts.length>=limit) break;
+    if(r.sub.indexOf(s)===0||r.zip.indexOf(s)===0) starts.push(r);
+    else if(contains.length<limit&&(r.sub.includes(s)||r.dist.includes(s)||r.prov.includes(s))) contains.push(r);
+  }
+  return starts.concat(contains).slice(0,limit);
+}
+function wireAddrAuto(pre){
+  const inp=$(pre+'Sub'); if(!inp||inp.dataset.auto) return;
+  inp.dataset.auto='1'; inp.setAttribute('autocomplete','off');
+  const holder=inp.parentNode;
+  if(getComputedStyle(holder).position==='static') holder.style.position='relative';
+  const box=document.createElement('div');
+  box.className='addr-dd';
+  holder.appendChild(box);
+  function fill(items){
+    box.innerHTML=items.map(r=>
+      '<div class="addr-op"><b>'+esc(r.sub)+'</b><span> &gt; '+esc(r.dist)+' &gt; '+esc(r.prov)+' &gt; '+esc(r.zip)+'</span></div>').join('');
+    box.style.display=items.length?'block':'none';
+    Array.from(box.children).forEach((el,i)=>{
+      el.onmousedown=e=>{
+        e.preventDefault();
+        const r=items[i];
+        const set=(id,v)=>{ const t=$(pre+id); if(t) t.value=v||''; };
+        set('Sub',r.sub); set('Dist',r.dist); set('Prov',r.prov); set('Zip',r.zip);
+        box.style.display='none';
+        if(pre==='ll') syncLlAddr(); else if(pre==='tn') syncTnAddr(); else syncLsAddr();
+      };
+    });
+  }
+  inp.addEventListener('focus',()=>loadAddrDB());
+  inp.addEventListener('input',async()=>{ await loadAddrDB(); fill(searchAddr(inp.value.trim())); });
+  inp.addEventListener('blur',()=>setTimeout(()=>{ box.style.display='none'; },160));
+}
+
+/* ═══════════════ ประกอบที่อยู่จากช่องแยก ═══════════════ */
+function _composeAddr(pre){
+  const g=id=>val(pre+id);
+  const bkk=/กรุงเทพ/.test(g('Prov'));
+  const parts=[g('House'), g('Road'),
+    g('Sub')?((bkk?'แขวง':'ตำบล')+g('Sub')):'',
+    g('Dist')?((bkk?'เขต':'อำเภอ')+g('Dist')):'',
+    g('Prov')?(bkk?g('Prov'):('จังหวัด'+g('Prov'))):'',
+    g('Zip')].filter(Boolean);
+  return parts.join(' ');
+}
+function syncLlAddr(){
+  const v=_composeAddr('ll');
+  $('llAddr').value=v;
+  $('llAddrPreview').textContent = v || 'ที่อยู่ตามบัตรประชาชน';
+}
+function syncLsAddr(){
+  const v=_composeAddr('ls');
+  $('lsPaddr').value=v;
+  $('lsAddrPreview').textContent = v || 'ใช้เป็น "ทำที่" ของหนังสือ ตามแบบฟอร์มมาตรฐาน';
+}
+function syncTnAddr(){
+  const v=_composeAddr('tn');
+  $('tnAddrId').value=v;
+  $('tnAddrPreview').textContent = v || 'ดูจากสำเนาบัตรที่แนบท้ายสัญญาเช่า';
+}
+function _applyAddr(pre,text){
+  if(!text) return;
+  const a=splitAddr(text);
+  const set=(id,v)=>{ const el=$(pre+id); if(el) el.value=v||''; };
+  set('House',[a.house,a.moo?('หมู่ '+a.moo):''].filter(Boolean).join(' '));
+  set('Road',a.road); set('Sub',a.sub); set('Dist',a.dist); set('Prov',a.prov); set('Zip',a.zip);
+  if(pre==='ls') syncLsAddr(); else if(pre==='ll') syncLlAddr(); else syncTnAddr();
+}
+
+/* ═══════════════ เดือน/ปี (แบบ sale) ═══════════════ */
+function monthOptions(sel){
+  return '<option value="">— เดือน —</option>'+
+    TH_MONTHS.map((n,i)=>{ const v=String(i+1).padStart(2,'0');
+      return '<option value="'+v+'"'+(sel===v?' selected':'')+'>'+n+'</option>'; }).join('');
+}
+function yearOptions(sel){
+  const nowY=new Date().getFullYear();
+  let o='<option value="">— ปี —</option>';
+  for(let y=nowY-3;y<=nowY+1;y++) o+='<option value="'+y+'"'+(String(sel)===String(y)?' selected':'')+'>พ.ศ. '+(y+543)+'</option>';
+  return o;
+}
+function monthLabel(m,y){
+  if(!m||!y) return '';
+  return TH_MONTHS[parseInt(m,10)-1]+' '+(parseInt(y,10)+543);
+}
+
+/* ═══════════════ CHIPS ═══════════════ */
+function buildChips(){
+  const PT=['บ้าน','คอนโด','อาคารพาณิชย์','ห้องพัก'];
+  $('ptypeChips').innerHTML=PT.map(p=>`<span class="chip ${S.ptype===p?'active':''}" onclick="pickPtype('${p}')">${p}</span>`).join('');
+  const DY=[7,15,30];
+  $('daysChips').innerHTML=DY.map(n=>`<span class="chip ${S.days===n?'active':''}" onclick="pickDays(${n})">ภายใน ${n} วัน</span>`).join('');
+  $('toneChips').innerHTML=
+    `<span class="chip ${!S.softTone?'active':''}" onclick="pickTone(false)">ฉบับมาตรฐาน</span>`+
+    `<span class="chip ${S.softTone?'active':''}" onclick="pickTone(true)">ฉบับไม่ระบุการตัดสาธารณูปโภค</span>`;
+  $('toneHint').textContent = S.softTone
+    ? 'สงวนสิทธิ์บอกเลิกสัญญาและดำเนินคดีตามกฎหมาย โดยไม่กล่าวถึงการตัดน้ำ-ไฟหรือห้ามเข้าออก'
+    : 'ใช้ข้อความตามแบบฟอร์มเดิมทุกตัวอักษร (รวมส่วนที่ต้องให้ทนายยืนยัน)';
+  const MT=['ไปรษณีย์ลงทะเบียนตอบรับ','EMS','มอบให้กับตัวผู้เช่า','ปิดประกาศ ณ ทรัพย์ที่เช่า'];
+  const mc=$('methodChips');
+  if(mc) mc.innerHTML=MT.map(m=>`<span class="chip ${S.method===m?'active':''}" onclick="pickMethod('${m}')">${m}</span>`).join('');
+}
+function pickPtype(p){ S.ptype=p; buildChips(); }
+function pickDays(n){ S.days=n; buildChips(); }
+function pickTone(v){ S.softTone=v; buildChips(); }
+function pickMethod(m){ S.method=m; buildChips(); }
+
+/* ═══════════════ การไม่ปฏิบัติตามสัญญา ═══════════════ */
+const BREACH_OPTIONS=[
+  'นำทรัพย์ที่เช่าไปให้เช่าช่วง โดยไม่ได้รับความยินยอมจากผู้ให้เช่า',
+  'นำเข้าหรือเก็บรักษาสิ่งของที่เป็นอันตรายหรือผิดกฎหมายไว้ในทรัพย์ที่เช่า',
+  'กระทำการรบกวนหรือก่อความไม่สงบต่อผู้อื่น',
+  'เลี้ยงสัตว์โดยไม่ได้รับความยินยอมจากผู้ให้เช่า',
+  'ต่อเติมหรือดัดแปลงอาคาร โดยไม่ได้รับความยินยอมจากผู้ให้เช่า',
+  'อื่นๆ โปรดระบุ'
+];
+function buildBreachPick(){
+  const el=$('breachPick'); if(!el) return;
+  el.innerHTML='<option value="">— เลือกข้อที่ผู้เช่าไม่ปฏิบัติตามสัญญา —</option>'+
+    BREACH_OPTIONS.map(o=>'<option value="'+esc(o)+'">'+esc(o)+'</option>').join('');
+}
+function addBreach(v){
+  if(!v) return;
+  S.breaches=S.breaches||[];
+  if(S.breaches.some(b=>b.type===v&&v!=='อื่นๆ โปรดระบุ')){ toast('เลือกข้อนี้ไว้แล้ว'); return; }
+  S.breaches.push({type:v,note:''});
+  renderBreaches();
+}
+function delBreach(i){ (S.breaches||[]).splice(i,1); renderBreaches(); }
+function editBreach(i,v){ if(S.breaches&&S.breaches[i]) S.breaches[i].note=v; }
+function renderBreaches(){
+  const box=$('breachList'); if(!box) return;
+  const list=S.breaches||[];
+  box.innerHTML=list.length ? list.map((b,i)=>{
+    const other=(b.type==='อื่นๆ โปรดระบุ');
+    return `<div class="ar-row">
+      <div class="ar-amt" style="align-items:flex-start">
+        <div style="flex:1;font-size:13.5px;line-height:1.5;padding-top:4px">${esc(other?'อื่นๆ':b.type)}</div>
+        <button class="ar-del" onclick="delBreach(${i})">✕</button>
+      </div>
+      ${other?`<input type="text" style="margin-top:8px" value="${esc(b.note)}" placeholder="ระบุการกระทำที่ผิดสัญญา" oninput="editBreach(${i},this.value)">`:''}
+    </div>`;
+  }).join('') : '<div class="field-micro">ยังไม่ได้เลือก — ถ้าเหตุบอกเลิกมีเฉพาะค่าเช่าค้างชำระ ข้ามส่วนนี้ได้</div>';
+}
+/* ข้อความรวมของเหตุผิดสัญญา */
+function breachText(){
+  const list=(S.breaches||[]).map(b=> b.type==='อื่นๆ โปรดระบุ' ? (b.note||'').trim() : b.type).filter(Boolean);
+  return list;
+}
+
+/* ═══════════════ ARREARS ═══════════════ */
+function addArrear(kind){
+  const y=String(new Date().getFullYear());
+  if(kind==='rent') S.rentItems.push({m:'',y:y,amount:''});
+  else S.utilItems.push({type:'ค่าน้ำประปา/ค่าไฟฟ้า',m:'',y:y,amount:''});
+  renderArrears();
+}
+function delArrear(kind,i){
+  if(kind==='rent') S.rentItems.splice(i,1); else S.utilItems.splice(i,1);
+  renderArrears();
+}
+function editArrear(kind,i,key,v){
+  const arr = kind==='rent'?S.rentItems:S.utilItems;
+  if(arr[i]){ arr[i][key]=v; updateTotals(); }
+}
+function _arRow(kind,x,i){
+  return `<div class="ar-row">
+      <div class="ar-sel">
+        <select onchange="editArrear('${kind}',${i},'m',this.value)">${monthOptions(x.m)}</select>
+        <select onchange="editArrear('${kind}',${i},'y',this.value)">${yearOptions(x.y)}</select>
+      </div>
+      <div class="ar-amt">
+        <input type="text" inputmode="numeric" value="${esc(x.amount)}" placeholder="จำนวนเงิน (บาท)" oninput="editArrear('${kind}',${i},'amount',this.value)">
+        <button class="ar-del" onclick="delArrear('${kind}',${i})">✕</button>
+      </div>
+    </div>`;
+}
+function renderArrears(){
+  if(!S.rentItems.length) S.rentItems.push({m:'',y:String(new Date().getFullYear()),amount:''});
+  $('rentList').innerHTML=S.rentItems.map((x,i)=>_arRow('rent',x,i)).join('');
+  $('utilList').innerHTML=S.utilItems.map((x,i)=>_arRow('util',x,i)).join('')
+    || '<div class="field-micro">ไม่มีรายการ — กดปุ่มด้านล่างเพื่อเพิ่ม</div>';
+  updateTotals();
+}
+function updateTotals(){
+  const t=arrearTotals();
+  $('sumRent').textContent=money(t.rentTotal)+' บาท';
+  $('sumUtil').textContent=money(t.utilTotal)+' บาท';
+  $('sumAll').textContent=money(t.total)+' บาท';
+  $('sumWords').textContent=t.total?'('+bahtText(t.total)+')':'';
+}
+
+/* ═══════════════ สร้างเนื้อหนังสือ (ตามแบบฟอร์ม — เติม slot เท่านั้น) ═══════════════ */
+/* อ้างอิงทรัพย์ในหนังสือ: "คอนโด โครงการ X เลขที่ Y" */
+function propRef(LS){
+  const parts=[LS.ptype];
+  if(LS.pno) parts.push('โครงการ '+LS.pno);
+  if(LS.house) parts.push('เลขที่ '+LS.house);
+  else parts.push('เลขที่ ........................');
+  return parts.join(' ');
+}
+function demandDoc(){
+  const d=caseData();
+  const L=d.landlord,T=d.tenant,LS=d.lease,AR=d.arrears;
+  const ip=thDateParts(d.demand.issuedDate);
+  const tenantLine=[T.name,T.name2].filter(Boolean).join(' และ ');
+  const leaseRef=[LS.leaseNo?('เลขที่ '+LS.leaseNo):'', LS.leaseDate?('ลงวันที่ '+thDate(LS.leaseDate)):''].filter(Boolean).join(' ');
+  const lp=thDateParts(LS.leaseDate);
+
+  const rentMonths=AR.rentItems.map(x=>monthLabel(x.m,x.y)).filter(Boolean).join(', ');
+  const utilMonths=AR.utilItems.map(x=>monthLabel(x.m,x.y)).filter(Boolean).join(', ');
+
+  const bl=breachText();
+  const hasAr=AR.total>0;
+  const brBody = bl.length
+    ? ((bl.length===1 ? bl[0] : bl.map((x,i)=>'('+(i+1)+') '+x).join(' '))+
+       ' ซึ่งเป็นการผิดสัญญาเช่าในสาระสำคัญ')
+    : '';
+  /* ยืนเดี่ยว (ไม่มียอดค้าง) */
+  const brSolo = bl.length
+    ? ('ข้อเท็จจริงปรากฏว่า ท่านได้ปฏิบัติผิดเงื่อนไขของสัญญาเช่าดังกล่าวข้างต้น กล่าวคือ '+brBody) : '';
+  /* ต่อท้ายย่อหน้ายอดค้าง */
+  const brAdd = bl.length
+    ? ('นอกจากนี้ ท่านยังได้ปฏิบัติผิดเงื่อนไขของสัญญาเช่าดังกล่าวข้างต้น กล่าวคือ '+brBody) : '';
+  const act = hasAr
+    ? (bl.length ? 'ดำเนินการชำระเงินค่าเช่าและค่าน้ำประปา/ค่าไฟฟ้าดังกล่าวข้างต้นให้แก่ข้าพเจ้า และแก้ไขการปฏิบัติผิดสัญญาให้ถูกต้อง'
+                 : 'ดำเนินการชำระเงินค่าเช่าและค่าน้ำประปา/ค่าไฟฟ้าดังกล่าวข้างต้นให้แก่ข้าพเจ้า')
+    : 'ระงับการกระทำดังกล่าว และแก้ไขการปฏิบัติผิดสัญญาให้ถูกต้อง';
+  const failTxt = hasAr
+    ? (bl.length ? 'ท่านยังคงละเลยไม่ชำระเงินจำนวนดังกล่าวหรือไม่แก้ไขการปฏิบัติผิดสัญญา' : 'ท่านยังคงละเลยไม่ชำระเงินจำนวนดังกล่าว')
+    : 'ท่านยังคงละเลยไม่แก้ไขการปฏิบัติผิดสัญญา';
+  const tail = 'ในการนี้ จึงขอให้ท่าน'+act+'ภายในกำหนด '+d.demand.days+
+    ' วัน นับแต่วันที่ท่านได้รับหนังสือฉบับนี้ หากพ้นกำหนดเวลาดังกล่าวแล้ว '+failTxt+
+    ' ข้าพเจ้ามีความจำเป็นต้องขอใช้สิทธิบอกเลิกสัญญาเช่า'+
+    (S.softTone ? '' : ' ตัดการจ่ายสาธารณูปโภค การเข้าออกทรัพย์ที่ให้เช่า')+
+    ' และดำเนินการตามกฎหมายต่อไป';
+
+  return {
+    place: LS.paddr || '',
+    dateLine: 'วันที่ '+ip.d+' เดือน '+ip.m+' พ.ศ. '+ip.y,
+    subject: (hasAr&&bl.length) ? 'ขอให้ชำระค่าเช่าค้างชำระ และปฏิบัติตามสัญญาเช่าให้ถูกต้อง'
+           : (bl.length ? 'ขอให้ปฏิบัติตามสัญญาเช่าให้ถูกต้อง'
+                        : 'ขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้า'),
+    to: tenantLine || '........................................',
+    ref: 'อ้างถึง สัญญาเช่า '+(leaseRef||'[เลขที่ ลงวันที่ ]'),
+    p1: 'ตามที่ท่านได้ทำสัญญาเช่าที่อ้างถึง '+propRef(LS)+
+        ' ตามสัญญาเช่าลงวันที่ '+lp.d+' เดือน '+lp.m+' พ.ศ. '+lp.y+
+        ' โดยกำหนดชำระค่าเช่าทุกวันที่ '+dash(LS.dueDay)+' ของเดือน ในอัตราเดือนละ '+money(LS.rent)+' บาท ความละเอียดแจ้งแล้วนั้น',
+    p2: (hasAr
+        ? ('ปรากฏว่า ท่านได้ค้างชำระค่าเช่าประจำเดือน '+dash(rentMonths)+
+           ' เป็นเงินทั้งสิ้น '+money(AR.rentTotal)+' บาท ('+bahtText(AR.rentTotal)+')'+
+           (AR.utilTotal>0 ? '  รวมถึงค่าน้ำประปาและค่าไฟฟ้าประจำเดือน '+dash(utilMonths)+' เป็นเงิน '+money(AR.utilTotal)+' บาท' : '')+
+           ' รวมทั้งสิ้น '+money(AR.total)+' บาท ('+bahtText(AR.total)+')'+
+           (brAdd?('  '+brAdd):''))
+        : brSolo),
+    p3: tail,
+    signer: L.name || '',
+  };
+}
+
+function renderPreview(){
+  const D=demandDoc();
+  $('docPreview').innerHTML=`
+  <div class="doc">
+    <div class="d-place">ทำที่ ${esc(D.place||'...........................................')}</div>
+    <div class="d-date">${esc(D.dateLine)}</div>
+    <div class="d-row"><b>เรื่อง</b>&nbsp; ${esc(D.subject)}</div>
+    <div class="d-row"><b>เรียน</b>&nbsp; ${esc(D.to)}</div>
+    <div class="d-row">${esc(D.ref)}</div>
+    <div style="height:10px"></div>
+    <div class="d-para">${esc(D.p1)}</div>
+    <div class="d-para">${esc(D.p2)}</div>
+    <div class="d-para">${esc(D.p3)}</div>
+    <div class="d-sign">ขอแสดงความนับถือ<br><br>
+      ลงชื่อ ........................................... (ผู้ให้เช่า)<br>
+      ( ${esc(D.signer||'...........................................')} )
+    </div>
+  </div>`;
+  const shell=document.querySelector('.preview-shell');
+  if(shell) shell.classList.toggle('locked', !S.paid);
+}
+
+/* ═══════════════ PAYMENT ═══════════════ */
+function renderPay(){
+  const area=$('payArea');
+  if(S.paid){ area.innerHTML='<div class="note info">เคสนี้ปลดล็อกแล้ว</div>'; go('doc'); renderDoc(); return; }
+  area.innerHTML = _isTestEnv()
+    ? '<button class="btn-next" onclick="devSkipPay()">⚡ TEST — ข้ามการชำระเงิน</button>'+
+      '<div class="nav-hint">โหมด staging: ปุ่มนี้ไม่มีใน production</div>'
+    : '<div class="note warn">ยังไม่ได้ต่อช่องทางชำระเงินสำหรับ production</div>';
+}
+async function devSkipPay(){
+  $('devMenu').classList.remove('open');
+  if(!_isTestEnv()) return;
+  if(!S.rowId){ toast('ยังไม่มีเคส — กรอกข้อมูลก่อน'); return; }
+  S.paid=true;
+  const now=new Date().toISOString();
+  try{ localStorage.setItem('notice_paid_'+S.rowId,now); }catch(_){}
+  const {error}=await sb.from(NOTICE_TABLE).update({status:'demand_ready'}).eq('id',S.rowId);
+  if(error) console.warn('[notice]',error.message);
+  toast('ปลดล็อกแล้ว (โหมดทดสอบ)');
+  const shell=document.querySelector('.preview-shell'); if(shell) shell.classList.remove('locked');
+  go('doc'); renderDoc();
+}
+
+/* ═══════════════ DOC PHASE ═══════════════ */
+function renderDoc(){
+  $('docCaseNo').textContent='เลขที่เคส '+(S.caseNo||'—');
+  const D=demandDoc();
+  $('docFull').innerHTML=`
+  <div class="doc">
+    <div class="d-place">ทำที่ ${esc(D.place||'...........................................')}</div>
+    <div class="d-date">${esc(D.dateLine)}</div>
+    <div class="d-row"><b>เรื่อง</b>&nbsp; ${esc(D.subject)}</div>
+    <div class="d-row"><b>เรียน</b>&nbsp; ${esc(D.to)}</div>
+    <div class="d-row">${esc(D.ref)}</div>
+    <div style="height:10px"></div>
+    <div class="d-para">${esc(D.p1)}</div>
+    <div class="d-para">${esc(D.p2)}</div>
+    <div class="d-para">${esc(D.p3)}</div>
+    <div class="d-sign">ขอแสดงความนับถือ<br><br>
+      ลงชื่อ ........................................... (ผู้ให้เช่า)<br>
+      ( ${esc(D.signer||'...........................................')} )
+    </div>
+  </div>`;
+  buildChips();
+}
+
+/* ═══════════════ ไปรษณีย์ลงทะเบียนตอบรับ (ป.133) ═══════════════ */
+/* แยกที่อยู่ไทยลงช่องตามฟอร์ม — รองรับทั้งคำเต็มและตัวย่อ (ต./อ./จ./ถ.) */
+function splitAddr(v){
+  const o={house:'',moo:'',road:'',sub:'',dist:'',prov:'',zip:''};
+  if(!v) return o;
+  let s=String(v).trim();
+  const mz=s.match(/(\d{5})\s*$/);                        if(mz){ o.zip=mz[1]; s=s.slice(0,mz.index).trim(); }
+  const mp=s.match(/(?:จังหวัด|จ\.)\s*(\S+)|กรุงเทพมหานคร|กทม\.?/);
+  if(mp){ o.prov=mp[1]||(/(กรุงเทพมหานคร|กทม)/.test(mp[0])?'กรุงเทพมหานคร':''); s=s.replace(mp[0],'').trim(); }
+  const md=s.match(/(?:อำเภอ|อ\.|เขต)\s*(\S+)/);           if(md){ o.dist=md[1]; s=s.replace(md[0],'').trim(); }
+  const ms=s.match(/(?:ตำบล|ต\.|แขวง)\s*(\S+)/);           if(ms){ o.sub=ms[1];  s=s.replace(ms[0],'').trim(); }
+  const mr=s.match(/(?:ถนน|ถ\.|ซอย|ซ\.)\s*\S+/);           if(mr){ o.road=mr[0]; s=s.replace(mr[0],'').trim(); }
+  const mm=s.match(/(?:หมู่ที่|หมู่|ม\.)\s*(\d+)/);         if(mm){ o.moo=mm[1];  s=s.replace(mm[0],'').trim(); }
+  o.house=s.replace(/[,\s]+$/,'').trim();
+  return o;
+}
+function joinAddr(a){
+  if(!a) return '';
+  const bkk=/กรุงเทพ/.test(a.prov||'');
+  return [a.house, a.moo?('หมู่ '+a.moo):'', a.road,
+    a.sub?((bkk?'แขวง':'ตำบล')+a.sub):'', a.dist?((bkk?'เขต':'อำเภอ')+a.dist):'',
+    a.prov?(bkk?a.prov:('จังหวัด'+a.prov)):'', a.zip].filter(Boolean).join(' ');
+}
+
+/* 2 ฉบับ: [0] ที่อยู่ทรัพย์ที่เช่า · [1] ที่อยู่ตามบัตร ปชช. */
+function postCopies(){
+  if(!S.copies || !S.copies.length){
+    const d=caseData();
+    const mk=(label,addrText)=>Object.assign(
+      {label, name:[d.tenant.name,d.tenant.name2].filter(Boolean).join(' และ '),
+       tracking:'', sentDate:todayISO(), recvDate:'', recvTime:'', recvName:'', recvBy:'ผู้รับ'},
+      splitAddr(addrText||''));
+    S.copies=[ mk('ส่งตามที่อยู่ในบัตรประชาชนผู้เช่า', d.tenant.addrId) ];
+  }
+  return S.copies;
+}
+function editCopy(i,key,v){ const c=S.copies&&S.copies[i]; if(!c) return; c[key]=v; if(key==='recvDate') updateDeadlineNote(); }
+function pickRecvBy(i,v){ if(S.copies&&S.copies[i]){ S.copies[i].recvBy=v; renderPost(); } }
+
+function renderPost(){
+  const d=caseData();
+  const set=(id,v)=>{ const e=$(id); if(e&&!e.value) e.value=v||''; };
+  const la=splitAddr(d.landlord.addr||'');
+  set('psName', d.landlord.name);
+  set('psAddr', d.landlord.addr);
+  set('psZip',  la.zip);
+
+  const cs=postCopies();
+  $('postCopies').innerHTML=cs.map((c,i)=>`
+    <div class="copy-card ${c.recvDate?'recv':''}">
+      <span class="copy-tag ${c.recvDate?'ok':''}">${c.recvDate?'✓ ได้รับแล้ว':esc(c.label)}</span>
+      ${c.recvDate?`<div style="font-size:13px;font-weight:600;margin-bottom:8px">${esc(c.label)}</div>`:''}
+      <div class="copy-addr">${esc(joinAddr(c)||'— ยังไม่มีที่อยู่ —')}</div>
+
+      <div class="sub-head">ชื่อและที่อยู่ผู้รับ (ตามช่องในใบตอบรับ)</div>
+      <div class="grid2">
+        <div class="full"><span class="mini-label">ชื่อผู้รับ</span>
+          <input type="text" value="${esc(c.name)}" oninput="editCopy(${i},'name',this.value)"></div>
+        <div><span class="mini-label">บ้านเลขที่</span>
+          <input type="text" value="${esc(c.house)}" oninput="editCopy(${i},'house',this.value)"></div>
+        <div><span class="mini-label">หมู่</span>
+          <input type="text" value="${esc(c.moo)}" oninput="editCopy(${i},'moo',this.value)"></div>
+        <div class="full"><span class="mini-label">ถนน / ซอย</span>
+          <input type="text" value="${esc(c.road)}" oninput="editCopy(${i},'road',this.value)"></div>
+        <div><span class="mini-label">ตำบล / แขวง</span>
+          <input type="text" value="${esc(c.sub)}" oninput="editCopy(${i},'sub',this.value)"></div>
+        <div><span class="mini-label">อำเภอ / เขต</span>
+          <input type="text" value="${esc(c.dist)}" oninput="editCopy(${i},'dist',this.value)"></div>
+        <div><span class="mini-label">จังหวัด</span>
+          <input type="text" value="${esc(c.prov)}" oninput="editCopy(${i},'prov',this.value)"></div>
+        <div><span class="mini-label">รหัสไปรษณีย์</span>
+          <input type="text" inputmode="numeric" maxlength="5" value="${esc(c.zip)}" oninput="editCopy(${i},'zip',this.value)"></div>
+      </div>
+
+      <div class="sub-head">การฝากส่ง</div>
+      <div class="grid2">
+        <div><span class="mini-label">วันที่ฝากส่ง</span>
+          <input type="date" value="${esc(c.sentDate)}" oninput="editCopy(${i},'sentDate',this.value)"></div>
+        <div><span class="mini-label">เลขที่สิ่งของ (EMS/ลงทะเบียน)</span>
+          <input type="text" value="${esc(c.tracking)}" placeholder="EB123456789TH" oninput="editCopy(${i},'tracking',this.value)"></div>
+      </div>
+
+      <div class="sub-head">คำตอบรับของผู้รับ — กรอกเมื่อใบตอบรับส่งกลับมา</div>
+      <div class="grid2">
+        <div><span class="mini-label">วันที่ได้รับ</span>
+          <input type="date" value="${esc(c.recvDate)}" oninput="editCopy(${i},'recvDate',this.value)"></div>
+        <div><span class="mini-label">เวลา</span>
+          <input type="text" value="${esc(c.recvTime)}" placeholder="เช่น 10.30 น." oninput="editCopy(${i},'recvTime',this.value)"></div>
+        <div class="full"><span class="mini-label">ชื่อผู้รับ (ตัวบรรจง ตามใบตอบรับ)</span>
+          <input type="text" value="${esc(c.recvName)}" oninput="editCopy(${i},'recvName',this.value)"></div>
+      </div>
+      <div class="chip-row" style="margin-top:9px">
+        <span class="chip ${c.recvBy==='ผู้รับ'?'active':''}" onclick="pickRecvBy(${i},'ผู้รับ')">ผู้รับเซ็นเอง</span>
+        <span class="chip ${c.recvBy==='ผู้แทนรับ'?'active':''}" onclick="pickRecvBy(${i},'ผู้แทนรับ')">ผู้แทนรับ</span>
+      </div>
+    </div>`).join('');
+  updateDeadlineNote();
+}
+
+/* วันครบกำหนด = นับจากใบตอบรับใบ "หลังสุด" ที่ได้รับ (ปลอดภัยสุดในทางคดี) */
+function effectiveRecvDate(){
+  const cs=(S.copies||[]).map(c=>c.recvDate).filter(Boolean).sort();
+  return cs.length?cs[cs.length-1]:'';
+}
+function updateDeadlineNote(){
+  const box=$('deadlineNote'); if(!box) return;
+  const cs=S.copies||[];
+  const got=cs.filter(c=>c.recvDate).length;
+  const rec=effectiveRecvDate();
+  if(!rec){ box.className='note info'; box.textContent='กรอก "วันที่ผู้รับได้รับ" จากใบตอบรับที่ส่งกลับมา เพื่อให้ระบบคำนวณวันครบกำหนด'; return; }
+  const due=addDays(rec,S.days);
+  box.className='note info';
+  box.innerHTML='ได้รับใบตอบรับแล้ว '+got+' จาก '+cs.length+' ฉบับ · นับจากใบหลังสุด ('+esc(thDate(rec))+')<br>'+
+    'ครบกำหนดชำระวันที่ <b>'+esc(thDate(due))+'</b> — ขั้นที่ 2 (บอกเลิกสัญญา) จะปลดล็อกหลังวันนี้'+
+    (got<cs.length?'<br><span style="color:#7a5310">ยังขาดใบตอบรับอีก '+(cs.length-got)+' ฉบับ — ควรรอให้ครบก่อนเริ่มนับ</span>':'');
+}
+
+async function saveDelivery(){
+  const cs=S.copies||[];
+  if(!cs.length){ toast('ยังไม่มีข้อมูลการส่ง'); return; }
+  if(!cs.some(c=>c.sentDate)){ toast('กรุณาระบุวันที่ฝากส่ง'); return; }
+  const rec=effectiveRecvDate();
+  const due=rec?addDays(rec,S.days):null;
+  S.delivery={
+    method:'ไปรษณีย์ลงทะเบียนตอบรับ (ป.133)',
+    sender:{name:val('psName'),addr:val('psAddr'),zip:val('psZip'),office:val('psOffice')},
+    copies:cs, effectiveRecvDate:rec
+  };
+  S.demand=Object.assign({},caseData().demand,{deadlineDate:due,issuedAt:new Date().toISOString()});
+  try{
+    const {error}=await sb.from(NOTICE_TABLE).update({
+      demand:S.demand, demand_delivery:S.delivery,
+      status: rec?'demand_sent':'demand_ready'
+    }).eq('id',S.rowId);
+    if(error) throw error;
+    toast(rec?'บันทึกแล้ว — เริ่มนับกำหนดเวลา':'บันทึกแล้ว (รอใบตอบรับ)');
+    go('timeline'); buildTimeline();
+  }catch(err){ toast('บันทึกไม่สำเร็จ: '+(err.message||err)); }
+}
+
+/* ═══════════════ TIMELINE ═══════════════ */
+function buildTimeline(){
+  $('tlCaseNo').textContent='เลขที่เคส '+(S.caseNo||'—');
+  const cps=(S.delivery&&S.delivery.copies)||S.copies||[];
+  const got=cps.filter(c=>c.recvDate).length;
+  const rec=(S.delivery&&S.delivery.effectiveRecvDate)||effectiveRecvDate();
+  const due=S.demand&&S.demand.deadlineDate;
+  const passed = due ? (new Date(due) < new Date(todayISO())) : false;
+  const trk=cps.filter(c=>c.tracking).map(c=>c.tracking).join(' · ');
+  const pol=S.evidence&&S.evidence.police;
+  const rows=[
+    {n:1,title:'หนังสือทวงถามค่าเช่า',state:(got&&got===cps.length)?'done':'active',
+     desc:S.delivery?('ไปรษณีย์ลงทะเบียนตอบรับ'+(trk?(' · '+trk):'')):'ออกหนังสือแล้ว รอบันทึกการส่ง',
+     meta:rec?('ใบตอบรับกลับแล้ว '+got+'/'+cps.length+' · นับจาก '+thDate(rec)+' · ครบกำหนด '+thDate(due))
+            :(cps.length?('รอใบตอบรับ '+cps.length+' ฉบับ'):'ยังไม่ได้บันทึกการส่ง')},
+    {n:2,title:'หนังสือบอกเลิกสัญญาเช่า',
+     state:(S.tmDelivery&&S.tmDelivery.recvDate)?'done':(S.terminate?'active':(passed?'active':'')),
+     desc:S.terminate
+        ? ('ออกหนังสือแล้ว ลงวันที่ '+thDate(S.terminate.issuedDate)+(S.tmDelivery&&S.tmDelivery.tracking?(' · '+S.tmDelivery.tracking):''))
+        : 'เตรียมหนังสือล่วงหน้าได้เลย — แต่ต้องลงวันที่และส่งหลังครบกำหนดขั้นที่ 1',
+     meta:(S.tmDelivery&&S.tmDelivery.recvDate)
+        ? ('ผู้เช่าได้รับ '+thDate(S.tmDelivery.recvDate)+(S.terminate&&S.terminate.moveOutDate?(' · ครบกำหนดย้ายออก '+thDate(S.terminate.moveOutDate)):''))
+        : (due?('ครบกำหนดขั้นที่ 1 วันที่ '+thDate(due)):'รอบันทึกวันที่ผู้เช่าได้รับหนังสือทวงถาม')},
+    {n:3,title:'แจ้งความลงบันทึกประจำวัน / ฟ้องขับไล่',
+     state:(pol&&pol.bookNo)?'done':(pol?'active':''),
+     desc:pol?('แจ้งที่ '+(pol.station||'—')+(pol.date?(' เมื่อ '+thDate(pol.date)):''))
+             :'ออกหนังสือแจ้งตำรวจได้เลย (แถมฟรีในแพ็ก) — ใช้ลงบันทึกประจำวันไว้เป็นหลักฐาน',
+     meta:(pol&&pol.bookNo)?('เลขที่บันทึกประจำวัน '+pol.bookNo):'ยังไม่ได้บันทึกเลขที่บันทึกประจำวัน'},
+  ];
+  $('tlList').innerHTML=rows.map(r=>`
+    <div class="tl-item ${r.state}">
+      <div class="tl-dot">${r.state==='done'?'✓':r.n}</div>
+      <div class="tl-body">
+        <div class="tl-title">${esc(r.title)}</div>
+        <div class="tl-desc">${esc(r.desc)}</div>
+        <div class="tl-meta">${esc(r.meta)}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ═══════════════ ขั้นที่ 2 — หนังสือบอกเลิกสัญญาเช่า ═══════════════ */
+function buildTmChips(){
+  const DY=[7,15,30];
+  $('tmDaysChips').innerHTML=DY.map(x=>`<span class="chip ${S.tmDays===x?'active':''}" onclick="pickTmDays(${x})">ภายใน ${x} วัน</span>`).join('');
+  $('tmToneChips').innerHTML=
+    `<span class="chip ${!S.tmSoftTone?'active':''}" onclick="pickTmTone(false)">ฉบับมาตรฐาน</span>`+
+    `<span class="chip ${S.tmSoftTone?'active':''}" onclick="pickTmTone(true)">ฉบับไม่ระบุการล็อกประตู/ตัดน้ำ-ไฟ</span>`;
+  $('tmToneHint').textContent = S.tmSoftTone
+    ? 'สงวนสิทธิ์เรียกค่าเสียหายและดำเนินคดีตามกฎหมาย โดยไม่กล่าวถึงการล็อกประตู ตัดสาธารณูปโภค หรือขนย้ายทรัพย์สินเอง'
+    : 'ใช้ข้อความตามแบบฟอร์มเดิมทุกตัวอักษร (รวมส่วนที่ต้องให้ทนายยืนยัน)';
+}
+function pickTmDays(n){ S.tmDays=n; buildTmChips(); renderTerminate(); }
+function pickTmTone(v){ S.tmSoftTone=v; buildTmChips(); renderTerminate(); }
+
+function terminateDoc(){
+  const d=caseData();
+  const L=d.landlord,T=d.tenant,LS=d.lease;
+  const ip=thDateParts(val('tmIssueDate')||todayISO());
+  const lp=thDateParts(LS.leaseDate);
+  const dm=S.demand||d.demand;
+  const dmIssued=dm&&dm.issuedDate?thDate(dm.issuedDate):'';
+  const dp=thDateParts(dm&&dm.issuedDate);
+  const days=S.tmDays||7;
+
+  const tail = S.tmSoftTone
+    ? 'หากท่านไม่ย้ายออกภายในกำหนดเวลาดังกล่าว ข้าพเจ้าจะดำเนินการตามกฎหมาย โดยใช้สิทธิทางศาลเพื่อขับไล่และเรียกค่าเสียหายจากท่านต่อไป'
+    : 'หากท่านไม่ย้ายออกภายในกำหนดเวลาดังกล่าว ข้าพเจ้าจะเข้าดำเนินการล็อกประตูสถานที่เช่า ตัดสาธารณูปโภค การเข้าออกทรัพย์ที่ให้เช่า ขนย้ายทรัพย์สิน บริวาร ย้ายออกจากสถานที่เช่า และดำเนินการตามกฎหมายต่อไป';
+
+  return {
+    place: LS.paddr||'',
+    dateLine: 'วันที่ '+ip.d+' เดือน '+ip.m+' พ.ศ. '+ip.y,
+    subject: 'บอกเลิกสัญญาเช่า และขอให้ส่งมอบพื้นที่เช่าคืน',
+    to: [T.name,T.name2].filter(Boolean).join(' และ ')||'........................................',
+    ref1: 'อ้างถึง  1. สัญญาเช่า '+([LS.leaseNo?('เลขที่ '+LS.leaseNo):'',LS.leaseDate?('ลงวันที่ '+thDate(LS.leaseDate)):''].filter(Boolean).join(' ')||'[เลขที่ ลงวันที่ ]'),
+    ref2: '           2. หนังสือ ฉบับลงวันที่ '+dp.d+' เดือน '+dp.m+' พ.ศ. '+dp.y+' เรื่อง ขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้า',
+    p1: 'ตามที่ท่านได้ทำสัญญาเช่าที่อ้างถึง 1. '+propRef(LS)+
+        ' ตามสัญญาเช่าลงวันที่ '+lp.d+' เดือน '+lp.m+' พ.ศ. '+lp.y+
+        ' โดยกำหนดชำระค่าเช่าทุกวันที่ '+dash(LS.dueDay)+' ของเดือน ในอัตราเดือนละ '+money(LS.rent)+
+        ' บาท และหนังสือขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้าอ้างถึง 2. ซึ่งท่านได้รับไว้โดยชอบแล้ว ความละเอียดแจ้งแล้วนั้น',
+    p2: (function(){
+      const bl2=breachText(); const ar2=(d.arrears.total>0);
+      const lead = ar2
+        ? ('ปรากฏว่า แต่ท่านยังคงละเลยมิได้ทำการชำระเงินค่าเช่าและค่าน้ำ/ค่าไฟฟ้าที่ค้างชำระแต่อย่างใด'+
+           (bl2.length?(' อีกทั้งยังคงปฏิบัติผิดเงื่อนไขของสัญญาเช่า กล่าวคือ '+
+             (bl2.length===1?bl2[0]:bl2.map((x,i)=>'('+(i+1)+') '+x).join(' '))+' โดยมิได้แก้ไขให้ถูกต้อง'):''))
+        : ('ปรากฏว่า ท่านยังคงปฏิบัติผิดเงื่อนไขของสัญญาเช่า กล่าวคือ '+
+           (bl2.length===1?bl2[0]:bl2.map((x,i)=>'('+(i+1)+') '+x).join(' '))+' โดยมิได้แก้ไขให้ถูกต้องแต่อย่างใด');
+      return lead+' ด้วยเหตุนี้ ข้าพเจ้าในฐานะผู้ให้เช่า จึงขอใช้สิทธิบอกเลิกสัญญาเช่าที่อ้างถึง 1. โดยให้สัญญาเช่าเป็นอันสิ้นสุดลงนับแต่วันที่ท่านได้รับหนังสือฉบับนี้ และขอให้ท่านดำเนินการขนย้ายทรัพย์สิน บริวาร และย้ายออกจากสถานที่เช่าภายในกำหนด '+days+' วัน นับแต่วันที่ได้รับหนังสือฉบับนี้ พร้อมทั้งชำระค่าเช่าที่ค้างชำระ ค่าน้ำประปา ค่าไฟฟ้า และค่าเสียหายจากการขาดประโยชน์จนถึงวันที่ย้ายออกจริง ตลอดจนส่งมอบกุญแจและคีย์การ์ดคืนแก่ข้าพเจ้า ณ วันที่ย้ายออก '+tail; })(),
+    signer: L.name||'',
+    dmIssued: dmIssued
+  };
+}
+function terminateHTML(D,c){
+  return `<div class="${c}-place">ทำที่ ${esc(_addr2(D.place)[0]||'...........................................')}</div>
+    ${_addr2(D.place)[1]?`<div class="${c}-place">${esc(_addr2(D.place)[1])}</div>`:''}
+    <div class="${c}-date">${esc(D.dateLine)}</div>
+    <div class="${c}-row"><b>เรื่อง</b>&nbsp;&nbsp; ${esc(D.subject)}</div>
+    <div class="${c}-row"><b>เรียน</b>&nbsp;&nbsp; ${esc(D.to)}</div>
+    <div class="${c}-row">${esc(D.ref1)}</div>
+    <div class="${c}-row">${esc(D.ref2)}</div>
+    <div style="height:12px"></div>
+    <div class="${c}-para">${esc(D.p1)}</div>
+    <div class="${c}-para">${esc(D.p2)}</div>
+    <div class="${c}-sign">ขอแสดงความนับถือ<br><br><br>
+      ลงชื่อ ........................................... (ผู้ให้เช่า)<br>
+      ( ${esc(D.signer||'...........................................')} )
+    </div>`;
+}
+/* แยกที่อยู่เป็น 2 บรรทัดแบบ template */
+function _addr2(a){
+  const s2=String(a||'').trim(); if(!s2) return ['',''];
+  const m=/(อำเภอ|เขต)/.exec(s2);
+  if(!m) return [s2,''];
+  return [s2.slice(0,m.index).trim(), s2.slice(m.index).trim()];
+}
+function renderTerminate(){
+  buildTmChips();
+  if(!$('tmIssueDate').value) $('tmIssueDate').value=todayISO();
+  const dm=S.demand||{};
+  const due=dm.deadlineDate;
+  const days=dm.days||S.days;
+
+  /* คำเตือนเรื่องจังหวะเวลา */
+  const w=$('tmTimingWarn');
+  w.innerHTML='<b>⚠️ หนังสือฉบับนี้ต้องลงวันที่และส่งหลังครบกำหนดเท่านั้น</b><br>'+
+    'หนังสือทวงถามให้เวลาผู้เช่าชำระภายใน <b>'+days+' วัน</b> นับแต่วันที่ได้รับ'+
+    (due ? ' ซึ่งครบกำหนดวันที่ <b>'+esc(thDate(due))+'</b>' : ' (ยังไม่ได้บันทึกวันที่ผู้เช่าได้รับหนังสือทวงถาม จึงยังคำนวณวันครบกำหนดไม่ได้)')+
+    '<br>ถ้าลงวันที่หรือส่งก่อนครบกำหนด ผู้เช่าโต้แย้งได้ว่าการบอกเลิกสัญญาไม่ชอบ และต้องเริ่มกระบวนการใหม่ทั้งหมด';
+
+  /* เตือนถ้าวันที่ออกหนังสือเร็วเกินไป */
+  const iss=val('tmIssueDate');
+  const hint=$('tmDateHint');
+  if(due&&iss&&iss<=due){
+    hint.innerHTML='<span style="color:var(--red);font-weight:600">⚠️ วันที่นี้ยังไม่พ้นกำหนด — ควรลงวันที่ตั้งแต่ '+esc(thDate(addDays(due,1)))+' เป็นต้นไป</span>';
+  }else if(due){
+    hint.innerHTML='<span style="color:var(--green)">✓ พ้นกำหนดตามหนังสือทวงถามแล้ว</span>';
+  }else{
+    hint.textContent='แนะนำให้บันทึกวันที่ผู้เช่าได้รับหนังสือทวงถามก่อน เพื่อให้ระบบตรวจวันให้';
+  }
+
+  /* วันครบกำหนดย้ายออก */
+  const rc=val('tmRecv'); const mv=$('tmMoveNote');
+  if(rc){
+    mv.innerHTML='ครบกำหนดขนย้ายและส่งมอบพื้นที่คืนวันที่ <b>'+esc(thDate(addDays(rc,S.tmDays||7)))+'</b>';
+  }else{
+    mv.textContent='กรอกวันที่ผู้เช่าได้รับ เพื่อคำนวณวันครบกำหนดย้ายออก';
+  }
+
+  $('tmPreview').innerHTML='<div class="doc">'+terminateHTML(terminateDoc(),'d')+'</div>';
+}
+async function saveTerminate(){
+  if(!val('tmIssueDate')){ toast('กรุณาระบุวันที่ออกหนังสือ'); return; }
+  const rc=val('tmRecv');
+  const tm={ days:S.tmDays||7, softTone:!!S.tmSoftTone, issuedDate:val('tmIssueDate'),
+    moveOutDate: rc?addDays(rc,S.tmDays||7):null, issuedAt:new Date().toISOString() };
+  const dl={ method:'ไปรษณีย์ลงทะเบียนตอบรับ (ป.133)', tracking:val('tmTracking'),
+    sentDate:val('tmSent'), recvDate:rc };
+  S.terminate=tm; S.tmDelivery=dl;
+  try{
+    const {error}=await sb.from(NOTICE_TABLE).update({
+      terminate:tm, terminate_delivery:dl,
+      status: rc?'terminate_sent':'terminate_ready'
+    }).eq('id',S.rowId);
+    if(error) throw error;
+    toast('บันทึกเข้าเคสแล้ว ✓');
+    go('timeline'); buildTimeline();
+  }catch(err){ toast('บันทึกไม่สำเร็จ: '+(err.message||err)); }
+}
+async function downloadTerminatePDF(){
+  toast('กำลังสร้าง PDF…');
+  const D=terminateDoc();
+  const pd=$('printDoc'); pd.className='pd-render';
+  pd.innerHTML='<div class="pd-page">'+terminateHTML(D,'pd')+
+    '<div class="pd-foot">'+esc(S.caseNo||'')+' · หนังสือบอกเลิกสัญญาเช่า · ออกโดยระบบ SignDee</div></div>';
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF('p','mm','a4');
+    const pages=pd.querySelectorAll('.pd-page');
+    for(let i=0;i<pages.length;i++){
+      const canvas=await html2canvas(pages[i],{scale:2,backgroundColor:'#fff',useCORS:true});
+      const img=canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(img,'JPEG',0,0,210,297);
+    }
+    pdf.save((S.caseNo||'notice')+'_terminate.pdf');
+    toast('ดาวน์โหลดแล้ว ✓');
+  }catch(err){ toast('สร้าง PDF ไม่สำเร็จ: '+(err.message||err)); }
+  pd.className=''; pd.innerHTML='';
+}
+
+/* ═══════════════ หนังสือแจ้งตำรวจ (ลงบันทึกประจำวัน) ═══════════════ */
+function policeDoc(){
+  const d=caseData();
+  const L=d.landlord,T=d.tenant,LS=d.lease,AR=d.arrears;
+  const dp=thDateParts(val('pcDate')||todayISO());
+  const lp=thDateParts(LS.leaseDate);
+  const cs=(S.delivery&&S.delivery.copies)||S.copies||[];
+  const rentMonths=AR.rentItems.map(x=>monthLabel(x.m,x.y)).filter(Boolean).join(', ');
+
+  /* ข้อเท็จจริงเรียงตามลำดับเวลา */
+  const facts=[];
+  facts.push('1. ข้าพเจ้า '+dash(L.name)+
+    (L.id13?(' เลขประจำตัวประชาชน '+L.id13):'')+
+    ' เป็นผู้ให้เช่า '+propRef(LS)+' ตั้งอยู่ '+dash(LS.paddr));
+  facts.push('2. ข้าพเจ้าได้ทำสัญญาเช่ากับ '+dash([T.name,T.name2].filter(Boolean).join(' และ '))+
+    ' ตามสัญญาเช่า'+(LS.leaseNo?(' เลขที่ '+LS.leaseNo):'')+
+    ' ลงวันที่ '+lp.d+' เดือน '+lp.m+' พ.ศ. '+lp.y+
+    ' อัตราค่าเช่าเดือนละ '+money(LS.rent)+' บาท กำหนดชำระทุกวันที่ '+dash(LS.dueDay)+' ของเดือน');
+  facts.push('3. ผู้เช่าผิดนัดไม่ชำระค่าเช่าประจำเดือน '+dash(rentMonths)+
+    ' รวมค่าเช่าและค่าสาธารณูปโภคค้างชำระเป็นเงินทั้งสิ้น '+money(AR.total)+' บาท ('+bahtText(AR.total)+')');
+
+  let i=4;
+  const dm=S.demand||d.demand;
+  const sentList=cs.filter(c=>c.sentDate);
+  if(sentList.length){
+    const c=sentList[0];
+    facts.push(i+'. ข้าพเจ้าได้มีหนังสือทวงถามให้ชำระหนี้ ส่งทางไปรษณีย์ลงทะเบียนตอบรับ'+
+      (c.tracking?(' เลขที่สิ่งของ '+c.tracking):'')+
+      ' เมื่อวันที่ '+thDate(c.sentDate)+
+      ' ไปยังที่อยู่ตามบัตรประชาชนของผู้เช่า คือ '+dash(joinAddr(c)));
+    i++;
+    const rec=cs.filter(c2=>c2.recvDate);
+    if(rec.length){
+      const r=rec[rec.length-1];
+      facts.push(i+'. ผู้เช่าได้รับหนังสือดังกล่าวแล้วเมื่อวันที่ '+thDate(r.recvDate)+
+        (r.recvName?(' โดยมี '+r.recvName+' เป็นผู้ลงชื่อรับ'):'')+
+        ' ปรากฏตามใบตอบรับ (ป.133) ที่แนบมาพร้อมนี้');
+      i++;
+      if(dm&&dm.deadlineDate){
+        facts.push(i+'. หนังสือดังกล่าวกำหนดให้ผู้เช่าชำระหนี้ภายใน '+dm.days+
+          ' วันนับแต่วันที่ได้รับ ซึ่งครบกำหนดในวันที่ '+thDate(dm.deadlineDate)+
+          ' แต่จนถึงขณะนี้ผู้เช่ายังคงเพิกเฉย มิได้ชำระหนี้แต่อย่างใด');
+        i++;
+      }
+    }
+  }
+  facts.push(i+'. ข้าพเจ้าจึงมาแจ้งความไว้เป็นหลักฐาน เพื่อประโยชน์ในการดำเนินการตามกฎหมายต่อไป');
+
+  return {
+    dateLine:'วันที่ '+dp.d+' เดือน '+dp.m+' พ.ศ. '+dp.y,
+    station:val('pcStation')||'........................................',
+    stationAddr:val('pcStationAddr'),
+    subject:'ขอความอนุเคราะห์ลงบันทึกประจำวันไว้เป็นหลักฐาน',
+    facts:facts,
+    purpose:'ทั้งนี้ ข้าพเจ้าประสงค์ขอให้พนักงานสอบสวนบันทึกข้อเท็จจริงข้างต้นไว้เป็นหลักฐานในบันทึกประจำวัน '+
+      'เพื่อใช้ประกอบการดำเนินคดีตามกฎหมายและการใช้สิทธิทางศาลต่อไป',
+    attach:['สำเนาสัญญาเช่า','สำเนาหนังสือทวงถามให้ชำระหนี้','ใบตอบรับไปรษณีย์ลงทะเบียน (ป.133)','สำเนาบัตรประจำตัวประชาชนของข้าพเจ้า'],
+    signer:L.name||'',
+    phone:L.phone||''
+  };
+}
+function policeHTML(P,cls){
+  const c=cls||'d';
+  return `<div class="${c}-date">${esc(P.dateLine)}</div>
+    <div class="${c}-row"><b>เรื่อง</b>&nbsp;&nbsp; ${esc(P.subject)}</div>
+    <div class="${c}-row"><b>เรียน</b>&nbsp;&nbsp; พนักงานสอบสวน ${esc(P.station)}</div>
+    ${P.stationAddr?`<div class="${c}-row">${esc(P.stationAddr)}</div>`:''}
+    <div style="height:12px"></div>
+    ${P.facts.map(f=>`<div class="${c}-para noind">${esc(f)}</div>`).join('')}
+    <div class="${c}-para">${esc(P.purpose)}</div>
+    <div class="${c}-row" style="margin-top:6px"><b>เอกสารแนบ</b></div>
+    ${P.attach.map((a,i)=>`<div class="${c}-para noind" style="margin-bottom:4px">&nbsp;&nbsp;&nbsp;${i+1}) ${esc(a)}</div>`).join('')}
+    <div class="${c}-sign">ขอแสดงความนับถือ<br><br><br>
+      ลงชื่อ ........................................... ผู้แจ้ง<br>
+      ( ${esc(P.signer||'...........................................')} )<br>
+      ${P.phone?('โทร. '+esc(P.phone)):''}
+    </div>`;
+}
+function renderPolice(){
+  if(!$('pcDate').value) $('pcDate').value=todayISO();
+  const P=policeDoc();
+  $('policePreview').innerHTML='<div class="doc">'+policeHTML(P,'d')+'</div>';
+}
+['pcStation','pcStationAddr','pcDate'].forEach(function(id){
+  const el=$(id); if(el) el.addEventListener('input',function(){ if($('ph-police').classList.contains('active')) renderPolice(); });
+});
+async function savePolice(){
+  if(!val('pcStation')){ toast('กรุณาระบุสถานีตำรวจ'); return; }
+  const ev=Object.assign({},(S.evidence||{}),{police:{
+    station:val('pcStation'), stationAddr:val('pcStationAddr'),
+    date:val('pcDate'), bookNo:val('pcBookNo'), issuedAt:new Date().toISOString()
+  }});
+  S.evidence=ev;
+  try{
+    const {error}=await sb.from(NOTICE_TABLE).update({evidence:ev}).eq('id',S.rowId);
+    if(error) throw error;
+    toast('บันทึกเข้าเคสแล้ว ✓');
+    go('timeline'); buildTimeline();
+  }catch(err){ toast('บันทึกไม่สำเร็จ: '+(err.message||err)); }
+}
+async function downloadPolicePDF(){
+  if(!val('pcStation')){ toast('กรุณาระบุสถานีตำรวจก่อน'); return; }
+  toast('กำลังสร้าง PDF…');
+  const P=policeDoc();
+  const pd=$('printDoc'); pd.className='pd-render';
+  pd.innerHTML='<div class="pd-page">'+policeHTML(P,'pd')+
+    '<div class="pd-foot">'+esc(S.caseNo||'')+' · หนังสือแจ้งตำรวจ · ออกโดยระบบ SignDee</div></div>';
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF('p','mm','a4');
+    const pages=pd.querySelectorAll('.pd-page');
+    for(let i=0;i<pages.length;i++){
+      const canvas=await html2canvas(pages[i],{scale:2,backgroundColor:'#fff',useCORS:true});
+      const img=canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(img,'JPEG',0,0,210,297);
+    }
+    pdf.save((S.caseNo||'notice')+'_police.pdf');
+    toast('ดาวน์โหลดแล้ว ✓');
+  }catch(err){ toast('สร้าง PDF ไม่สำเร็จ: '+(err.message||err)); }
+  pd.className=''; pd.innerHTML='';
+}
+
+/* ═══════════════ PDF หนังสือทวงถาม ═══════════════ */
+async function downloadDemandPDF(){
+  toast('กำลังสร้าง PDF…');
+  const D=demandDoc();
+  const pd=$('printDoc'); pd.className='pd-render';
+  pd.innerHTML=`<div class="pd-page">
+    <div class="pd-place">ทำที่ ${esc(D.place||'...........................................')}</div>
+    <div class="pd-date">${esc(D.dateLine)}</div>
+    <div class="pd-row"><b>เรื่อง</b>&nbsp;&nbsp; ${esc(D.subject)}</div>
+    <div class="pd-row"><b>เรียน</b>&nbsp;&nbsp; ${esc(D.to)}</div>
+    <div class="pd-row">${esc(D.ref)}</div>
+    <div style="height:16px"></div>
+    <div class="pd-para">${esc(D.p1)}</div>
+    <div class="pd-para">${esc(D.p2)}</div>
+    <div class="pd-para">${esc(D.p3)}</div>
+    <div class="pd-sign">ขอแสดงความนับถือ<br><br><br>
+      ลงชื่อ ........................................................... (ผู้ให้เช่า)<br>
+      ( ${esc(D.signer||'...........................................')} )
+    </div>
+    <div class="pd-foot">${esc(S.caseNo||'')} · ออกโดยระบบ SignDee</div>
+  </div>`;
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF('p','mm','a4');
+    const pages=pd.querySelectorAll('.pd-page');
+    for(let i=0;i<pages.length;i++){
+      const canvas=await html2canvas(pages[i],{scale:2,backgroundColor:'#fff',useCORS:true});
+      const img=canvas.toDataURL('image/jpeg',0.92);
+      if(i>0) pdf.addPage();
+      pdf.addImage(img,'JPEG',0,0,210,297);
+    }
+    pdf.save((S.caseNo||'notice')+'_demand.pdf');
+    toast('ดาวน์โหลดแล้ว ✓');
+  }catch(err){ toast('สร้าง PDF ไม่สำเร็จ: '+(err.message||err)); }
+  pd.className=''; pd.innerHTML='';
+}
+
+/* ═══════════════ ป้ายตัดแปะ ป.133 (ขนาดจริงหน่วย มม.) ═══════════════ */
+/* หน้า A4 กว้าง 794px = 210mm → 3.7809 px ต่อ 1 มม. (สเกลเดียวกับที่ jsPDF map ลง A4) */
+const PX_MM = 794/210;
+function mm(v){ return (Number(v)||0)*PX_MM; }
+function syncLabel(){
+  S.label={ sw:num(val('lbSw'))||70, sh:num(val('lbSh'))||26,
+            rw:num(val('lbRw'))||88, rh:num(val('lbRh'))||40 };
+}
+function _ruler(){
+  let ticks='';
+  for(let i=0;i<=50;i+=5){
+    ticks+='<div class="rl-t" style="left:'+mm(i)+'px"><span>'+i+'</span></div>';
+  }
+  return '<div class="rl" style="width:'+mm(50)+'px">'+ticks+'</div>';
+}
+async function downloadPostPDF(){
+  toast('กำลังสร้าง PDF…');
+  syncLabel();
+  const L=S.label||{sw:70,sh:26,rw:88,rh:40};
+  const cs=postCopies();
+  const sender={name:val('psName'),addr:val('psAddr'),zip:val('psZip'),office:val('psOffice')};
+  const pd=$('printDoc'); pd.className='pd-render';
+
+  /* ── หน้า 1: ป้ายตัดแปะขนาดจริง ── */
+  let labels='<div class="pd-page">'+
+    '<div class="pd-title133">ป้ายสำหรับตัดแปะบนใบตอบรับ ป.133</div>'+
+    '<div class="pd-sub133">'+esc(S.caseNo||'')+' · พิมพ์ขนาดจริง 100% เท่านั้น — ห้ามเลือก Fit to page</div>'+
+    '<div class="rl-wrap"><div class="rl-cap">สอบเทียบ: เส้นนี้ต้องยาว 50 มม. บนกระดาษจริง</div>'+_ruler()+'</div>';
+
+  cs.forEach(c=>{
+    labels+='<div class="lb-cap">① ป้ายผู้ฝากส่ง — แปะช่อง "ชื่อและที่อยู่ของผู้ฝากส่ง" (หน้าใบตอบรับ) · '+esc(L.sw)+'×'+esc(L.sh)+' มม.</div>'+
+      '<div class="lb" style="width:'+mm(L.sw)+'px;height:'+mm(L.sh)+'px">'+
+        '<div class="lb-in"><b>'+esc(sender.name||'')+'</b><br>'+esc(sender.addr||'')+' '+esc(sender.zip||'')+'</div>'+
+      '</div>'+
+      '<div class="lb-cap">② ป้ายผู้รับ — แปะช่อง "ชื่อและที่อยู่ของผู้รับ" (หลังใบตอบรับ) · '+esc(L.rw)+'×'+esc(L.rh)+' มม.</div>'+
+      '<div class="lb" style="width:'+mm(L.rw)+'px;height:'+mm(L.rh)+'px">'+
+        '<div class="lb-in"><b>'+esc(c.name||'')+'</b><br>'+esc(joinAddr(c))+'</div>'+
+      '</div>'+
+      '<div class="lb-cap">③ ป้ายจ่าหน้าซอง · 100×45 มม.</div>'+
+      '<div class="lb" style="width:'+mm(100)+'px;height:'+mm(45)+'px">'+
+        '<div class="lb-in lb-env">'+
+          '<div class="lb-from">ผู้ฝากส่ง: '+esc(sender.name||'')+'<br>'+esc(sender.addr||'')+' '+esc(sender.zip||'')+'</div>'+
+          '<div class="lb-to">กรุณาส่ง<br><b>'+esc(c.name||'')+'</b><br>'+esc(joinAddr(c))+'</div>'+
+        '</div>'+
+      '</div>';
+  });
+  labels+='<div class="pd-foot">'+esc(S.caseNo||'')+' · ป้ายตัดแปะ · ออกโดยระบบ SignDee</div></div>';
+
+  /* ── หน้า 2: ใบช่วยกรอก (สำหรับช่อง ③ ที่ต้องเขียนมือ) ── */
+  const info=cs.map(c=>`
+    <div class="pd-page">
+      <div class="pd-title133">ข้อมูลสำหรับกรอกใบตอบรับในประเทศ (ป.133)</div>
+      <div class="pd-sub133">${esc(S.caseNo||'')} · ${esc(c.label)} · หนังสือทวงถามค่าเช่า</div>
+      <div class="pd-box">
+        <div class="pd-box-t">① หน้าใบตอบรับ — ชื่อและที่อยู่ผู้ฝากส่ง</div>
+        <div class="pd-kv"><span>ชื่อผู้ฝากส่ง</span><b>${esc(sender.name||'—')}</b></div>
+        <div class="pd-kv"><span>ที่อยู่</span><b>${esc(sender.addr||'—')}</b></div>
+        <div class="pd-kv"><span>รหัสไปรษณีย์</span><b>${esc(sender.zip||'—')}</b></div>
+      </div>
+      <div class="pd-box">
+        <div class="pd-box-t">② หลังใบตอบรับ — ชื่อและที่อยู่ผู้รับ</div>
+        <div class="pd-kv"><span>ชื่อผู้รับ</span><b>${esc(c.name||'—')}</b></div>
+        <div class="pd-kv"><span>บ้านเลขที่ / หมู่</span><b>${esc(c.house||'—')}${c.moo?('  หมู่ '+esc(c.moo)):''}</b></div>
+        <div class="pd-kv"><span>ถนน / ซอย</span><b>${esc(c.road||'—')}</b></div>
+        <div class="pd-kv"><span>ตำบล / แขวง</span><b>${esc(c.sub||'—')}</b></div>
+        <div class="pd-kv"><span>อำเภอ / เขต</span><b>${esc(c.dist||'—')}</b></div>
+        <div class="pd-kv"><span>จังหวัด</span><b>${esc(c.prov||'—')}</b></div>
+        <div class="pd-kv"><span>รหัสไปรษณีย์</span><b>${esc(c.zip||'—')}</b></div>
+        <div class="pd-kv"><span>ฝากส่ง ณ ที่ทำการไปรษณีย์</span><b>${esc(sender.office||'—')}</b></div>
+        <div class="pd-kv"><span>วันที่ฝากส่ง</span><b>${esc(thDate(c.sentDate)||'—')}</b></div>
+      </div>
+      <div class="pd-box">
+        <div class="pd-box-t">③ คำตอบรับของผู้รับ — เจ้าหน้าที่/ผู้รับกรอกเมื่อส่งถึง (เขียนมือบนใบจริง)</div>
+        <div class="pd-blank">ได้รับสิ่งของตามที่แจ้งไว้ข้างต้นเรียบร้อยแล้ว<br><br>
+          เมื่อวันที่ ............ เดือน ........................ พ.ศ. ............ เวลา ............ น.<br><br>
+          ลงชื่อผู้รับหรือผู้แทน ...................................................<br><br>
+          เขียนชื่อตัวบรรจง ...................................................<br><br>
+          ☐ ผู้รับ &nbsp;&nbsp; ☐ ผู้แทนรับ<br><br>
+          ลงชื่อเจ้าหน้าที่นำจ่าย ...................................................
+        </div>
+      </div>
+      <div class="pd-foot">${esc(S.caseNo||'')} · ใบช่วยกรอก · ออกโดยระบบ SignDee</div>
+    </div>`).join('');
+
+  pd.innerHTML=labels+info;
+  await new Promise(r=>setTimeout(r,150));
+  try{
+    const {jsPDF}=window.jspdf; const pdf=new jsPDF('p','mm','a4');
+    const pages=pd.querySelectorAll('.pd-page');
+    for(let i=0;i<pages.length;i++){
+      const canvas=await html2canvas(pages[i],{scale:3,backgroundColor:'#fff',useCORS:true});
+      const img=canvas.toDataURL('image/jpeg',0.95);
+      if(i>0) pdf.addPage();
+      pdf.addImage(img,'JPEG',0,0,210,297);   /* map เต็ม A4 → สเกล มม. ตรงเป๊ะ */
+    }
+    pdf.save((S.caseNo||'notice')+'_post133.pdf');
+    toast('ดาวน์โหลดแล้ว ✓ พิมพ์ที่ 100%');
+  }catch(err){ toast('สร้าง PDF ไม่สำเร็จ: '+(err.message||err)); }
+  pd.className=''; pd.innerHTML='';
+}
+
+/* ═══════════════ ENTRY ═══════════════ */
+function startNew(){
+  localStorage.removeItem('notice_case_id');
+  S.rowId=null; S.caseNo=''; S.paid=false; S.rentItems=[]; S.utilItems=[]; S.demand=null; S.delivery=null;
+  S.copies=null; S.evidence=null; S.breaches=[]; S.terminate=null; S.tmDelivery=null; S.tmDays=7; S.tmSoftTone=false;
+  ['llName','llId','llAddr','llPhone','llHouse','llRoad','llSub','llDist','llProv','llZip',
+   'tnName','tnName2','tnAddrId','tnPhone',
+   'tnHouse','tnRoad','tnSub','tnDist','tnProv','tnZip',
+   'lsPno','lsPaddr','lsNo','lsDate','lsDueDay','lsRent',
+   'lsHouse','lsRoad','lsSub','lsDist','lsProv','lsZip','psName','psAddr','psZip','psOffice',
+   'pcStation','pcStationAddr','pcDate','pcBookNo',
+   'tmIssueDate','tmTracking','tmSent','tmRecv']
+   .forEach(id=>{ const e=$(id); if(e) e.value=''; });
+  $('dmIssueDate').value=todayISO();
+  buildChips();
+  go('wizard'); showStep(1);
+}
+async function resumeCase(){
+  if(!$('agreeTos').checked){ toast('กรุณายอมรับเงื่อนไขการให้บริการก่อน'); return; }
+  const id=localStorage.getItem('notice_case_id');
+  if(!id){ toast('ไม่พบเคสที่ค้างไว้'); return; }
+  const row=await loadCase(id);
+  if(!row){ toast('เปิดเคสไม่สำเร็จ'); return; }
+  if(S.delivery){ buildTimeline(); go('timeline'); }
+  else if(S.paid||row.status==='demand_ready'){ S.paid=true; renderDoc(); go('doc'); }
+  else { go('wizard'); showStep(1); }
+}
+
+/* ═══════════════ DEV ═══════════════ */
+function toggleDev(){ $('devMenu').classList.toggle('open'); }
+function devFill(){
+  $('devMenu').classList.remove('open');
+  const set=(id,v)=>{ const e=$(id); if(e) e.value=v; };
+  set('llName','นายสมหมาย สองสี'); set('llId','1101700207277');
+  set('llPhone','062-012-4845'); _applyAddr('ll','7/11 ตำบลท่าปลา อำเภอบางพระ จังหวัดชลบุรี 20110');
+  set('tnName','นายมานะ ขยันดี'); set('tnPhone','086-123-4567');
+  _applyAddr('tn','99/1 หมู่ 3 ถ.รัชดาภิเษก ตำบลท่าปลา อำเภอบางพระ จังหวัดชลบุรี 20110');
+  set('lsPno','The Bangkok');
+  _applyAddr('ls','7 ถ.รัชดา แขวงลาดพร้าว เขตลาดพร้าว กรุงเทพมหานคร 10300');
+  set('lsNo','RENT-2026-ACV1'); set('lsDate','2026-08-01'); set('lsDueDay','5'); set('lsRent','5000');
+  set('dmIssueDate',todayISO());
+  S.ptype='คอนโด'; S.days=15;
+  const Y=String(new Date().getFullYear());
+  S.rentItems=[{m:'06',y:Y,amount:'5000'},{m:'07',y:Y,amount:'5000'}];
+  S.utilItems=[{type:'ค่าน้ำประปา/ค่าไฟฟ้า',m:'07',y:Y,amount:'2400'}];
+  buildChips(); renderArrears();
+  go('wizard'); showStep(1);
+  toast('เติมข้อมูลจำลองแล้ว');
+}
+function devReset(){
+  $('devMenu').classList.remove('open');
+  localStorage.removeItem('notice_case_id');
+  location.reload();
+}
+
+/* ═══════════════ INIT ═══════════════ */
+(function init(){
+  buildChips();
+  $('dmIssueDate').value=todayISO();
+  if(_isTestEnv()) $('devFab').classList.add('on');
+  if(localStorage.getItem('notice_case_id')) $('btnResume').style.display='block';
+  $('lc1').classList.add('clickable');
+  $('lc1').onclick=function(){ if($('agreeTos').checked) startNew(); else toast('กรุณายอมรับเงื่อนไขการให้บริการก่อน'); };
+  updateAgree();
+  ['ll','tn','ls'].forEach(wireAddrAuto);
+  try{ history.replaceState({phase:'landing'},''); }catch(_){}
+})();
+</script>
+</body>
+</html>

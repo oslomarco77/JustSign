@@ -812,10 +812,10 @@ async function ensureRow(){
   }).select('id').single();
   if(error) throw error;
   S.rowId=data.id; localStorage.setItem('nda_contract_row_id',S.rowId);
-  // SD-407A: NDA must not bind at draft creation.  Unlike Sale/Rental, the
-  // current NDA data model has no backend-authoritative frozen version and its
-  // completion state is still browser-written.  Keep the handoff token until a
-  // future backend completion adapter can validate and bind canonical evidence.
+      // ── ผูกกลับเข้า Workspace ถ้ามาจาก Agreement OS (ทาง A) ──
+      // ⚠️ ห้าม await — การบันทึกสัญญาต้องไม่รอระบบภายนอก
+      // window.SignDeeWS เป็นการอ่าน property จึงไม่ ReferenceError แม้ ws-link.js โหลดไม่ขึ้น
+      try { if (window.SignDeeWS) window.SignDeeWS.bind(S.rowId); } catch (e) {}
   return S.rowId;
 }
 function partyPayload(which){
