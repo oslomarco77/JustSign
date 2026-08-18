@@ -5,6 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SignDee Notice — ทวงถามค่าเช่า &amp; บอกเลิกสัญญาเช่า</title>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<!-- ══ Google tag (gtag.js) — Google Ads conversion tracking ══
+     ⚙️ ตั้งค่า 2 บรรทัดล่างนี้จาก Google Ads → Goals → Conversions → "Purchase"
+        ADS_ID    = รหัสบัญชี เช่น 'AW-123456789'
+        ADS_LABEL = label ของ conversion action เช่น 'AbC-D_efG-h12_34-567'
+     ถ้ายังไม่ตั้ง (ค่าว่าง) ระบบจะไม่ยิงอะไรเลย แต่หน้าเว็บทำงานปกติทุกอย่าง -->
+<script>
+  window.SIGNDEE_ADS = {
+    ADS_ID:    'AW-18396218301',   /* Google tag ของบัญชี SignDee */
+    ADS_LABEL: 'xBZFCO6zy-McEL2HgMRE',   /* conversion action "Purchase" */
+    DEBUG: false     /* true = log ทุกขั้นตอนใน console (ใช้ตอนทดสอบ) */
+  };
+</script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-18396218301"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  /* linker: ให้ gclid ส่งต่อระหว่าง notice.signdee.com → app.signdee.com ได้ */
+  /* ⚠️ ไม่เปิด enhanced conversions โดยตั้งใจ — หน้านี้มีชื่อ/ที่อยู่/เบอร์โทรของ "ผู้เช่า"
+     ซึ่งเป็นบุคคลที่สามที่ไม่ได้ยินยอม (PDPA) · conversion tracking ทำงานครบโดยไม่ต้องใช้ */
+  gtag('config', 'AW-18396218301', {
+    linker: { domains: ['notice.signdee.com', 'app.signdee.com', 'signdee.com'] }
+  });
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -1801,6 +1827,9 @@ async function checkBeamPay(){
       const st=$('qrStatus'); if(st) st.innerHTML='<b style="color:var(--green)">✓ ชำระเงินสำเร็จ</b>';
       toast('ชำระเงินสำเร็จ ✓');
       const shell=document.querySelector('.preview-shell'); if(shell) shell.classList.remove('locked');
+      /* ── Google Ads Purchase: backend เป็นผู้ตัดสินว่ายิงได้หรือไม่ ── */
+      try{ adsMarkSuccessUrl(S.rowId); }catch(_){}
+      try{ adsFirePurchase(S.rowId); }catch(_){}
       setTimeout(()=>{ go('doc'); renderDoc(); },900);
     }
   }catch(_){}
@@ -1825,6 +1854,8 @@ async function devSkipPay(){
     S.paid=true;
     const shell=document.querySelector('.preview-shell'); if(shell) shell.classList.remove('locked');
     toast('ปลดล็อกแล้ว (DEV)');
+    /* เดินเส้นทางเดียวกับการจ่ายจริง — ใช้ทดสอบ conversion ได้ทั้ง flow */
+    try{ adsMarkSuccessUrl(S.rowId); adsFirePurchase(S.rowId); }catch(_){}
     go('doc'); renderDoc();
   }catch(err){ toast('error: '+(err.message||err)); }
 }
@@ -2634,6 +2665,89 @@ function devFill(){
   go('wizard'); showStep(1);
   toast('เติมข้อมูลจำลองแล้ว');
 }
+/* ═══════════════ GOOGLE ADS — PURCHASE CONVERSION ═══════════════
+   หลักการ:
+   • ยิง purchase ได้ต่อเมื่อ backend (/api/myip action=notice_conversion) ตอบ fire:true
+     ซึ่งจะเป็น true เฉพาะเมื่อ notice_cases.payment_completed = true และยังไม่เคยส่ง
+   • กันซ้ำ 2 ชั้น: (1) คอลัมน์ ads_conversion_sent_at ในฐานข้อมูล (atomic ฝั่ง server)
+                    (2) localStorage ฝั่ง client (กันยิงรัวจากแท็บเดียวกัน)
+   • ไม่ยิงจากการ "เข้าหน้า success" เฉย ๆ — ทุกครั้งต้องถาม backend ก่อนเสมอ
+   ═══════════════════════════════════════════════════════════════ */
+const ADS_SENT_KEY='signdee_notice_ads_sent';
+function _adsCfg(){ return window.SIGNDEE_ADS || {}; }
+function _adsLog(){ if(_adsCfg().DEBUG) try{ console.log.apply(console,['[ads]'].concat([].slice.call(arguments))); }catch(_){} }
+function _adsSentLocal(txn){
+  try{ const a=JSON.parse(localStorage.getItem(ADS_SENT_KEY)||'[]'); return a.indexOf(txn)>=0; }catch(_){ return false; }
+}
+function _adsMarkLocal(txn){
+  try{ const a=JSON.parse(localStorage.getItem(ADS_SENT_KEY)||'[]'); if(a.indexOf(txn)<0){ a.push(txn); localStorage.setItem(ADS_SENT_KEY,JSON.stringify(a.slice(-50))); } }catch(_){}
+}
+/* ทำให้หน้า success มี URL ของตัวเอง (ไม่เปลี่ยน UI) — ใช้เป็น URL ยืนยันการชำระเงิน */
+function adsMarkSuccessUrl(rowId){
+  if(!rowId) return;
+  try{
+    const u=new URL(location.href);
+    u.searchParams.set('paid', rowId);
+    history.replaceState(history.state||{}, '', u.toString());
+  }catch(_){}
+}
+let _adsBusy=false, _adsDone={};
+async function adsFirePurchase(rowId){
+  const A=_adsCfg();
+  if(!rowId){ _adsLog('ไม่มี rowId'); return; }
+  /* กันเรียกซ้อน: boot กับ checkBeamPay อาจทำงานไล่กันในเสี้ยววินาทีเดียว */
+  if(_adsBusy){ _adsLog('กำลังตรวจอยู่ — ข้าม'); return; }
+  if(_adsDone[rowId]){ _adsLog('เคสนี้ตรวจแล้วในหน้านี้'); return; }
+  _adsBusy=true;
+  /* ⚠️ เช็คก่อนเรียก backend — ถ้ายิงไม่ได้ ห้ามไป "จองสิทธิ์" ในฐานข้อมูล
+     ไม่งั้นเคสจะถูก mark ว่า sent ทั้งที่ Google ไม่เคยได้รับ conversion */
+  if(!A.ADS_ID || !A.ADS_LABEL){
+    _adsLog('⚠️ ยังไม่ได้ตั้ง ADS_ID/ADS_LABEL — ไม่เรียก backend และไม่ยิง (เคสยังไม่ถูก mark)');
+    return;
+  }
+  const q=(typeof readQuizParams==='function') ? readQuizParams() : {};
+  let j=null;
+  try{
+    const r=await fetch(NOTICE_API+'/api/myip',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        action:'notice_conversion', row_id:rowId,
+        gclid: q.gclid || null,
+        source: { utm_source:q.utm_source||null, utm_medium:q.utm_medium||null, utm_campaign:q.utm_campaign||null,
+                  utm_term:q.utm_term||null, utm_content:q.utm_content||null }
+      })
+    });
+    j=await r.json();
+  }catch(e){ _adsBusy=false; _adsLog('เรียก backend ไม่สำเร็จ',e); return; }
+  _adsBusy=false; _adsDone[rowId]=true;
+
+  if(!j || !j.fire){ _adsLog('ไม่ยิง —', (j&&j.reason)||'ไม่ทราบสาเหตุ', j); return; }
+  if(_adsSentLocal(j.transaction_id)){ _adsLog('ยิงไปแล้วในเครื่องนี้', j.transaction_id); return; }
+
+  _adsMarkLocal(j.transaction_id);
+  try{
+    gtag('event','conversion',{
+      send_to: A.ADS_ID+'/'+A.ADS_LABEL,
+      value: j.value, currency: j.currency || 'THB',
+      transaction_id: j.transaction_id
+    });
+    /* ส่ง purchase อีกชุดสำหรับ GA4/enhanced (ไม่มีผลถ้าไม่ได้ตั้ง GA4) */
+    gtag('event','purchase',{
+      transaction_id: j.transaction_id, value: j.value, currency: j.currency||'THB',
+      items:[{ item_id:'notice_case', item_name:'SignDee Notice — ค่าบริการจัดการเคส', price:j.value, quantity:1 }]
+    });
+    _adsLog('✓ ส่ง purchase แล้ว', j);
+  }catch(e){ _adsLog('gtag error',e); }
+}
+/* เข้าหน้าเดิมซ้ำ/refresh: ตรวจกับ backend ทุกครั้ง — ถ้าเคยส่งแล้วจะได้ already_sent */
+async function adsCheckOnBoot(){
+  let rid=null;
+  try{ rid=new URLSearchParams(location.search).get('paid'); }catch(_){}
+  if(!rid){ try{ rid=localStorage.getItem('notice_case_id'); }catch(_){} }
+  if(!rid) return;
+  await adsFirePurchase(rid);
+}
+
 function devReset(){
   $('devMenu').classList.remove('open');
   localStorage.removeItem('notice_case_id');
@@ -2645,6 +2759,9 @@ function devReset(){
   buildChips();
   $('dmIssueDate').value=todayISO();
   if(_isTestEnv()||_isDev()) $('devFab').classList.add('on');
+  /* Google Ads: ถ้ากลับเข้าหน้าพร้อม ?paid=<case_id> หรือมีเคสค้างในเครื่อง
+     ให้ถาม backend ว่าควรยิง purchase ไหม (backend กันซ้ำให้เอง) */
+  try{ setTimeout(adsCheckOnBoot, 1200); }catch(_){}
   if(localStorage.getItem('notice_case_id')) $('btnResume').style.display='block';
   $('lc1').classList.add('clickable');
   $('lc1').onclick=function(){ if($('agreeTos').checked) startNew(); else toast('กรุณายอมรับเงื่อนไขการให้บริการก่อน'); };
