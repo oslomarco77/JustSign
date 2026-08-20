@@ -321,10 +321,7 @@ input.bad{border-color:var(--red)}
 .soon-body{pointer-events:none;user-select:none;filter:saturate(.35)}
 .soon-note{font-size:12px;line-height:1.6;color:#7a5310;background:var(--amber-d,rgba(183,122,27,.10));border:1px solid rgba(183,122,27,.25);border-radius:12px;padding:11px 13px;margin-top:12px}
 .opt-row{display:flex;flex-direction:column;gap:9px}
-.opt{display:flex;align-items:flex-start;gap:12px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:14px 15px;cursor:pointer;transition:.15s}
-.opt:active{transform:scale(.995)}
-.opt.on{border-color:var(--accent);background:var(--accent-d);box-shadow:0 0 0 3px rgba(46,134,198,.10)}
-.opt.on .ot{color:var(--accent)}
+.opt{display:flex;align-items:flex-start;gap:12px;background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:14px 15px}
 .opt .ot{font-family:'Anuphan';font-weight:600;font-size:14.5px}
 .opt .od{font-size:12.5px;color:var(--text2);margin-top:3px;line-height:1.5}
 .terms-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
@@ -464,23 +461,17 @@ input.bad{border-color:var(--red)}
            เทมเพลต 8 ข้อที่ทนายรีวิวแล้วเป็น One-way ทั้งฉบับ (ข้อ 1 ระบุ
            "ผู้ให้ข้อมูล…เปิดเผยให้แก่ผู้รับข้อมูล") ยังไม่มีฉบับ Mutual
            ถ้าเปิดให้เลือกแล้วเอกสารไม่เปลี่ยน = ให้ข้อมูลผิดแก่ผู้ใช้ -->
-      <!-- ══ การ์ด 4 · ประเภทข้อตกลง ══
-           ท่อต่อครบแล้ว: เลือกได้จริง → ส่ง nda_type ไป generate → backend
-           branch ตาม type · ฉบับ Mutual จะปลดล็อกทันทีที่ทนายส่งข้อความมา
-           แล้ววางใน NDA_T_MUTUAL + ตั้ง ready:true ใน myip.js (ไม่ต้องแก้หน้านี้) -->
-      <div class="fcard">
-        <div class="fcard-h"><span class="fh-n">4</span>ประเภทข้อตกลง<span class="fh-tag" id="ndaTypeTag">One-way</span></div>
-        <div class="opt-row" id="ndaTypeOpts">
-          <div class="opt on" data-type="one_way" onclick="pickNdaType('one_way')">
-            <div><div class="ot">One-way NDA</div>
-            <div class="od">มีฝ่ายหนึ่งเป็นผู้เปิดเผยข้อมูล อีกฝ่ายเป็นผู้รับข้อมูล</div></div>
-          </div>
-          <div class="opt" data-type="mutual" onclick="pickNdaType('mutual')">
-            <div><div class="ot">Mutual NDA <span class="fh-tag" style="margin-left:6px">รอทนายรีวิว</span></div>
-            <div class="od">ทั้งสองฝ่ายสามารถเปิดเผยข้อมูลที่เป็นความลับต่อกัน</div></div>
+      <div class="fcard soon">
+        <div class="fcard-h"><span class="fh-n">4</span>ประเภทข้อตกลง<span class="fh-tag">รอทนายรีวิว</span></div>
+        <div class="soon-body">
+          <div class="opt-row">
+            <div class="opt"><div><div class="ot">One-way NDA · ใช้อยู่ในขณะนี้</div>
+              <div class="od">มีฝ่ายหนึ่งเป็นผู้เปิดเผยข้อมูล อีกฝ่ายเป็นผู้รับข้อมูล</div></div></div>
+            <div class="opt"><div><div class="ot">Mutual NDA</div>
+              <div class="od">ทั้งสองฝ่ายสามารถเปิดเผยข้อมูลที่เป็นความลับต่อกัน</div></div></div>
           </div>
         </div>
-        <div class="soon-note" id="ndaTypeNote">⚠️ <b>ยังเปิดใช้งานไม่ได้</b> — เทมเพลตที่ทนายรีวิวแล้วมีเฉพาะฉบับ One-way ระบบเตรียมโครงไว้ครบแล้ว จะเปิดใช้ทันทีที่ได้รับข้อความฉบับ Mutual จากทนาย</div>
+        <div class="soon-note">⚠️ <b>MISSING PRODUCT REQUIREMENT</b> — เทมเพลตที่ทนายรีวิวแล้วมีเฉพาะฉบับ One-way ข้อตกลงทุกฉบับที่ออกจากระบบตอนนี้จึงเป็น One-way เสมอ ตัวเลือกนี้จะเปิดใช้งานเมื่อได้รับเทมเพลต Mutual จากทนาย</div>
       </div>
 
       <!-- ══ การ์ด 5 · เงื่อนไขข้อตกลง — read-only ══
@@ -511,7 +502,7 @@ input.bad{border-color:var(--red)}
       <div class="sub">ระบุข้อมูลผู้เปิดเผยและผู้รับข้อมูลที่อยู่ภายใต้ข้อตกลง — ถ่ายด้านหน้าบัตร AI จะอ่านให้ ตรวจแก้ได้ก่อนไปต่อ</div>
 
       <div class="fcard">
-        <div class="fcard-h"><span class="fh-n">1</span>👤 ฝ่ายที่ 1 · <span id="pcRoleA">ผู้ให้ข้อมูล</span><span class="fh-tag" id="pcTagA">Disclosing Party</span></div>
+        <div class="fcard-h"><span class="fh-n">1</span>👤 ฝ่ายที่ 1 · ผู้ให้ข้อมูล<span class="fh-tag">Disclosing Party</span></div>
         <label class="pdpa" style="margin-top:0"><input type="checkbox" id="jur_A" onchange="toggleJuristic('A')">
           <span>ทำในนามนิติบุคคล (บริษัท / ห้างหุ้นส่วน / สมาคม)</span></label>
         <div class="ocrbox" id="jurBox_A" style="display:none"></div>
@@ -523,7 +514,7 @@ input.bad{border-color:var(--red)}
       </div>
 
       <div class="fcard">
-        <div class="fcard-h"><span class="fh-n">2</span>👤 ฝ่ายที่ 2 · <span id="pcRoleB">ผู้รับข้อมูล</span><span class="fh-tag" id="pcTagB">Receiving Party</span></div>
+        <div class="fcard-h"><span class="fh-n">2</span>👤 ฝ่ายที่ 2 · ผู้รับข้อมูล<span class="fh-tag">Receiving Party</span></div>
         <label class="pdpa" style="margin-top:0"><input type="checkbox" id="jur_B" onchange="toggleJuristic('B')">
           <span>ทำในนามนิติบุคคล (บริษัท / ห้างหุ้นส่วน / สมาคม)</span></label>
         <div class="ocrbox" id="jurBox_B" style="display:none"></div>
@@ -592,8 +583,8 @@ input.bad{border-color:var(--red)}
       <div class="doc" id="docFull" style="margin-top:14px"></div>
       <label class="fl">คุณคือคู่สัญญาฝ่ายไหน?</label>
       <div class="pills" id="rolePills">
-        <div class="pill" data-role="a" onclick="pickRole('a')" id="rolePillA">ผู้ให้ข้อมูล</div>
-        <div class="pill" data-role="b" onclick="pickRole('b')" id="rolePillB">ผู้รับข้อมูล</div>
+        <div class="pill" data-role="a" onclick="pickRole('a')">ผู้ให้ข้อมูล</div>
+        <div class="pill" data-role="b" onclick="pickRole('b')">ผู้รับข้อมูล</div>
         <div class="pill" data-role="third" onclick="pickRole('third')">คนกลาง</div>
       </div>
       <button class="btn" id="reviewNext" onclick="reviewNext()" disabled>ยืนยันและไปลงนาม →</button>
@@ -859,8 +850,8 @@ function renderAgreementSummary(){
   const rows = [
     ['Agreement ID', (m.contract_no || (S.rowId ? String(S.rowId).slice(0,8).toUpperCase() : '—'))],
     ['ประเภท NDA', _agTypeTh()],
-    ['ฝ่ายที่ 1 · '+_ndaRole('a'), nameA],
-    ['ฝ่ายที่ 2 · '+_ndaRole('b'), nameB],
+    ['ฝ่ายที่ 1 · ผู้ให้ข้อมูล', nameA],
+    ['ฝ่ายที่ 2 · ผู้รับข้อมูล', nameB],
     ['วัตถุประสงค์', purpose ? (purpose.length > 46 ? purpose.slice(0,46) + '…' : purpose) : '—'],
     ['ระยะเวลาของข้อตกลง', _agDurTh()],
     ['ระยะเวลารักษาความลับ', _agDurTh()],
@@ -965,13 +956,12 @@ function _agReadWatch(docId, barId){
 function _saveDraft(){
   if($('purpose')) S.purpose=$('purpose').value.trim();
   const cm=$('customMonths'); if(cm&&cm.style.display!=='none'){ const n=parseInt(cm.value,10); if(n>=1&&n<=120) S.durationMonths=n; }
-  localStorage.setItem('signdee_nda_draft',JSON.stringify({purpose:S.purpose,durationMonths:S.durationMonths,ndaType:S.ndaType,jur:_jurDraft()}));
+  localStorage.setItem('signdee_nda_draft',JSON.stringify({purpose:S.purpose,durationMonths:S.durationMonths,jur:_jurDraft()}));
 }
 function _loadDraft(){
   try{ const d=JSON.parse(localStorage.getItem('signdee_nda_draft')||'{}');
     if(d.purpose){ S.purpose=d.purpose; if($('purpose'))$('purpose').value=d.purpose; }
     if(d.durationMonths){ S.durationMonths=d.durationMonths; }
-    if(d.ndaType){ S.ndaType=d.ndaType; }
     if(d.jur){ ['A','B'].forEach(w=>{ if(d.jur[w]&&d.jur[w].on){ S.jur[w]=d.jur[w]; const cb=$('jur_'+w); if(cb){ cb.checked=true; toggleJuristic(w); } } }); }
   }catch(_){}
 }
@@ -980,7 +970,6 @@ function _loadDraft(){
 function buildStep1(){
   $('chips').innerHTML=CHIPS.map(c=>`<span class="chip" onclick="toggleChip(this,'${esc(c)}')">${esc(c)}</span>`).join('');
   $('pills').innerHTML=DUR.map(d=>`<div class="pill" data-v="${d.v}" onclick="pickDur(this)">${d.t}</div>`).join('');
-  pickNdaType(S.ndaType||'one_way');
 }
 /* รวมรายการเป็นประโยคไทย: "ก ข ค และง" */
 function _joinTh(arr){
@@ -1000,29 +989,6 @@ function toggleChip(el,txt){
   ta.value = phrase ? (cur ? cur+' '+phrase : phrase) : cur;
   window._chipPhrase = phrase;
   _saveDraft();
-}
-/* ── ประเภท NDA (one_way / mutual) ──
-   ผู้ใช้เลือกที่นี่ → ส่งไปกับ action:'generate' → server เป็นคนตัดสินว่าทำได้ไหม
-   ถ้าเทมเพลต Mutual ยังไม่พร้อม server จะตอบ mutual_not_ready แล้วเราดีดกลับ one_way */
-function pickNdaType(t){
-  if(!['one_way','mutual'].includes(t)) return;
-  S.ndaType=t;
-  document.querySelectorAll('#ndaTypeOpts .opt').forEach(el=>el.classList.toggle('on', el.dataset.type===t));
-  const tag=$('ndaTypeTag'); if(tag) tag.textContent = (t==='mutual') ? 'Mutual' : 'One-way';
-  const note=$('ndaTypeNote');
-  if(note) note.style.display = (t==='mutual') ? 'block' : 'none';
-  _ndaPaintRoles();
-  _saveDraft(); agRefresh();
-}
-/* เขียนชื่อเรียกคู่สัญญาลง markup ที่เป็นข้อความคงที่ (หัวการ์ด step2 + pill เลือกฝ่าย) */
-function _ndaPaintRoles(){
-  const a=_ndaRole('a'), b=_ndaRole('b');
-  const en=(S.ndaType==='mutual');
-  const set=(id,v)=>{ const el=$(id); if(el) el.textContent=v; };
-  set('pcRoleA',a); set('pcRoleB',b);
-  set('pcTagA', en?'Party 1':'Disclosing Party');
-  set('pcTagB', en?'Party 2':'Receiving Party');
-  set('rolePillA',a); set('rolePillB',b);
 }
 function pickDur(el){
   document.querySelectorAll('#pills .pill').forEach(p=>p.classList.remove('on'));
@@ -1277,7 +1243,7 @@ async function step2Generate(){
       status:'ocr_done'
     }).eq('id',S.rowId);
     step=3; renderProc(3);
-    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate',row_id:S.rowId,nda_type:S.ndaType||'one_way',turnstile_token:await _turnstileToken()})});
+    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'generate',row_id:S.rowId,turnstile_token:await _turnstileToken()})});
     let j; try{ j=await r.json(); }catch(_){ j={}; }
     clearInterval(timer);
     if(!j || !j.ok){
@@ -1286,8 +1252,6 @@ async function step2Generate(){
       else if(r.status===504 || (j&&/timeout/i.test(JSON.stringify(j)))) msg='AI ใช้เวลานานเกิน (timeout) — เพิ่ม maxDuration myip.js เป็น 60';
       else msg=(j&&(j.message_th||j.detail||j.code)) || ('HTTP '+r.status+' — สร้างสัญญาไม่สำเร็จ');
       console.error('NDA generate failed:', r.status, j);
-      // เทมเพลต Mutual ยังไม่พร้อม → ดีดกลับ One-way แล้วพากลับไปหน้าขอบเขต
-      if(j && j.code==='mutual_not_ready'){ pickNdaType('one_way'); toast(msg); go('step1'); return; }
       toast(msg); go('step2'); return;
     }
     for(let i=4;i<=PROC.length;i++){ renderProc(i); await new Promise(x=>setTimeout(x,320)); }
@@ -1313,21 +1277,6 @@ function _clauseHtml(txt){
     return /^\d+\.\d+/.test(t) ? `<div class="cl-sub">${esc(t)}</div>` : `<div class="cl-para">${esc(t)}</div>`;
   }).join('');
 }
-/* ชื่อเรียกคู่สัญญา — ฉบับ Mutual ทั้งสองฝ่ายเป็นทั้งผู้ให้และผู้รับ จึงใช้คำกลาง
-   ลำดับความน่าเชื่อถือ: meta.roles จาก backend > ประเภทที่ผู้ใช้เลือก > ค่าเดิม (One-way) */
-function _ndaRoleOf(ndaType,which){
-  return (ndaType==='mutual')
-    ? (which==='a' ? 'คู่สัญญาฝ่ายที่หนึ่ง' : 'คู่สัญญาฝ่ายที่สอง')
-    : (which==='a' ? 'ผู้ให้ข้อมูล'        : 'ผู้รับข้อมูล');
-}
-function _ndaRole(which){
-  const r=(S.meta&&S.meta.roles)||null;
-  if(r&&r[which]) return r[which];
-  return _ndaRoleOf(S.ndaType,which);
-}
-function _ndaRoleEn(ndaType,which){
-  return (ndaType==='mutual') ? (which==='a'?'Party 1':'Party 2') : (which==='a'?'Discloser':'Recipient');
-}
 function partyBlock(meta,which,role){
   const _j=_jurOf(which);
   if(_j) return _jurText(_j,role,'"','"');
@@ -1350,8 +1299,8 @@ function renderDoc(target,clauses,blurred){
       <div style="text-align:right;line-height:1.9">ทำที่ ${esc(_pls[0]||'................................................')}</div>
       ${_pls[1]?`<div style="text-align:right;line-height:1.9">${esc(_pls[1])}</div>`:''}
       <div style="text-align:center;line-height:1.9;margin-bottom:10px">วันที่ ${dateTh||'....................'}</div>
-      <div style="margin-bottom:8px"><b>ระหว่าง:</b> ${partyBlock(meta,'a',_ndaRole('a'))} ฝ่ายหนึ่ง</div>
-      <div style="margin-bottom:8px"><b>กับ</b> ${partyBlock(meta,'b',_ndaRole('b'))} อีกฝ่ายหนึ่ง</div>
+      <div style="margin-bottom:8px"><b>ระหว่าง:</b> ${partyBlock(meta,'a','ผู้ให้ข้อมูล')} ฝ่ายหนึ่ง</div>
+      <div style="margin-bottom:8px"><b>กับ</b> ${partyBlock(meta,'b','ผู้รับข้อมูล')} อีกฝ่ายหนึ่ง</div>
       <div>${intro}</div>
     </div>`;
   let body='';
@@ -1364,10 +1313,10 @@ function renderDoc(target,clauses,blurred){
   // ช่องลงนามสองฝ่าย
   body+=`<div class="clause" style="display:flex;gap:24px;padding-top:22px">
       <div style="flex:1;text-align:center">
-        ${sigImg('a')}<div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;font-size:13px">ลงชื่อ ...................... ${esc(_ndaRole('a'))}<br>( ${esc((S.meta&&S.meta.a&&S.meta.a.name)||S.parties.a||'')} )</div>
+        ${sigImg('a')}<div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;font-size:13px">ลงชื่อ ...................... ผู้ให้ข้อมูล<br>( ${esc((S.meta&&S.meta.a&&S.meta.a.name)||S.parties.a||'')} )</div>
       </div>
       <div style="flex:1;text-align:center">
-        ${sigImg('b')}<div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;font-size:13px">ลงชื่อ ...................... ${esc(_ndaRole('b'))}<br>( ${esc((S.meta&&S.meta.b&&S.meta.b.name)||S.parties.b||'')} )</div>
+        ${sigImg('b')}<div style="border-top:1px solid var(--text);margin-top:6px;padding-top:6px;font-size:13px">ลงชื่อ ...................... ผู้รับข้อมูล<br>( ${esc((S.meta&&S.meta.b&&S.meta.b.name)||S.parties.b||'')} )</div>
       </div>
     </div>`;
   $(target).innerHTML=hd+body;
@@ -1527,8 +1476,8 @@ function renderReview(){
   if($('reviewCards')) $('reviewCards').innerHTML=_agReviewCards();
   $('reviewParties').innerHTML=`
     <div class="ocrbox" style="padding:6px 14px">
-      ${_reviewPartyCard('a',_ndaRole('a'))}
-      ${_reviewPartyCard('b',_ndaRole('b'))}
+      ${_reviewPartyCard('a','ผู้ให้ข้อมูล')}
+      ${_reviewPartyCard('b','ผู้รับข้อมูล')}
       <div class="mini" style="padding:9px 0">SHA-256: <span class="mono">${esc(S.docHash.slice(0,24))}…</span></div>
     </div>`;
   renderDoc('docFull',S.clauses,false);
@@ -1544,7 +1493,7 @@ async function reviewNext(){
   await sb.from(NDA_TABLE).update({creator_party:S.creatorParty,status:'reviewed'}).eq('id',S.rowId);
   await genTokens();
   if(S.creatorParty==='third'){ buildStatus(); go('status'); return; }
-  const who=_ndaRole(S.creatorParty==='a'?'a':'b');
+  const who=S.creatorParty==='a'?'ผู้ให้ข้อมูล':'ผู้รับข้อมูล';
   $('signTitle').textContent='ลงลายมือชื่อ — '+who;
   $('signSub').textContent='คุณลงนามในฐานะ '+who;
   go('sign'); initSig('sigCanvas');
@@ -1593,8 +1542,8 @@ async function myIp(){ try{ const r=await fetch(JUSTSIGN_API+'/api/myip'); const
 let _statusPoll=null;
 function buildStatus(){
   const need=[];
-  if(S.creatorParty!=='a') need.push({p:'a',label:_ndaRole('a'),token:S.tokens.a});
-  if(S.creatorParty!=='b') need.push({p:'b',label:_ndaRole('b'),token:S.tokens.b});
+  if(S.creatorParty!=='a') need.push({p:'a',label:'ผู้ให้ข้อมูล',token:S.tokens.a});
+  if(S.creatorParty!=='b') need.push({p:'b',label:'ผู้รับข้อมูล',token:S.tokens.b});
   const base=location.origin+location.pathname;
   $('linkCards').innerHTML=need.map(n=>{
     const url=base+'?sign='+encodeURIComponent(n.token);
@@ -1684,8 +1633,8 @@ async function pollStatus(){
 }
 function renderStatusList(){
   const rows=[
-    {n:1,role:'ฝ่ายที่ 1 · '+_ndaRole('a'),name:S.parties.a,done:S.creatorParty==='a'||S._aSigned},
-    {n:2,role:'ฝ่ายที่ 2 · '+_ndaRole('b'),name:S.parties.b,done:S.creatorParty==='b'||S._bSigned},
+    {n:1,role:'ฝ่ายที่ 1 · ผู้ให้ข้อมูล',name:S.parties.a,done:S.creatorParty==='a'||S._aSigned},
+    {n:2,role:'ฝ่ายที่ 2 · ผู้รับข้อมูล',name:S.parties.b,done:S.creatorParty==='b'||S._bSigned},
   ];
   $('statusList').innerHTML=rows.map(r=>`
     <div class="tl-item ${r.done?'done':'active'}">
@@ -1705,7 +1654,7 @@ async function initRemote(token){
   const party=m[1]==='na'?'a':'b'; const rowId=m[2];
   S.remote={party,rowId,token};
   go('remote');
-  $('rmTitle').textContent='ลงนาม NDA — '+_ndaRole(party);
+  $('rmTitle').textContent='ลงนามสัญญา NDA — '+(party==='a'?'ผู้ให้ข้อมูล':'ผู้รับข้อมูล');
   const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'content',row_id:rowId,token,turnstile_token:await _turnstileToken()})});
   const j=await r.json();
   if(!j.ok){ $('rmSub').textContent='ไม่สามารถโหลดสัญญา'; return; }
@@ -1911,9 +1860,6 @@ async function buildEvidencePDF(){
   const row=await _ndaFetchRow(S.rowId,(S.remote&&S.remote.token)||null);
   if(!row){ return; }   // _ndaFetchRow แจ้ง toast ให้แล้ว
   const cl=row.clauses_json||S.clauses||{};
-  const _nt=row.nda_type||S.ndaType||'one_way';
-  const _rA=_ndaRoleOf(_nt,'a'), _rB=_ndaRoleOf(_nt,'b');
-  const _eA=_ndaRoleEn(_nt,'a'), _eB=_ndaRoleEn(_nt,'b');
   const A=row.party_a||{}, B=row.party_b||{};
   const aCard=row.a_card||{}, bCard=row.b_card||{};
   const cno=row.cert_no||S.certNo||('NDC-'+(new Date().getFullYear()+543)+'-'+((row.doc_hash||S.docHash)||'').slice(0,12).toUpperCase());
@@ -1938,15 +1884,15 @@ async function buildEvidencePDF(){
     <div class="pd-place">ทำที่ ${esc(_pl[0]||'................................................')}</div>
     ${_pl[1]?`<div class="pd-place" style="margin-top:0">${esc(_pl[1])}</div>`:''}
     <div class="pd-date">วันที่ ${esc(dateTh||'....................')}</div>
-    <div class="pd-clause"><b>ระหว่าง:</b> ${_pdPartyLine(A,aCard,_rA)} ฝ่ายหนึ่ง</div>
-    <div class="pd-clause"><b>กับ</b> ${_pdPartyLine(B,bCard,_rB)} อีกฝ่ายหนึ่ง</div>
+    <div class="pd-clause"><b>ระหว่าง:</b> ${_pdPartyLine(A,aCard,'ผู้ให้ข้อมูล')} ฝ่ายหนึ่ง</div>
+    <div class="pd-clause"><b>กับ</b> ${_pdPartyLine(B,bCard,'ผู้รับข้อมูล')} อีกฝ่ายหนึ่ง</div>
     <div class="pd-clause">${esc(cl.intro||'ผู้ให้ข้อมูลตกลงเปิดเผยข้อมูลและผู้รับข้อมูลตกลงรับข้อมูลตามสัญญา โดยมีเงื่อนไขดังต่อไปนี้')}</div>`;
   for(let i=1;i<=4;i++) p1+=`<div class="pd-clause">${_pdClauseHtml(cl['c'+i])}</div>`;
   p1+=`</div>`;
   let p2=`<div class="pd-page">`;
   for(let i=5;i<=8;i++) p2+=`<div class="pd-clause">${_pdClauseHtml(cl['c'+i])}</div>`;
   p2+=`<div class="pd-clause">${esc(cl.closing||'สัญญานี้ทำขึ้นสองฉบับมีข้อความถูกต้องตรงกัน คู่สัญญาได้อ่านและเข้าใจข้อความในสัญญานี้ละเอียดโดยตลอดแล้ว จึงได้ลงลายมือชื่อและประทับตราไว้ (หากมี) ไว้เป็นสำคัญ')}</div>
-    <div class="pd-sig">${sigBlock(sigA,A.name,_rA)}${sigBlock(sigB,B.name,_rB)}</div>
+    <div class="pd-sig">${sigBlock(sigA,A.name,'ผู้ให้ข้อมูล')}${sigBlock(sigB,B.name,'ผู้รับข้อมูล')}</div>
   </div>`;
 
   // ── ใบรับรองการลงนามอิเล็กทรอนิกส์ (แบบไฟล์ 3) ──
@@ -1957,8 +1903,8 @@ async function buildEvidencePDF(){
   const ev=[];
   const evName={draft:'สร้างสัญญา',nda_generate:'สร้างสัญญา (ระบบ)',ai_generate:'สร้างสัญญา (ระบบ)',notify_sent:'ส่งลิงก์ลงนาม',payment_skipped_staging:'ปลดล็อก (ทดสอบ)'};
   (Array.isArray(row.audit_log)?row.audit_log:[]).forEach(a=>{ if(a&&a.ts) ev.push({label:evName[a.event]||a.event, at:a.ts, ip:a.ip, dev:a.ua}); });
-  if(row.a_signed_at) ev.push({label:_rA+'ลงนามอิเล็กทรอนิกส์', at:row.a_signed_at, ip:row.a_sign_ip, dev:row.a_sign_device});
-  if(row.b_signed_at) ev.push({label:_rB+'ลงนามอิเล็กทรอนิกส์', at:row.b_signed_at, ip:row.b_sign_ip, dev:row.b_sign_device});
+  if(row.a_signed_at) ev.push({label:'ผู้ให้ข้อมูลลงนามอิเล็กทรอนิกส์', at:row.a_signed_at, ip:row.a_sign_ip, dev:row.a_sign_device});
+  if(row.b_signed_at) ev.push({label:'ผู้รับข้อมูลลงนามอิเล็กทรอนิกส์', at:row.b_signed_at, ip:row.b_sign_ip, dev:row.b_sign_device});
   try{ ev.sort((x,y)=>new Date(x.at)-new Date(y.at)); }catch(_){}
   const auditRows=ev.map((e,i)=>`<tr><td>${i+1}</td><td>${esc(_pdLocal(e.at))}<div class="cert-utc">${esc(fmtUTC(e.at))}</div></td><td>${esc(e.label)}</td><td>${esc(e.ip||'—')}<div class="cert-utc">${esc(_pdDevice(e.dev))}</div></td></tr>`).join('')||'<tr><td colspan="4">—</td></tr>';
 
@@ -1978,14 +1924,14 @@ async function buildEvidencePDF(){
     <div class="cert-sec-title">รายละเอียดผู้ลงนาม (Signers)</div>
     <table class="cert-table">
       <tr><th>ผู้ลงนาม</th><th>ชื่อ</th><th>วันเวลาที่เซ็น (Local · UTC)</th><th>IP</th><th>อุปกรณ์</th></tr>
-      ${signerRow(_rA,A.name,row.a_signed_at,row.a_sign_ip,row.a_sign_device)}
-      ${signerRow(_rB,B.name,row.b_signed_at,row.b_sign_ip,row.b_sign_device)}
+      ${signerRow('ผู้ให้ข้อมูล',A.name,row.a_signed_at,row.a_sign_ip,row.a_sign_device)}
+      ${signerRow('ผู้รับข้อมูล',B.name,row.b_signed_at,row.b_sign_ip,row.b_sign_device)}
     </table>
     <div class="cert-sec-title">วิธีพิสูจน์ตัวตนผู้ลงนาม (Identity Verification)</div>
     <table class="cert-table">
       <tr><th>ผู้ลงนาม</th><th>วิธียืนยันตัวตน</th><th>บัญชี LINE ที่ยืนยัน</th><th>LINE User ID</th></tr>
-      ${_verifyRow(_rA,row.a_verify_method,row.a_line_name,row.a_line_user_id)}
-      ${_verifyRow(_rB,row.b_verify_method,row.b_line_name,row.b_line_user_id)}
+      ${_verifyRow('ผู้ให้ข้อมูล',row.a_verify_method,row.a_line_name,row.a_line_user_id)}
+      ${_verifyRow('ผู้รับข้อมูล',row.b_verify_method,row.b_line_name,row.b_line_user_id)}
     </table>
     <div class="cert-sec-title">บันทึกเหตุการณ์ทั้งหมด (Full Audit Trail)</div>
     <table class="cert-table cert-audit">
@@ -2016,8 +1962,8 @@ async function buildEvidencePDF(){
       <div class="ap-page-meta">สัญญาเลขที่: ${esc(row.contract_no||'—')} | ${esc(dateTh)}</div>
     </div>
     <div class="apc-grid">
-      ${cardBlock(aCard,A,_rA,_eA)}
-      ${cardBlock(bCard,B,_rB,_eB)}
+      ${cardBlock(aCard,A,'ผู้ให้ข้อมูล','Discloser')}
+      ${cardBlock(bCard,B,'ผู้รับข้อมูล','Recipient')}
     </div>
     <div class="ap-footer">สำเนาบัตรประชาชนใช้เพื่อยืนยันตัวตนคู่สัญญาเท่านั้น | พิมพ์เมื่อ ${esc(_pdLocal(new Date().toISOString()))}</div>
   </div>`;
@@ -2033,8 +1979,8 @@ async function buildEvidencePDF(){
       : `<div class="apc-empty">${esc(role)} — ไม่ได้แนบสำเนาหนังสือรับรอง</div>`;
     return `<div><div class="apc-role">${esc(role)} — ${en}</div>${inner}</div>`;
   };
-  const certA=certBlock(aCard,A,_rA,_eA);
-  const certB=certBlock(bCard,B,_rB,_eB);
+  const certA=certBlock(aCard,A,'ผู้ให้ข้อมูล','Discloser');
+  const certB=certBlock(bCard,B,'ผู้รับข้อมูล','Recipient');
   const apJurHtml=(certA||certB) ? `<div class="pd-page">
     <div class="ap-page-header">
       <div class="ap-page-title">ภาคผนวก ข — สำเนาหนังสือรับรองนิติบุคคล</div>
@@ -2081,71 +2027,18 @@ async function skipPaySkip(){
   if(!S.rowId){ toast('ยังไม่มีสัญญา — สร้างก่อน'); return; }
   const devKey=_devKey();
   toast('⚡ TEST: ขออนุมัติข้ามการชำระเงิน…');
-  const tried=[];
   try{
-    /* ── ทาง A: myip action:'content' + skip ──
-       ผ่านเมื่อ NDA_ALLOW_SKIP=1 (staging) หรือ dev_key ตรง NDA_DEV_KEY / ADMIN_PASSWORD */
-    const bodyA={action:'content', row_id:S.rowId, skip:true, turnstile_token:await _turnstileToken()};
-    if(devKey) bodyA.dev_key=devKey;
-    let jA={};
-    try{
-      const rA=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(bodyA)});
-      jA=await rA.json().catch(()=>({})); jA._status=rA.status;
-    }catch(e){ jA={code:'network_error'}; }
-    tried.push('myip/content+skip → '+(jA.code||jA._status||'?'));
-
-    if(jA && jA.ok && jA.clauses){
-      S.clauses=jA.clauses; S.docHash=jA.doc_hash; S.meta=jA.meta||S.meta; S.ndaType=jA.nda_type||S.ndaType;
-      return _skipDone();
-    }
-
-    /* ── ทาง B: create-payment-intent action:'dev_skip' ──
-       คนละ env กัน (DEV_SKIP_SECRET) — เขียน payment_completed ด้วย service_role
-       ใช้ได้บน production โดยไม่ต้องเปิด NDA_ALLOW_SKIP */
-    if(devKey){
-      let jB={};
-      try{
-        const rB=await fetch(JUSTSIGN_API+'/api/create-payment-intent',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({action:'dev_skip', product:'nda', contract_id:S.rowId, secret:devKey})});
-        jB=await rB.json().catch(()=>({})); jB._status=rB.status;
-      }catch(e){ jB={error:'network_error'}; }
-      tried.push('dev_skip → '+(jB.error||jB._status||'?'));
-      if(jB && jB.ok){
-        const ok=await loadFullContent();      // ตอนนี้ payment_completed=true แล้ว
-        if(ok) return _skipDone();
-        tried.push('content หลัง dev_skip ไม่ผ่าน');
-      }
-    } else {
-      tried.push('dev_skip → ข้าม (ไม่มีรหัส ?dev=)');
-    }
-
-    // ทั้งสองทางไม่ผ่าน — บอกสาเหตุจริงคาหน้าจอ ไม่ใช่ toast ที่หายไป
-    if(jA && jA.code==='bad_dev_key') _clearDevKey();   // ล้างเฉพาะตอนรหัสผิดจริง
-    _skipFail(tried, jA);
-  }catch(err){ _skipFail(tried.concat(['exception: '+(err.message||err)]), null); }
-}
-function _skipDone(){
-  S._skipPaid=true; S._paidAt=new Date().toISOString();
-  Promise.resolve()
-    .then(()=>S.tokens?null:genTokens())
-    .then(()=>markPaid('paid_test'))
-    .catch(()=>{})
-    .then(()=>{ renderReview(); go('review'); });
-}
-function _skipFail(tried,jA){
-  const msg=(jA&&(jA.message_th||jA.code))||'ไม่ทราบสาเหตุ';
-  const box=$('qrbox');
-  if(box) box.innerHTML=
-    `<div class="pay-status" style="color:var(--red);font-weight:600">ข้ามการชำระเงินไม่สำเร็จ</div>
-     <div class="mini" style="margin-top:6px;line-height:1.65;text-align:left">${esc(msg)}</div>
-     <div class="mono" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:left;line-height:1.7">${tried.map(t=>'· '+esc(t)).join('<br>')}</div>
-     <div class="mini" style="margin-top:10px;line-height:1.65;text-align:left">ต้องตั้งอย่างใดอย่างหนึ่งใน Vercel env:<br>
-       · <b>NDA_ALLOW_SKIP=1</b> (Preview เท่านั้น)<br>
-       · <b>NDA_DEV_KEY</b> หรือ <b>ADMIN_PASSWORD</b> ให้ตรงกับที่ใส่ใน <span class="mono">?dev=</span><br>
-       · <b>DEV_SKIP_SECRET</b> ให้ตรงกับที่ใส่ใน <span class="mono">?dev=</span></div>
-     <div class="btn-row" style="margin-top:12px"><button class="btn ghost sm" style="flex:1" onclick="startPayment()">← กลับไปหน้า QR</button></div>`;
-  toast('ข้ามไม่สำเร็จ: '+msg);
-  console.error('[NDA skip] ลำดับที่ลอง:', tried, jA);
+    // ให้ server ตัดสินเสมอ — ผ่านได้เมื่อ NDA_ALLOW_SKIP=1 หรือรหัส dev ถูกต้องเท่านั้น
+    let ok=await loadFullContent(null,true,devKey||undefined);
+    // รหัส dev ค้างเก่าใน localStorage ทำให้ถูกปฏิเสธ → ล้างแล้วลองใหม่แบบไม่ส่งรหัส
+    // (ถ้า deployment นี้ตั้ง NDA_ALLOW_SKIP=1 ไว้ รอบสองจะผ่าน)
+    if(!ok && devKey){ _clearDevKey(); toast('รหัส dev เดิมใช้ไม่ได้ — ลองใหม่โดยไม่ใช้รหัส…'); ok=await loadFullContent(null,true,undefined); }
+    if(!ok){ _clearDevKey(); toast('ข้ามไม่สำเร็จ — deployment นี้ยังไม่ได้ตั้ง NDA_ALLOW_SKIP=1'); return; }
+    S._skipPaid=true;
+    if(!S.tokens) await genTokens();
+    await markPaid('paid_test');
+    go('review');
+  }catch(err){ toast('error: '+(err.message||err)); }
 }
 
 /* ── โหมด dev — เปิดด้วย ?dev=<รหัส> · ปิดด้วย ?dev=off (แบบเดียวกับ index-sale) ──

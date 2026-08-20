@@ -255,7 +255,143 @@ input.bad{border-color:var(--red)}
 #printDoc.pd-render .apc-wm span{transform:rotate(-16deg);font-size:11px;font-weight:700;line-height:1.35;color:rgba(190,30,30,.72);background:rgba(255,255,255,.55);border-top:1.5px solid rgba(190,30,30,.5);border-bottom:1.5px solid rgba(190,30,30,.5);padding:5px 8px;text-align:center;width:118%;display:block}
 #printDoc.pd-render .apc-empty{border:1.5px dashed #d0ccc4;border-radius:12px;padding:28px;text-align:center;color:#aaa;font-size:13px}
 
+/* ══════════════════════════════════════════════════════════════════
+   EMPLOYMENT AGREEMENT LAYER — UX pattern เดียวกับ SignDee Notice
+   เพิ่มอย่างเดียว ไม่ลบ/ไม่แก้ CSS เดิมแม้แต่บรรทัดเดียว
+   ══════════════════════════════════════════════════════════════════ */
+
+/* ── EMPLOYMENT BAR (header ถาวร + timeline) ── */
+.embar{position:sticky;top:0;z-index:25;background:rgba(241,240,234,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:none}
+.embar.on{display:block}
+.embar-inner{max-width:960px;margin:0 auto;padding:12px 20px 10px}
+.eb-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.eb-brand{font-family:'Anuphan';font-size:11.5px;font-weight:800;letter-spacing:.10em;color:var(--text3)}
+.eb-brand span{color:var(--accent)}
+.eb-title{font-family:'Anuphan';font-size:17px;font-weight:700;margin-top:1px;letter-spacing:-.01em}
+.eb-right{text-align:right;flex:0 0 auto}
+.eb-no{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--text2)}
+.eb-status{display:inline-block;margin-top:5px;font-size:11.5px;font-weight:700;padding:3px 11px;border-radius:20px}
+.em-draft{background:var(--surf2);color:var(--text2)}
+.em-active{background:rgba(46,134,198,.12);color:var(--accent)}
+.em-wait{background:rgba(183,122,27,.12);color:#B77A1B}
+.em-done{background:rgba(26,127,90,.12);color:var(--green)}
+.eb-track{display:flex;gap:4px;margin-top:11px;overflow-x:auto;scrollbar-width:none}
+.eb-track::-webkit-scrollbar{display:none}
+.eb-node{flex:1 0 auto;min-width:78px;display:flex;flex-direction:column;align-items:center;gap:4px;opacity:.45}
+.eb-node.active,.eb-node.done{opacity:1}
+.eb-dot{width:20px;height:20px;border-radius:50%;background:var(--surf2);color:var(--text3);font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Anuphan'}
+.eb-node.active .eb-dot{background:var(--accent);color:#fff;box-shadow:0 0 0 4px rgba(46,134,198,.14)}
+.eb-node.done .eb-dot{background:var(--green);color:#fff}
+.eb-lb{font-size:10px;color:var(--text2);white-space:nowrap}
+/* Employment bar แทน progress เดิม — เหลือแค่ปุ่มย้อนกลับ ไม่ให้มี progress ซ้อน 3 ชั้น */
+.embar.on ~ .wrap .wgn{display:none!important}
+.embar.on ~ .topbar .progress-wrap{display:none}
+.embar.on ~ .topbar .topbar-inner{padding:9px 20px}
+
+/* ── EMPLOYMENT SUMMARY ── */
+.em-sum{display:none;position:sticky;top:0;z-index:24;max-width:960px;margin:0 auto;background:var(--white);border:1px solid var(--border);border-radius:0 0 16px 16px;box-shadow:var(--shadow)}
+.em-sum summary{padding:11px 20px;cursor:pointer;font-size:12.5px;font-weight:700;font-family:'Anuphan';color:var(--text2);list-style:none;letter-spacing:.04em}
+.em-sum summary::-webkit-details-marker{display:none}
+.em-sum summary::after{content:'▼';float:right;font-size:9px;color:var(--text3)}
+.em-sum[open] summary::after{content:'▲'}
+.es-body{padding:2px 20px 14px}
+.es-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--border);font-size:12.5px;color:var(--text3)}
+.es-row:last-child{border-bottom:none}
+.es-row b{color:var(--text);font-weight:600;text-align:right;word-break:break-word}
+@media(min-width:900px){
+  .em-sum{position:fixed;top:auto;bottom:20px;right:20px;left:auto;width:296px;border-radius:16px;margin:0;z-index:26}
+  .em-sum summary{padding:13px 18px}
+}
+
+/* ── CURRENT STEP (hero navy) ── */
+.hero-step{background:linear-gradient(160deg,#12203A,#0B1220);color:#fff;border-radius:22px;padding:24px 22px 22px;box-shadow:0 22px 46px -20px rgba(11,18,32,.55);margin:4px 0 20px;display:none}
+.hero-step.on{display:block}
+.hs-label{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.55);font-weight:700}
+.hs-num{font-family:'Anuphan';font-size:48px;font-weight:800;line-height:1;margin:6px 0 2px;background:linear-gradient(135deg,#8FD3F4,#2E86C6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hs-title{font-family:'Anuphan';font-size:21px;font-weight:700;letter-spacing:-.02em}
+.hs-meta{font-size:13.5px;color:rgba(255,255,255,.78);margin-top:7px;line-height:1.55}
+.hs-next{margin-top:14px;padding-top:13px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:rgba(255,255,255,.6)}
+
+/* ── SECTION CARD / ACCORDION ── */
+.fcard{background:var(--white);border:1px solid var(--border);border-radius:18px;padding:0;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden}
+.fcard>summary,.fcard-h{font-family:'Anuphan';font-weight:700;font-size:14.5px;padding:15px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;list-style:none;cursor:pointer}
+.fcard>summary::-webkit-details-marker{display:none}
+.fcard>summary::after{content:'▲';margin-left:auto;font-size:9px;color:var(--text3)}
+.fcard:not([open])>summary::after{content:'▼'}
+.fcard:not([open])>summary{border-bottom:none}
+.fh-n{flex:0 0 auto;width:22px;height:22px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.fh-tag{margin-left:auto;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--surf2);color:var(--text3)}
+.fcard>summary .fh-tag{margin-left:auto;margin-right:10px}
+.fcard-b{padding:4px 18px 18px}
+.fcard-b>.fl:first-child{margin-top:10px}
+
+/* ── SALARY SUMMARY (presentation ล้วน อ่านจาก S.emp) ── */
+.paysum{background:var(--bg);border-radius:16px;padding:15px 16px;margin-top:14px;box-shadow:inset 2px 2px 6px rgba(178,173,157,.30),inset -2px -2px 6px rgba(255,255,255,.9)}
+.ps-h{font-family:'Anuphan';font-weight:700;font-size:13px;color:var(--text2);margin-bottom:9px;letter-spacing:.03em}
+.ps-r{display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13.5px;color:var(--text2)}
+.ps-r b{color:var(--text);font-weight:600}
+.ps-total{display:flex;justify-content:space-between;gap:12px;margin-top:8px;padding-top:10px;border-top:1px solid var(--border2);font-family:'Anuphan';font-weight:700;font-size:15px}
+.ps-total b{color:var(--accent)}
+
+/* ── LEGAL NOTE (§18 — เก็บข้อความเดิมทุกตัวอักษร แค่จัดกล่องให้ไม่รก) ── */
+.legal-note{background:var(--white);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:12px;padding:12px 14px;margin-top:12px;font-size:12.5px;line-height:1.7;color:var(--text2)}
+.legal-note>summary{list-style:none;cursor:pointer;font-family:'Anuphan';font-weight:700;font-size:12.5px;color:var(--accent);display:flex;align-items:center;gap:6px}
+.legal-note>summary::-webkit-details-marker{display:none}
+.legal-note>summary::after{content:'▼';margin-left:auto;font-size:9px;color:var(--text3)}
+.legal-note[open]>summary::after{content:'▲'}
+.legal-note .ln-b{margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.legal-note.warn{border-left-color:#B77A1B}
+.legal-note.warn>summary{color:#8a5f16}
+
+/* ── TIMELINE แนวตั้ง (party signing status) ── */
+.tl-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--border)}
+.tl-item:last-child{border-bottom:none}
+.tl-dot{flex:0 0 34px;width:34px;height:34px;border-radius:50%;background:var(--surf2);color:var(--text3);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:'Anuphan';font-size:14px}
+.tl-item.done .tl-dot{background:var(--green);color:#fff}
+.tl-item.active .tl-dot{background:var(--accent);color:#fff}
+.tl-body{flex:1;min-width:0}
+.tl-title{font-weight:700;font-size:15px;font-family:'Anuphan'}
+.tl-desc{font-size:13px;color:var(--text2);margin-top:3px;line-height:1.55}
+.tl-meta{font-size:12px;color:var(--text3);margin-top:5px}
+
+/* ── REVIEW CARD ── */
+.rv-card{background:var(--white);border:1px solid var(--border);border-radius:16px;padding:15px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.rv-h{display:flex;align-items:center;gap:8px;font-family:'Anuphan';font-weight:700;font-size:14px;margin-bottom:8px}
+.rv-h .ok{color:var(--green)}
+.rv-edit{margin-left:auto;background:none;border:1px solid var(--border);border-radius:99px;padding:5px 13px;font-family:'Sarabun',sans-serif;font-size:12px;color:var(--accent);cursor:pointer;font-weight:600}
+.rv-b{font-size:13px;color:var(--text2);line-height:1.6}
+
+/* ── READING PROGRESS ── */
+.readbar{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:9px 13px;margin:14px 0 0;display:none}
+.readbar.on{display:block}
+.rb-top{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:5px}
+.rb-top b{font-family:'IBM Plex Mono';color:var(--accent)}
+.rb-bar{height:4px;background:var(--surf2);border-radius:99px;overflow:hidden}
+.rb-fill{height:100%;width:0;background:var(--green);border-radius:99px;transition:width .3s}
+
+/* ── STICKY CTA ── */
+.emcta{position:fixed;left:0;right:0;bottom:0;z-index:30;padding:14px 20px 20px;background:linear-gradient(transparent,var(--bg) 34%);display:none}
+.emcta.on{display:block}
+.emcta-inner{max-width:640px;margin:0 auto}
+.emcta button{width:100%;padding:16px;border:none;border-radius:99px;background:var(--primary);color:#fff;font-family:'Anuphan',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:var(--shadow-lg)}
+.emcta button[disabled]{opacity:.45;cursor:not-allowed}
+@media(min-width:900px){ .emcta{display:none!important} }
+
+/* ── EMPLOYER WORKSPACE (§16) ── */
+.ws-head{font-family:'Anuphan';font-weight:800;font-size:11.5px;letter-spacing:.11em;color:var(--text3);margin:26px 0 10px}
+.ws-card{display:flex;align-items:center;gap:14px;background:var(--white);border:1px solid var(--border);border-radius:16px;padding:15px 16px;margin-bottom:10px;cursor:pointer;box-shadow:var(--shadow);transition:.15s;width:100%;text-align:left;font-family:'Sarabun',sans-serif}
+.ws-card:active{transform:scale(.995)}
+.ws-ic{flex:0 0 auto;width:40px;height:40px;border-radius:12px;background:var(--accent-d);display:flex;align-items:center;justify-content:center;font-size:19px}
+.ws-t{font-family:'Anuphan';font-weight:700;font-size:14.5px;color:var(--text)}
+.ws-d{font-size:12.5px;color:var(--text2);margin-top:3px;line-height:1.5}
+.ws-arrow{margin-left:auto;color:var(--text3);font-size:16px;flex:0 0 auto}
+.ws-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.ws-stat{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:12px 8px;text-align:center;box-shadow:var(--shadow)}
+.ws-stat .n{font-family:'Anuphan';font-size:22px;font-weight:800;color:var(--accent);line-height:1.1}
+.ws-stat .l{font-size:10.5px;color:var(--text3);margin-top:3px;line-height:1.3}
+
 @media print{
+  .embar,.em-sum,.hero-step,.emcta,.readbar{display:none!important}
   #printDoc{position:static!important;left:0!important;width:auto!important}
   .pd-page{page-break-after:always;padding:40px}
   .pd-title,.cert-title{font-family:'Anuphan';font-weight:700;text-align:center}
@@ -339,6 +475,25 @@ input.bad{border-color:var(--red)}
 </head>
 <body>
 
+<!-- ══ EMPLOYMENT BAR ถาวร (แสดงทุก phase หลังเริ่มร่าง) ══ -->
+<div class="embar" id="embar">
+  <div class="embar-inner">
+    <div class="eb-top">
+      <div>
+        <div class="eb-brand">SIGNDEE <span>EMPLOYMENT</span></div>
+        <div class="eb-title">สัญญาจ้างงาน</div>
+      </div>
+      <div class="eb-right">
+        <div class="eb-no" id="ebNo">EMPLOYMENT —</div>
+        <div class="eb-status em-draft" id="ebStatus">กำลังจัดทำ</div>
+      </div>
+    </div>
+    <div class="eb-track" id="ebTrack"></div>
+  </div>
+</div>
+
+<details class="em-sum" id="emSum"><summary>EMPLOYMENT SUMMARY</summary><div class="es-body"></div></details>
+
 <div class="topbar" id="topbar" style="display:none">
   <div class="topbar-inner">
     <button class="back-btn" onclick="empBack()">&#8592;</button>
@@ -363,23 +518,40 @@ input.bad{border-color:var(--red)}
     <div class="brand-name">SignDee <span style="color:var(--blue)">สัญญาจ้าง</span></div>
   </div>
 
+  <!-- ══ CURRENT STEP — ตอบ 3 คำถาม: อยู่ตรงไหน / ต้องทำอะไร / ถัดไปคืออะไร ══ -->
+  <div class="hero-step" id="heroStep"></div>
+
   <!-- ══ LANDING ══ -->
   <section class="phase active" id="ph-landing">
     <div class="card">
-      <div class="q">สร้างสัญญาจ้างงานใน 2 ขั้นตอน</div>
-      <div class="sub">เลือกตำแหน่งงาน แล้วอัปโหลดบัตรประชาชนของนายจ้างและลูกจ้าง จากนั้นระบบจะจัดทำหนังสือสัญญาจ้างพร้อมรายละเอียดตำแหน่งงานแนบท้าย และ Legal Evidence Pack ให้อัตโนมัติ</div>
+      <div class="q">จ้างงานให้ชัด ตั้งแต่วันแรก</div>
+      <div class="sub">สร้างสัญญาจ้างพร้อมรายละเอียดตำแหน่ง หน้าที่ ค่าตอบแทน และเอกสารแนบท้าย พร้อมลงนามออนไลน์และเก็บหลักฐานในที่เดียว</div>
       <div class="feat" style="margin-left:0">
-        <div>&#10003; ร่างตาม พ.ร.บ.คุ้มครองแรงงาน พ.ศ. 2541</div>
-        <div>&#10003; เอกสารแนบท้าย ก. รายละเอียดตำแหน่งงาน</div>
-        <div>&#10003; เซ็นออนไลน์พร้อมใบรับรองอิเล็กทรอนิกส์</div>
+        <div>&#10003; สัญญาจ้าง ร่างตาม พ.ร.บ.คุ้มครองแรงงาน พ.ศ. 2541</div>
+        <div>&#10003; รายละเอียดตำแหน่งงาน (ขอบเขตงาน &middot; คุณสมบัติ &middot; KPI)</div>
+        <div>&#10003; เอกสารแนบท้าย ก.</div>
+        <div>&#10003; ลงนามออนไลน์ทั้งสองฝ่าย</div>
+        <div>&#10003; Evidence Pack + ใบรับรองการลงนาม</div>
       </div>
-      <button class="btn" onclick="go('step1')">เริ่มสร้างสัญญา &#8594;</button>
+      <button class="btn" onclick="go('step1')">สร้าง Employment Agreement &#8594;</button>
       <div class="secnote">&#128274; ข้อมูลเข้ารหัส &middot; ตามกฎหมาย PDPA</div>
-      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
-        <div class="mini" style="margin-bottom:8px">เครื่องมือสำหรับนายจ้าง</div>
-        <button class="btn ghost" onclick="go('dash')">แดชบอร์ดนายจ้าง &#8594;</button>
-        <button class="btn ghost" onclick="go('sso')">คำนวณและนำส่งเงินสมทบประกันสังคม &#8594;</button>
-      </div>
+
+      <!-- ══ EMPLOYER WORKSPACE — แยกออกจาก flow สร้างสัญญาชัดเจน (§16/§17) ══ -->
+      <div class="ws-head">EMPLOYER WORKSPACE</div>
+      <div class="ws-stats" id="wsStats"></div>
+      <button class="ws-card" type="button" onclick="go('dash')">
+        <span class="ws-ic">&#128202;</span>
+        <span><span class="ws-t">ภาพรวม &middot; สัญญาจ้าง &middot; ลูกจ้าง</span>
+              <span class="ws-d">สรุปสัญญาทั้งหมด สถานะการลงนาม และสิ่งที่ต้องทำ</span></span>
+        <span class="ws-arrow">&#8594;</span>
+      </button>
+      <div class="ws-head">EMPLOYER TOOLS</div>
+      <button class="ws-card" type="button" onclick="go('sso')">
+        <span class="ws-ic">&#129534;</span>
+        <span><span class="ws-t">ประกันสังคม</span>
+              <span class="ws-d">คำนวณ &middot; เตรียมไฟล์ &middot; เตือนกำหนดส่ง</span></span>
+        <span class="ws-arrow">&#8594;</span>
+      </button>
     </div>
   </section>
 
@@ -465,8 +637,8 @@ input.bad{border-color:var(--red)}
   <section class="phase" id="ph-step1">
     <div class="card">
       <div class="dots"><span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
-      <div class="q">ตำแหน่งงานอะไร</div>
-      <div class="sub">พิมพ์หรือเลือกตำแหน่ง &mdash; ระบบจะร่างขอบเขตงาน คุณสมบัติ และตัวชี้วัดให้ แก้ไขได้ทุกบรรทัด</div>
+      <div class="q">ตำแหน่งงาน</div>
+      <div class="sub">กำหนดบทบาท หน้าที่ และความคาดหวังของตำแหน่ง &mdash; ระบบจะร่างขอบเขตงาน คุณสมบัติ และตัวชี้วัดให้ แก้ไขได้ทุกบรรทัด</div>
       <div class="combo">
         <input type="text" id="posInput" autocomplete="off" placeholder="เช่น พนักงานขาย, Software Engineer" oninput="posSearch(this.value)" onfocus="posSearch(this.value)">
         <div class="combo-list" id="posList" style="display:none"></div>
@@ -484,73 +656,108 @@ input.bad{border-color:var(--red)}
       <div class="q">รายละเอียดการจ้าง</div>
       <div class="sub">กรอกเท่าที่จำเป็น &mdash; เงื่อนไขตามกฎหมายแรงงานระบบใส่ให้อัตโนมัติ</div>
 
-      <label class="fl">ประเภทการจ้าง</label>
-      <div class="pills" id="etPills"></div>
-      <div id="etWarn"></div>
+      <details class="fcard" open>
+        <summary><span class="fh-n">1</span>&#128176; ค่าตอบแทน</summary>
+        <div class="fcard-b">
+          <label class="fl">เงินเดือน (บาท/เดือน)</label>
+          <input type="text" id="salary" inputmode="numeric" placeholder="เช่น 25000" oninput="onSalary(this.value)">
+          <div id="wageWarn"></div>
 
-      <label class="fl">เงินเดือน (บาท/เดือน)</label>
-      <input type="text" id="salary" inputmode="numeric" placeholder="เช่น 25000" oninput="onSalary(this.value)">
-      <div id="wageWarn"></div>
+          <div id="moreMoneyBtn"><button class="btn ghost sm" type="button" onclick="showMoreMoney()">+ เพิ่มเงินได้อื่น (ค่าตำแหน่ง / โบนัส)</button></div>
+          <div id="moreMoney" style="display:none">
+            <label class="fl">ค่าตำแหน่ง / ค่าครองชีพ (บาท/เดือน)</label>
+            <input type="text" id="allowance" inputmode="numeric" placeholder="0" oninput="_updS1b()">
+            <label class="fl">โบนัส</label>
+            <input type="text" id="bonus" placeholder="เช่น ตามผลประกอบการ ปีละ 1 ครั้ง" oninput="_updS1b()">
+          </div>
 
-      <div id="moreMoneyBtn"><button class="btn ghost sm" type="button" onclick="showMoreMoney()">+ เพิ่มเงินได้อื่น (ค่าตำแหน่ง / โบนัส)</button></div>
-      <div id="moreMoney" style="display:none">
-        <label class="fl">ค่าตำแหน่ง / ค่าครองชีพ (บาท/เดือน)</label>
-        <input type="text" id="allowance" inputmode="numeric" placeholder="0" oninput="_updS1b()">
-        <label class="fl">โบนัส</label>
-        <input type="text" id="bonus" placeholder="เช่น ตามผลประกอบการ ปีละ 1 ครั้ง" oninput="_updS1b()">
-      </div>
+          <label class="fl">วันจ่ายค่าจ้าง</label>
+          <input type="text" id="payday" value="ภายในวันที่ 5 ของทุกเดือน" oninput="_updS1b()">
 
-      <label class="fl">ระยะทดลองงาน</label>
-      <div class="pills" id="pbPills"></div>
-      <input type="text" id="pbCustom" inputmode="numeric" placeholder="ระบุจำนวนวัน (1&ndash;180)" style="display:none;margin-top:8px" oninput="_updS1b()">
-      <div class="mini" style="margin-top:8px;line-height:1.65;padding:11px 13px;background:var(--surf2);border-radius:12px">
-        <b>หมายเหตุ:</b> การทดลองงานไม่ตัดสิทธิค่าชดเชย &mdash; หากลูกจ้างทำงานติดต่อกันครบ <b>120 วัน</b> ขึ้นไปแล้วถูกเลิกจ้างโดยลูกจ้างไม่มีความผิด
-        นายจ้างต้องจ่ายค่าชดเชยไม่น้อยกว่าค่าจ้างอัตราสุดท้าย <b>30 วัน</b> (ประมาณ 1 เดือน) ตามมาตรา 118 พ.ร.บ.คุ้มครองแรงงาน
-        <br>ผู้ประกอบการส่วนใหญ่จึงกำหนดระยะทดลองงานไว้ที่ 119 วัน
-      </div>
-
-      <label class="fl">วันทำงาน</label>
-      <div class="pills" id="wdPresets"></div>
-      <div class="pills" id="wdPills" style="display:none"></div>
-
-      <div class="row">
-        <div><label class="fl">เวลาเข้างาน</label>
-          <div class="timepick"><select id="wStartH" onchange="_updS1b()"></select><span>:</span><select id="wStartM" onchange="_updS1b()"></select><span class="hh">น.</span></div>
+          <div class="paysum" id="paySum"></div>
         </div>
-        <div><label class="fl">เวลาเลิกงาน</label>
-          <div class="timepick"><select id="wEndH" onchange="_updS1b()"></select><span>:</span><select id="wEndM" onchange="_updS1b()"></select><span class="hh">น.</span></div>
+      </details>
+
+      <details class="fcard" open>
+        <summary><span class="fh-n">2</span>&#128197; ระยะเวลาการจ้าง</summary>
+        <div class="fcard-b">
+          <label class="fl">ประเภทการจ้าง</label>
+          <div class="pills" id="etPills"></div>
+          <div id="etWarn"></div>
+
+          <label class="fl">วันเริ่มงาน</label>
+          <input type="date" id="startDate" onchange="_updS1b()">
+          <div class="mini" id="startDateTh" style="margin-top:5px"></div>
+
+          <label class="fl">ระยะทดลองงาน</label>
+          <div class="pills" id="pbPills"></div>
+          <input type="text" id="pbCustom" inputmode="numeric" placeholder="ระบุจำนวนวัน (1&ndash;180)" style="display:none;margin-top:8px" oninput="_updS1b()">
+
+          <details class="legal-note" open>
+            <summary>&#9878; ข้อควรรู้ &mdash; ทดลองงานกับค่าชดเชย</summary>
+            <div class="ln-b">
+              การทดลองงานไม่ตัดสิทธิค่าชดเชย &mdash; หากลูกจ้างทำงานติดต่อกันครบ <b>120 วัน</b> ขึ้นไปแล้วถูกเลิกจ้างโดยลูกจ้างไม่มีความผิด
+              นายจ้างต้องจ่ายค่าชดเชยไม่น้อยกว่าค่าจ้างอัตราสุดท้าย <b>30 วัน</b> (ประมาณ 1 เดือน) ตามมาตรา 118 พ.ร.บ.คุ้มครองแรงงาน
+              <br>ผู้ประกอบการส่วนใหญ่จึงกำหนดระยะทดลองงานไว้ที่ 119 วัน
+            </div>
+          </details>
         </div>
-      </div>
-      <div id="hourWarn"></div>
+      </details>
 
-      <label class="fl">สถานที่ทำงาน</label>
-      <input type="text" id="wLoc" placeholder="เช่น สำนักงานใหญ่ ถ.สุขุมวิท กรุงเทพฯ" oninput="_updS1b()">
-      <div class="chips" id="locChips"></div>
+      <details class="fcard" open>
+        <summary><span class="fh-n">3</span>&#128336; เวลาทำงาน</summary>
+        <div class="fcard-b">
+          <label class="fl">วันทำงาน</label>
+          <div class="pills" id="wdPresets"></div>
+          <div class="pills" id="wdPills" style="display:none"></div>
 
-      <label class="pdpa" style="margin-top:12px"><input type="checkbox" id="optClientSite" onchange="toggleClientSite()">
-        <span>ลูกจ้างไปปฏิบัติงานประจำที่สถานประกอบการของลูกค้า/หน่วยงานอื่น</span></label>
-      <div id="clientSiteBox" style="display:none">
-        <input type="text" id="clientSite" placeholder="ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน" oninput="_updS1b()">
-        <div class="warnrow" style="margin-top:8px">&#9888; ลูกจ้างรับเหมาค่าแรงต้องได้รับสิทธิประโยชน์และสวัสดิการที่เป็นธรรมโดยไม่เลือกปฏิบัติ ตามมาตรา 11/1 พ.ร.บ.คุ้มครองแรงงาน</div>
-      </div>
+          <div class="row">
+            <div><label class="fl">เวลาเข้างาน</label>
+              <div class="timepick"><select id="wStartH" onchange="_updS1b()"></select><span>:</span><select id="wStartM" onchange="_updS1b()"></select><span class="hh">น.</span></div>
+            </div>
+            <div><label class="fl">เวลาเลิกงาน</label>
+              <div class="timepick"><select id="wEndH" onchange="_updS1b()"></select><span>:</span><select id="wEndM" onchange="_updS1b()"></select><span class="hh">น.</span></div>
+            </div>
+          </div>
+          <div id="hourWarn"></div>
+        </div>
+      </details>
 
-      <label class="fl">วันเริ่มงาน</label>
-      <input type="date" id="startDate" onchange="_updS1b()">
-      <div class="mini" id="startDateTh" style="margin-top:5px"></div>
+      <details class="fcard" open>
+        <summary><span class="fh-n">4</span>&#128205; สถานที่ทำงาน</summary>
+        <div class="fcard-b">
+          <label class="fl">สถานที่ทำงาน</label>
+          <input type="text" id="wLoc" placeholder="เช่น สำนักงานใหญ่ ถ.สุขุมวิท กรุงเทพฯ" oninput="_updS1b()">
+          <div class="chips" id="locChips"></div>
 
-      <label class="fl">วันจ่ายค่าจ้าง</label>
-      <input type="text" id="payday" value="ภายในวันที่ 5 ของทุกเดือน" oninput="_updS1b()">
+          <label class="pdpa" style="margin-top:12px"><input type="checkbox" id="optClientSite" onchange="toggleClientSite()">
+            <span>ลูกจ้างไปปฏิบัติงานประจำที่สถานประกอบการของลูกค้า/หน่วยงานอื่น</span></label>
+          <div id="clientSiteBox" style="display:none">
+            <input type="text" id="clientSite" placeholder="ชื่อหน่วยงาน / สถานที่ปฏิบัติงาน" oninput="_updS1b()">
+            <div class="legal-note warn" style="display:block">
+              &#9888; ลูกจ้างรับเหมาค่าแรงต้องได้รับสิทธิประโยชน์และสวัสดิการที่เป็นธรรมโดยไม่เลือกปฏิบัติ ตามมาตรา 11/1 พ.ร.บ.คุ้มครองแรงงาน
+            </div>
+          </div>
+        </div>
+      </details>
 
-      <label class="pdpa" style="margin-top:14px"><input type="checkbox" id="optRestrict" onchange="toggleRestrict()">
-        <span>เพิ่มข้อจำกัดหลังพ้นสภาพการเป็นลูกจ้าง</span></label>
-      <div id="restrictBox" style="display:none">
-        <div class="pills" id="rsPills"></div>
-        <input type="text" id="rsArea" placeholder="เขตพื้นที่ เช่น จังหวัดลำปาง" style="display:none;margin-top:8px" oninput="_updS1b()">
-        <div class="warnrow" style="margin-top:8px">&#9888; ข้อจำกัดหลังพ้นสภาพต้องมีขอบเขตที่สมเหตุสมผล ศาลอาจลดขอบเขตลงตาม พ.ร.บ.ว่าด้วยข้อสัญญาที่ไม่เป็นธรรม พ.ศ. 2540</div>
-      </div>
+      <details class="fcard">
+        <summary><span class="fh-n">5</span>&#128203; เงื่อนไขเพิ่มเติม<span class="fh-tag">ไม่บังคับ</span></summary>
+        <div class="fcard-b">
+          <label class="pdpa" style="margin-top:10px"><input type="checkbox" id="optRestrict" onchange="toggleRestrict()">
+            <span>เพิ่มข้อจำกัดหลังพ้นสภาพการเป็นลูกจ้าง</span></label>
+          <div id="restrictBox" style="display:none">
+            <div class="pills" id="rsPills"></div>
+            <input type="text" id="rsArea" placeholder="เขตพื้นที่ เช่น จังหวัดลำปาง" style="display:none;margin-top:8px" oninput="_updS1b()">
+            <div class="legal-note warn" style="display:block">
+              &#9888; ข้อจำกัดหลังพ้นสภาพต้องมีขอบเขตที่สมเหตุสมผล ศาลอาจลดขอบเขตลงตาม พ.ร.บ.ว่าด้วยข้อสัญญาที่ไม่เป็นธรรม พ.ศ. 2540
+            </div>
+          </div>
+        </div>
+      </details>
 
       <div class="sumline" id="sumline"></div>
-      <button class="btn" id="s1bnext" onclick="step1bNext()" disabled>ถัดไป &#8594;</button>
+      <button class="btn" id="s1bnext" onclick="step1bNext()" disabled>ถัดไป &#8594; คู่สัญญา</button>
     </div>
   </section>
 
@@ -558,34 +765,42 @@ input.bad{border-color:var(--red)}
   <section class="phase" id="ph-step2">
     <div class="card">
       <div class="dots"><span class="dot done"></span><span class="dot done"></span><span class="dot on"></span></div>
-      <div class="q">อัปโหลดบัตรประชาชนทั้งสองฝ่าย</div>
-      <div class="sub">ถ่ายด้านหน้าบัตร &mdash; ระบบจะอ่านข้อมูลให้ ตรวจแก้ได้ก่อนไปต่อ</div>
+      <div class="q">คู่สัญญา</div>
+      <div class="sub">ระบุนายจ้างและลูกจ้างที่อยู่ภายใต้สัญญา &mdash; ถ่ายด้านหน้าบัตร ระบบจะอ่านข้อมูลให้ ตรวจแก้ได้ก่อนไปต่อ</div>
 
-      <div class="party-h">นายจ้าง <span>&mdash; ผู้ว่าจ้าง</span></div>
-      <label class="pdpa" style="margin-top:10px"><input type="checkbox" id="jur_A" onchange="toggleJuristic('A')">
-        <span>นายจ้างเป็นนิติบุคคล (บริษัท / ห้างหุ้นส่วน / สมาคม)</span></label>
-      <div class="ocrbox" id="jurBox_A" style="display:none"></div>
-      <div class="drop" id="dropA" onclick="pickCard('A')">
-        <div class="ic">&#128247;</div><div class="t">ถ่าย / เลือกรูปบัตรประชาชน</div><div class="s">ด้านหน้าเท่านั้น</div>
+      <div class="fcard" style="padding:0">
+        <div class="fcard-h"><span class="fh-n">1</span>&#128084; นายจ้าง<span class="fh-tag">ผู้ว่าจ้าง</span></div>
+        <div class="fcard-b">
+          <label class="pdpa" style="margin-top:10px"><input type="checkbox" id="jur_A" onchange="toggleJuristic('A')">
+            <span>นายจ้างเป็นนิติบุคคล (บริษัท / ห้างหุ้นส่วน / สมาคม)</span></label>
+          <div class="ocrbox" id="jurBox_A" style="display:none"></div>
+          <div class="drop" id="dropA" onclick="pickCard('A')">
+            <div class="ic">&#128247;</div><div class="t">ถ่าย / เลือกรูปบัตรประชาชน</div><div class="s">ด้านหน้าเท่านั้น</div>
+          </div>
+          <img class="thumb" id="thumbA" style="display:none">
+          <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" type="button" onclick="manualCard('A')">หรือกรอกข้อมูลเอง (ไม่มีรูปบัตร)</button></div>
+          <div class="ocrbox" id="ocrA" style="display:none"></div>
+        </div>
       </div>
-      <img class="thumb" id="thumbA" style="display:none">
-      <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" type="button" onclick="manualCard('A')">หรือกรอกข้อมูลเอง (ไม่มีรูปบัตร)</button></div>
-      <div class="ocrbox" id="ocrA" style="display:none"></div>
 
-      <div class="party-h">ลูกจ้าง <span>&mdash; ผู้รับจ้าง</span></div>
-      <div class="drop" id="dropB" onclick="pickCard('B')">
-        <div class="ic">&#128247;</div><div class="t">ถ่าย / เลือกรูปบัตรประชาชน</div><div class="s">ด้านหน้าเท่านั้น</div>
+      <div class="fcard" style="padding:0">
+        <div class="fcard-h"><span class="fh-n">2</span>&#128100; ลูกจ้าง<span class="fh-tag">ผู้รับจ้าง</span></div>
+        <div class="fcard-b">
+          <div class="drop" id="dropB" onclick="pickCard('B')" style="margin-top:12px">
+            <div class="ic">&#128247;</div><div class="t">ถ่าย / เลือกรูปบัตรประชาชน</div><div class="s">ด้านหน้าเท่านั้น</div>
+          </div>
+          <img class="thumb" id="thumbB" style="display:none">
+          <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" type="button" onclick="manualCard('B')">หรือกรอกข้อมูลเอง (ไม่มีรูปบัตร)</button></div>
+          <div class="ocrbox" id="ocrB" style="display:none"></div>
+        </div>
       </div>
-      <img class="thumb" id="thumbB" style="display:none">
-      <div style="text-align:center;margin-top:8px"><button class="btn ghost sm" type="button" onclick="manualCard('B')">หรือกรอกข้อมูลเอง (ไม่มีรูปบัตร)</button></div>
-      <div class="ocrbox" id="ocrB" style="display:none"></div>
 
       <input type="file" id="fileInput" accept="image/*" capture="environment" style="display:none">
       <input type="file" id="certInput" accept="image/*" style="display:none">
       <div class="secnote">&#128274; รูปถูกเข้ารหัสและลบอัตโนมัติใน 60 วัน</div>
       <label class="pdpa"><input type="checkbox" id="pdpa" onchange="_updS2()">
         <span>ข้าพเจ้ายินยอมให้ประมวลผลข้อมูลบัตรประชาชนเพื่อจัดทำสัญญา ตามนโยบายความเป็นส่วนตัว</span></label>
-      <button class="btn" id="s2next" onclick="step2Generate()" disabled>สร้างสัญญา</button>
+      <button class="btn" id="s2next" onclick="step2Generate()" disabled>สร้าง Employment Agreement</button>
     </div>
   </section>
 
@@ -604,9 +819,9 @@ input.bad{border-color:var(--red)}
     <div class="doc" id="docPreview"></div>
     <div class="paywall">
       <div class="spark">&#10024;</div>
-      <h3>สัญญาจ้างของคุณพร้อมแล้ว</h3>
+      <h3>เปิดใช้งาน Employment Agreement</h3>
       <div class="mini">ปลดล็อกสัญญาฉบับเต็ม พร้อมเอกสารแนบท้าย ก., Evidence Pack และส่งเซ็นทางไกล</div>
-      <div class="price">&#3647;790</div>
+      <div class="price" id="payPrice1">&#3647;790</div>
       <div class="per">ครั้งเดียว ต่อสัญญา</div>
       <div class="feat">
         <div><b>&#10003;</b> หนังสือสัญญาจ้าง ตาม พ.ร.บ.คุ้มครองแรงงาน</div>
@@ -615,14 +830,14 @@ input.bad{border-color:var(--red)}
         <div><b>&#10003;</b> ส่งเซ็นทางไกล 2 ฝ่าย</div>
         <div><b>&#10003;</b> ใบรับรอง + SHA-256 &middot; ดาวน์โหลด PDF ไม่จำกัด</div>
       </div>
-      <button class="btn" onclick="go('pay')">ปลดล็อกสัญญาฉบับเต็ม</button>
+      <button class="btn" id="unlockBtn" onclick="go('pay')">ชำระ <span id="payPrice3">&#3647;790</span> และเปิดใช้งานสัญญา &#8594;</button>
     </div>
   </section>
 
   <!-- ══ PAYMENT ══ -->
   <section class="phase" id="ph-pay">
     <div class="card">
-      <div class="q" style="text-align:center">ชำระเงิน &#3647;790</div>
+      <div class="q" style="text-align:center">เปิดใช้งาน Employment Agreement <span id="payPrice2">&#3647;790</span></div>
       <div class="sub" style="text-align:center">สแกน PromptPay เพื่อชำระ</div>
       <div class="qrbox" id="qrbox"><div class="pay-status">กำลังสร้าง QR&hellip;</div></div>
       <div class="pay-status" id="payStatus"></div>
@@ -634,9 +849,14 @@ input.bad{border-color:var(--red)}
   <!-- ══ REVIEW ══ -->
   <section class="phase" id="ph-review">
     <div class="card">
-      <div class="q">ตรวจสอบสัญญา</div>
+      <div class="q">ตรวจสอบ Employment Agreement</div>
       <div class="sub" id="reviewSub">อ่านให้ครบทุกข้อ ตรวจข้อมูลก่อนส่งเซ็น</div>
+      <div id="reviewCards"></div>
       <div id="reviewParties"></div>
+      <div class="readbar" id="readBarR">
+        <div class="rb-top"><span class="rb-msg">เลื่อนอ่านให้ครบทุกข้อก่อนลงนาม</span><b class="rb-n">0 / 0</b></div>
+        <div class="rb-bar"><div class="rb-fill"></div></div>
+      </div>
       <div class="doc" id="docFull" style="margin-top:14px"></div>
       <label class="fl">คุณคือคู่สัญญาฝ่ายไหน?</label>
       <div class="pills" id="rolePills">
@@ -666,10 +886,10 @@ input.bad{border-color:var(--red)}
   <!-- ══ STATUS ══ -->
   <section class="phase" id="ph-status">
     <div class="card">
-      <div class="q">ส่งลิงก์ให้อีกฝ่ายเซ็น</div>
-      <div class="sub">คัดลอกลิงก์ส่งทาง LINE / SMS ให้คู่สัญญาที่ต้องเซ็นทางไกล</div>
+      <div class="q">สถานะการลงนาม</div>
+      <div class="sub">ส่งลิงก์ให้อีกฝ่ายลงนาม ระบบจะอัปเดตสถานะให้อัตโนมัติ</div>
+      <div style="margin-bottom:6px" id="statusList"></div>
       <div id="linkCards"></div>
-      <div style="margin-top:18px" id="statusList"></div>
       <button class="btn" id="doneBtn" onclick="go('done')" style="display:none">ไปหน้าดาวน์โหลด &#8594;</button>
     </div>
   </section>
@@ -677,8 +897,12 @@ input.bad{border-color:var(--red)}
   <!-- ══ REMOTE SIGN ══ -->
   <section class="phase" id="ph-remote">
     <div class="card">
-      <div class="q" id="rmTitle">ลงนามหนังสือสัญญาจ้าง</div>
+      <div class="q" id="rmTitle">ลงนาม Employment Agreement</div>
       <div class="sub" id="rmSub"></div>
+      <div class="readbar" id="readBarM">
+        <div class="rb-top"><span class="rb-msg">เลื่อนอ่านให้ครบทุกข้อก่อนลงนาม</span><b class="rb-n">0 / 0</b></div>
+        <div class="rb-bar"><div class="rb-fill"></div></div>
+      </div>
       <div class="doc" id="rmDoc"></div>
       <div id="rmLineBox"></div>
       <label class="pdpa" style="margin-top:14px"><input type="checkbox" id="rmConsent" onchange="_updRemote()">
@@ -694,13 +918,30 @@ input.bad{border-color:var(--red)}
   <!-- ══ DONE ══ -->
   <section class="phase" id="ph-done">
     <div class="card">
-      <div class="q" style="text-align:center">ลงนามครบทั้งสองฝ่ายแล้ว</div>
+      <div style="font-size:44px">&#127881;</div>
+      <div class="q" style="text-align:center">สัญญาจ้างเสร็จสมบูรณ์</div>
       <div class="sub" style="text-align:center">เลขที่ใบรับรอง <span class="mono" id="certNoDisp">&mdash;</span></div>
+      <div class="feat" style="margin:0 auto 8px;max-width:270px">
+        <div><b>&#10003;</b> นายจ้างลงนามแล้ว</div>
+        <div><b>&#10003;</b> ลูกจ้างลงนามแล้ว</div>
+        <div><b>&#10003;</b> Timestamp recorded</div>
+        <div><b>&#10003;</b> Signing evidence recorded</div>
+      </div>
+      <div class="ws-head" style="text-align:left">DOCUMENT PACK</div>
+      <div class="feat" style="margin-left:0">
+        <div><b>&#10003;</b> สัญญาจ้าง</div>
+        <div><b>&#10003;</b> เอกสารแนบท้าย ก. รายละเอียดตำแหน่งงาน</div>
+        <div><b>&#10003;</b> ใบรับรองการลงนาม</div>
+        <div><b>&#10003;</b> ภาคผนวกบัตรประชาชน</div>
+      </div>
       <button class="btn" id="dlBtn" onclick="buildEvidencePDF()">ดาวน์โหลด PDF ฉบับสมบูรณ์</button>
-      <div class="secnote">ไฟล์ประกอบด้วย สัญญาจ้าง &middot; เอกสารแนบท้าย ก. &middot; ใบรับรองการลงนาม &middot; ภาคผนวกบัตรประชาชน</div>
+      <div class="secnote">ไฟล์เดียวรวมทั้ง 4 ส่วน &mdash; สัญญาจ้าง &middot; เอกสารแนบท้าย ก. &middot; ใบรับรองการลงนาม &middot; ภาคผนวกบัตรประชาชน</div>
     </div>
   </section>
 </div>
+
+<!-- ══ STICKY CTA — mirror ปุ่มจริงของ phase ปัจจุบัน (ไม่ซ้อน onclick เดิม) ══ -->
+<div class="emcta" id="emCta"><div class="emcta-inner"><button type="button" id="emCtaBtn"></button></div></div>
 
 <div id="printDoc"></div>
 <div class="toast" id="toast"></div>
@@ -869,6 +1110,215 @@ function _empChrome(name){
     el.classList.toggle('done', idx>=0 && idx<i);
     el.classList.toggle('active', idx===i);
   });
+  emRefresh();                      // ← EMPLOYMENT LAYER (presentation อย่างเดียว)
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EMPLOYMENT AGREEMENT LAYER — Header / Timeline / Summary / Current Step /
+   Sticky CTA / Reading progress
+   กฎเหล็ก: ทุกอย่างในบล็อกนี้ "อ่าน" state เดิม (S, window._empPhase) เท่านั้น
+            ไม่เขียน state, ไม่เรียก API, ไม่แตะ business logic ใด ๆ
+   ══════════════════════════════════════════════════════════════════════════ */
+const EM_NODES = ['ตำแหน่งงาน','รายละเอียดการจ้าง','คู่สัญญา','ตรวจสอบ','เปิดใช้งาน','อ่านสัญญา','ลงนาม','เสร็จสมบูรณ์'];
+/* map ตาม flow จริงของหน้านี้ (preview → pay → review) ห้ามสลับลำดับ phase เดิม */
+const EM_PHASE_NODE = { step1:0, step1b:1, step2:2, proc:2, preview:3, pay:4, review:5, sign:6, status:6, remote:6, done:7 };
+
+/* จ่ายแล้วหรือยัง — ดูจากร่องรอยที่ระบบเดิมทิ้งไว้ ไม่สร้าง flag ใหม่
+   ก่อนจ่าย server ส่ง decoy ที่มี 🔒 มาให้เสมอ */
+function _emPaid(){
+  if(S._paidAt) return true;
+  try{ if(S.rowId && localStorage.getItem('emp_paid_at_'+S.rowId)) return true; }catch(_){}
+  const c3 = S.clauses && S.clauses.c3;
+  return !!(c3 && String(c3).indexOf('🔒') === -1);
+}
+function _emInFlow(){ return EM_PHASE_NODE[window._empPhase] !== undefined; }
+function _emBothSigned(){ return !!(S.sig && S.sig.a && S.sig.b); }
+function emStatus(){
+  if(_emBothSigned()) return { label:'✅ เสร็จสมบูรณ์', cls:'em-done' };
+  if(_emPaid() && (S.sig&&(S.sig.a||S.sig.b))) return { label:'🟡 รอการลงนาม', cls:'em-wait' };
+  if(_emPaid()) return { label:'🔵 เปิดใช้งานแล้ว', cls:'em-active' };
+  return { label:'🟡 กำลังจัดทำ', cls:'em-draft' };
+}
+function emNodeStates(){
+  const cur = EM_PHASE_NODE[window._empPhase];
+  const last = EM_NODES.length - 1;
+  const reached = Math.max((cur === undefined ? 0 : cur), _emPaid() ? 4 : 0, _emBothSigned() ? last : 0);
+  return EM_NODES.map((_,n)=>{
+    if(n < reached) return 'done';
+    if(n === reached) return (_emBothSigned() && n === last) ? 'done' : 'active';
+    return '';
+  });
+}
+function emNo(){
+  const cn = S.contractNo || (S.meta && S.meta.contract_no) || '';
+  if(cn) return 'EMPLOYMENT ' + cn;
+  return S.rowId ? ('EMPLOYMENT #' + String(S.rowId).slice(0,8).toUpperCase()) : 'EMPLOYMENT · ร่างใหม่';
+}
+function renderEmploymentBar(){
+  const bar = document.getElementById('embar'); if(!bar) return;
+  const show = _emInFlow();
+  bar.classList.toggle('on', show);
+  if(!show) return;
+  const nEl = document.getElementById('ebNo'); if(nEl) nEl.textContent = emNo();
+  const st = emStatus(), sEl = document.getElementById('ebStatus');
+  if(sEl){ sEl.textContent = st.label; sEl.className = 'eb-status ' + st.cls; }
+  const states = emNodeStates(), tr = document.getElementById('ebTrack');
+  if(!tr) return;
+  tr.innerHTML = EM_NODES.map((t,i)=>
+    `<div class="eb-node ${states[i]||''}"><span class="eb-dot">${states[i]==='done'?'✓':(i+1)}</span><span class="eb-lb">${esc(t)}</span></div>`
+  ).join('');
+  const act = tr.querySelector('.eb-node.active');
+  if(act) tr.scrollLeft = Math.max(0, act.offsetLeft - tr.clientWidth/2 + act.offsetWidth/2);
+}
+function _emMoney(n){ return _fmtInt(Number(n)||0); }
+function renderEmploymentSummary(){
+  const el = document.getElementById('emSum'); if(!el) return;
+  const show = _emInFlow() && !!(S.position || S.rowId);
+  el.style.display = show ? 'block' : 'none';
+  if(!show) return;
+  const e = S.emp || {};
+  const nameA = (S.meta && S.meta.a && S.meta.a.name) || S.parties.a
+             || ((S.jur.A && S.jur.A.on && S.jur.A.name) || '') || '—';
+  const nameB = (S.meta && S.meta.b && S.meta.b.name) || S.parties.b || '—';
+  const rows = [
+    ['Employment ID', S.contractNo || (S.rowId ? String(S.rowId).slice(0,8).toUpperCase() : '—')],
+    ['ตำแหน่ง', (S.position && (S.position.th || S.position.en)) || '—'],
+    ['นายจ้าง', nameA],
+    ['ลูกจ้าง', nameB],
+    ['เงินเดือน', e.salary > 0 ? ('฿' + _emMoney(e.salary) + ' / เดือน') : '—'],
+    ['วันเริ่มงาน', e.startDate ? _thDate(e.startDate) : '—'],
+    ['ทดลองงาน', e.probation ? (e.probation + ' วัน') : 'ไม่มี'],
+    ['สถานะ', emStatus().label],
+  ];
+  el.querySelector('.es-body').innerHTML = rows.map(r =>
+    `<div class="es-row"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('');
+}
+
+const EM_STEP_INFO = {
+  step1:  { n:'01', t:'ตำแหน่งงาน',            d:'กำหนดบทบาท หน้าที่ และความคาดหวังของตำแหน่ง' },
+  step1b: { n:'02', t:'รายละเอียดการจ้าง',      d:'ค่าตอบแทน ระยะเวลาการจ้าง เวลาทำงาน และสถานที่ปฏิบัติงาน' },
+  step2:  { n:'03', t:'คู่สัญญา',               d:'ระบุข้อมูลนายจ้างและลูกจ้างที่อยู่ภายใต้สัญญาฉบับนี้' },
+  proc:   { n:'03', t:'กำลังจัดทำสัญญา',        d:'ระบบกำลังประกอบข้อสัญญาตามกฎหมายแรงงาน' },
+  preview:{ n:'04', t:'ตรวจสอบ',               d:'อ่านโครงสัญญาและตรวจข้อมูลก่อนเปิดใช้งานฉบับเต็ม' },
+  pay:    { n:'05', t:'เปิดใช้งาน Agreement',   d:'ชำระเงินเพื่อปลดล็อกสัญญาฉบับเต็มและระบบลงนาม' },
+  review: { n:'06', t:'อ่านสัญญา',              d:'อ่านให้ครบทุกข้อและตรวจสอบข้อมูลก่อนลงนาม' },
+  sign:   { n:'07', t:'ลงนาม',                  d:'ลงลายมือชื่ออิเล็กทรอนิกส์ในสัญญาจ้างฉบับนี้' },
+  status: { n:'07', t:'รอคู่สัญญาลงนาม',        d:'ส่งลิงก์ให้อีกฝ่ายลงนาม ระบบจะอัปเดตสถานะให้อัตโนมัติ' },
+  remote: { n:'07', t:'ลงนาม',                  d:'อ่านสัญญาให้ครบแล้วลงลายมือชื่อ' },
+  done:   { n:'08', t:'เสร็จสมบูรณ์',           d:'ลงนามครบทั้งสองฝ่ายแล้ว ดาวน์โหลดสัญญาและหลักฐานการลงนามได้เลย' },
+};
+const EM_NEXT = { step1:'รายละเอียดการจ้าง', step1b:'คู่สัญญา', step2:'ตรวจสอบ', proc:'ตรวจสอบ',
+                  preview:'เปิดใช้งาน Agreement', pay:'อ่านสัญญา', review:'ลงนาม',
+                  sign:'รอคู่สัญญาลงนาม', status:'เสร็จสมบูรณ์', remote:'', done:'' };
+function renderCurrentStep(){
+  const el = document.getElementById('heroStep'); if(!el) return;
+  const info = EM_STEP_INFO[window._empPhase];
+  el.classList.toggle('on', !!info);
+  if(!info) return;
+  const nx = EM_NEXT[window._empPhase];
+  el.innerHTML =
+    `<div class="hs-label">ขั้นตอนปัจจุบัน</div>
+     <div class="hs-num">${esc(info.n)}</div>
+     <div class="hs-title">${esc(info.t)}</div>
+     <div class="hs-meta">${esc(info.d)}</div>` +
+    (nx ? `<div class="hs-next">ขั้นตอนถัดไป · ${esc(nx)}</div>` : '');
+}
+
+/* ── STICKY CTA — สะท้อนปุ่มจริงของ phase นั้น ๆ (forward click เท่านั้น) ── */
+const EM_CTA_BTN = { step1:'s1next', step1b:'s1bnext', step2:'s2next', preview:'unlockBtn',
+                     review:'reviewNext', sign:'signBtn', status:'doneBtn', remote:'rmBtn', done:'dlBtn' };
+let _emCtaTarget=null, _emCtaIO=null, _emCtaTimer=null, _emCtaVisible=true;
+function _emCtaSync(){
+  const bar=document.getElementById('emCta'), btn=document.getElementById('emCtaBtn');
+  if(!bar||!btn) return;
+  const t=_emCtaTarget;
+  if(!t || t.offsetParent===null || t.style.display==='none'){ bar.classList.remove('on'); return; }
+  btn.textContent=t.textContent; btn.disabled=!!t.disabled;
+  bar.classList.toggle('on', !_emCtaVisible);
+}
+function _emCtaBind(){
+  const id = EM_CTA_BTN[window._empPhase];
+  if(_emCtaIO){ try{ _emCtaIO.disconnect(); }catch(_){} _emCtaIO=null; }
+  if(_emCtaTimer){ clearInterval(_emCtaTimer); _emCtaTimer=null; }
+  _emCtaTarget = id ? document.getElementById(id) : null;
+  _emCtaVisible = true;
+  const bar=document.getElementById('emCta'), mirror=document.getElementById('emCtaBtn');
+  if(mirror) mirror.onclick=function(){ if(_emCtaTarget && !_emCtaTarget.disabled) _emCtaTarget.click(); };
+  if(!_emCtaTarget){ if(bar) bar.classList.remove('on'); return; }
+  try{
+    _emCtaIO=new IntersectionObserver(es=>{ _emCtaVisible=es[0].isIntersecting; _emCtaSync(); },{threshold:0.05});
+    _emCtaIO.observe(_emCtaTarget);
+  }catch(_){ _emCtaVisible=false; }
+  _emCtaTimer=setInterval(_emCtaSync,400);
+  _emCtaSync();
+}
+function emRefresh(){
+  try{ renderEmploymentBar(); renderEmploymentSummary(); renderCurrentStep(); _emCtaBind(); }
+  catch(e){ console.warn('[employment-layer]', e && e.message); }
+}
+
+/* ── READING PROGRESS — นับข้อสัญญาที่ถูกเลื่อนผ่านสายตา (ไม่บล็อกการลงนาม) ── */
+function _emReadWatch(docId, barId){
+  const doc=document.getElementById(docId), bar=document.getElementById(barId);
+  if(!doc||!bar) return;
+  const items=[...doc.querySelectorAll('.clause')].filter(el=>{
+    if(el.classList.contains('locked')) return false;
+    const first=el.querySelector('.cl-para,.cl-sub');
+    return !!(first && /^\s*\d+\./.test(first.textContent||''));
+  });
+  const total=items.length;
+  if(!total){ bar.classList.remove('on'); return; }
+  const seen=new Set();
+  const paint=()=>{
+    bar.querySelector('.rb-n').textContent=seen.size+' / '+total;
+    bar.querySelector('.rb-fill').style.width=Math.round(seen.size/total*100)+'%';
+    bar.querySelector('.rb-msg').textContent=(seen.size>=total)?'อ่านครบทุกข้อแล้ว ✓':'เลื่อนอ่านให้ครบทุกข้อก่อนลงนาม';
+  };
+  bar.classList.add('on'); paint();
+  try{
+    const io=new IntersectionObserver(es=>{
+      es.forEach(e=>{ if(e.isIntersecting){ seen.add(items.indexOf(e.target)); io.unobserve(e.target); } });
+      paint();
+    },{threshold:0.4});
+    items.forEach(el=>io.observe(el));
+  }catch(_){ bar.classList.remove('on'); }
+}
+
+/* ── SALARY SUMMARY (§7) — presentation ล้วน อ่านจาก S.emp ไม่คำนวณอะไรใหม่ ── */
+function renderPaySum(){
+  const box=document.getElementById('paySum'); if(!box) return;
+  const e=S.emp||{};
+  if(!(Number(e.salary)>0)){ box.style.display='none'; return; }
+  box.style.display='block';
+  const rows=[['เงินเดือน','฿'+_emMoney(e.salary)+' / เดือน']];
+  if(Number(e.allowance)>0) rows.push(['ค่าตำแหน่ง / ค่าครองชีพ','฿'+_emMoney(e.allowance)+' / เดือน']);
+  if(e.bonus) rows.push(['โบนัส',e.bonus]);
+  if(e.payday) rows.push(['วันจ่ายค่าจ้าง',e.payday]);
+  box.innerHTML='<div class="ps-h">ค่าตอบแทน</div>'
+    + rows.map(r=>`<div class="ps-r"><span>${esc(r[0])}</span><b>${esc(r[1])}</b></div>`).join('')
+    + `<div class="ps-total"><span>รวมต่อเดือน</span><b>฿${_emMoney((Number(e.salary)||0)+(Number(e.allowance)||0))}</b></div>`;
+}
+
+/* ── EMPLOYER WORKSPACE overview (§16) — อ่านจาก DASH ที่ dashInit โหลดไว้แล้ว ── */
+function renderWsStats(){
+  const box=document.getElementById('wsStats'); if(!box) return;
+  let rows=[];
+  // DASH ประกาศด้วย let ใน script block ที่ 2 — กัน TDZ/ยังไม่โหลดด้วย try
+  try{ if(typeof DASH!=='undefined' && Array.isArray(DASH.rows)) rows=DASH.rows.filter(r=>!r._gone); }catch(_){}
+  if(!rows.length){ box.style.display='none'; return; }
+  const signed=rows.filter(r=>r.a_signed_at&&r.b_signed_at);
+  const waiting=rows.filter(r=>r.payment_completed&&!(r.a_signed_at&&r.b_signed_at));
+  const todo=waiting.length;
+  box.style.display='grid';
+  box.innerHTML=[
+    [rows.length,'สัญญาจ้าง'],[waiting.length,'รอลงนาม'],[signed.length,'ลูกจ้าง'],[todo,'สิ่งที่ต้องทำ'],
+  ].map(s=>`<div class="ws-stat"><div class="n">${s[0]}</div><div class="l">${esc(s[1])}</div></div>`).join('');
+}
+
+/* ราคาแสดงผลอ่านจาก PRICE_STANG ที่เดียว — ห้าม hardcode ตัวเลขซ้ำในข้อความ */
+function _emPaintPrice(){
+  const txt='฿'+(PRICE_STANG/100).toLocaleString('en-US');
+  ['payPrice1','payPrice2','payPrice3'].forEach(id=>{ const el=$(id); if(el) el.textContent=txt; });
 }
 
 /* ═══════════════ DRAFT ═══════════════ */
@@ -1166,6 +1616,7 @@ function _updS1b(){
   const ok = e.salary>0 && e.days.length>0 && e.loc && e.startDate && (!$('optClientSite').checked || e.clientSite)
              && (e.restrict!=='noncompete' || true);
   $('s1bnext').disabled = !ok;
+  renderPaySum(); emRefresh();     // presentation layer — ไม่แตะ calculation ด้านบน
   _saveDraft();
 }
 function _thDateFull(iso){
@@ -1609,20 +2060,45 @@ async function skipPayment(){
               turnstile_token:await _turnstileToken()};
   if(devKey) body.dev_key=devKey;
 
-  const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',
-    headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-  const j=await r.json().catch(()=>({}));
+  const tried=[];
+  let j={}, st=0;
+  try{
+    const r=await fetch(JUSTSIGN_API+'/api/myip',{method:'POST',
+      headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    st=r.status; j=await r.json().catch(()=>({}));
+  }catch(e){ j={code:'network_error'}; }
+  tried.push('myip/emp_content+skip → '+(j.code||st||'?'));
 
-  if(!j||!j.ok){
-    /* รหัสผิดต้องล้างทิ้ง ไม่งั้นจะติดค้างแล้วลองซ้ำด้วยรหัสผิดเดิมไปเรื่อย ๆ
-       จนกว่าจะรู้ตัว — พฤติกรรมเดียวกับ index-nda.html */
-    if(j&&j.code==='bad_dev_key') _clearEmpDevKey();
-    toast('ข้ามไม่สำเร็จ: '+((j&&(j.message_th||j.code))||r.status));
-    return;
+  if(j&&j.ok){ if(_payPoll) clearInterval(_payPoll); onPaid(); return; }
+
+  /* ทางสำรอง: create-payment-intent action:'dev_skip' — คนละ env กัน (DEV_SKIP_SECRET)
+     เขียน payment_completed ด้วย service_role ใช้ได้บน production โดยไม่ต้องเปิด EMP_ALLOW_SKIP */
+  if(devKey){
+    let jB={}, stB=0;
+    try{
+      const rB=await fetch(JUSTSIGN_API+'/api/create-payment-intent',{method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({action:'dev_skip', product:'emp', contract_id:S.rowId, secret:devKey})});
+      stB=rB.status; jB=await rB.json().catch(()=>({}));
+    }catch(e){ jB={error:'network_error'}; }
+    tried.push('dev_skip → '+(jB.error||stB||'?'));
+    if(jB&&jB.ok){ if(_payPoll) clearInterval(_payPoll); onPaid(); return; }
+  } else {
+    tried.push('dev_skip → ข้าม (ไม่มีรหัส ?dev=)');
   }
 
-  if(_payPoll) clearInterval(_payPoll);
-  onPaid();
+  if(j&&j.code==='bad_dev_key') _clearEmpDevKey();   // ล้างเฉพาะตอนรหัสผิดจริง
+  const msg=(j&&(j.message_th||j.code))||st||'ไม่ทราบสาเหตุ';
+  const box=$('qrbox');
+  if(box) box.innerHTML=
+    `<div class="pay-status" style="color:var(--red);font-weight:600">ข้ามการชำระเงินไม่สำเร็จ</div>
+     <div class="mini" style="margin-top:6px;line-height:1.65;text-align:left">${esc(String(msg))}</div>
+     <div class="mono" style="font-size:11px;color:var(--text3);margin-top:8px;text-align:left;line-height:1.7">${tried.map(t=>'· '+esc(t)).join('<br>')}</div>
+     <div class="mini" style="margin-top:10px;line-height:1.65;text-align:left">ต้องตั้งอย่างใดอย่างหนึ่งใน Vercel env:<br>
+       · <b>EMP_ALLOW_SKIP=1</b> (Preview เท่านั้น)<br>
+       · <b>EMP_DEV_KEY</b> / <b>NDA_DEV_KEY</b> / <b>ADMIN_PASSWORD</b> ให้ตรงกับที่ใส่ใน <span class="mono">?dev=</span><br>
+       · <b>DEV_SKIP_SECRET</b> ให้ตรงกับที่ใส่ใน <span class="mono">?dev=</span></div>`;
+  toast('ข้ามไม่สำเร็จ: '+msg);
+  console.error('[EMP skip] ลำดับที่ลอง:', tried, j);
 }
 let _payPoll=null;
 async function startPayment(){
@@ -1689,8 +2165,32 @@ function _reviewPartyCard(which,role){
       ${jur?`<div class="mini" style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--border2)">ในนาม ${esc(jur.name||'')} · ทะเบียน ${esc(jur.regNo||'')} · โดย ${esc(jur.signer||'')}</div>`:''}
     </div>`;
 }
+/* การ์ดสรุปรายหมวด + ปุ่มแก้ไข (กลับไป phase เดิม ไม่ล้างข้อมูล) */
+function _emReviewCards(){
+  const e=S.emp||{}, jd=S.jd||{};
+  const dayTxt=(e.days&&e.days.length)?DAYS.filter(([v])=>e.days.includes(v)).map(x=>x[1]).join(' '):'—';
+  const etTxt=((ET.find(x=>x[0]===e.type)||[])[1])||'—';
+  const nameA=(S.meta&&S.meta.a&&S.meta.a.name)||S.parties.a||'—';
+  const nameB=(S.meta&&S.meta.b&&S.meta.b.name)||S.parties.b||'—';
+  const cards=[
+    ['ตำแหน่งงาน', esc((S.position&&(S.position.th||S.position.en))||'—'), "go('step1')"],
+    ['หน้าที่และ KPI', 'ขอบเขตงาน '+((jd.responsibilities||[]).length)+' ข้อ · คุณสมบัติ '+((jd.qualifications||[]).length)+' ข้อ · KPI '+((jd.kpis||[]).length)+' ข้อ', "go('step1')"],
+    ['ค่าตอบแทน', '฿'+_emMoney(e.salary)+' / เดือน'+(Number(e.allowance)>0?(' + ค่าตำแหน่ง ฿'+_emMoney(e.allowance)):'')+(e.bonus?(' · โบนัส '+esc(e.bonus)):''), "go('step1b')"],
+    ['ระยะเวลาจ้าง', esc(etTxt)+' · เริ่ม '+esc(e.startDate?_thDate(e.startDate):'—')+' · ทดลองงาน '+(e.probation?e.probation+' วัน':'ไม่มี'), "go('step1b')"],
+    ['เวลาทำงาน', esc(dayTxt)+' · '+esc(e.start||'—')+'–'+esc(e.end||'—'), "go('step1b')"],
+    ['สถานที่ทำงาน', esc(e.loc||'—')+(e.clientSite?(' · ปฏิบัติงานที่ '+esc(e.clientSite)):''), "go('step1b')"],
+    ['นายจ้าง', esc(nameA), "go('step2')"],
+    ['ลูกจ้าง', esc(nameB), "go('step2')"],
+    ['เงื่อนไขเพิ่มเติม', (e.restrict&&e.restrict!=='none')?('มีข้อจำกัดหลังพ้นสภาพ'+(e.restrictArea?(' · '+esc(e.restrictArea)):'')):'ไม่มี', "go('step1b')"],
+  ];
+  return cards.map(c=>`<div class="rv-card">
+      <div class="rv-h"><span class="ok">✓</span>${esc(c[0])}
+        <button type="button" class="rv-edit" onclick="${c[2]}">แก้ไข</button></div>
+      <div class="rv-b">${c[1]}</div></div>`).join('');
+}
 function renderReview(){
   $('reviewSub').textContent='อ่านให้ครบทั้ง '+(S.clauseCount||18)+' ข้อ พร้อมเอกสารแนบท้าย ก. ก่อนส่งเซ็น';
+  if($('reviewCards')) $('reviewCards').innerHTML=_emReviewCards();
   $('reviewParties').innerHTML=`
     <div class="ocrbox" style="padding:6px 14px">
       ${_reviewPartyCard('a','นายจ้าง')}
@@ -1698,6 +2198,8 @@ function renderReview(){
       <div class="mini" style="padding:9px 0">SHA-256: <span class="mono">${esc((S.docHash||'').slice(0,24))}…</span></div>
     </div>`;
   renderDoc('docFull',S.clauses,S.appendix,false);
+  _emReadWatch('docFull','readBarR');
+  emRefresh();
 }
 function pickRole(role){
   S.creatorParty=role;
@@ -1780,11 +2282,19 @@ function shareLine(p){
 }
 function renderStatusList(st){
   const rows=[
-    {label:'นายจ้าง', done:!!st.a_signed_at || !!S.sig.a},
-    {label:'ลูกจ้าง', done:!!st.b_signed_at || !!S.sig.b},
+    {n:1,label:'นายจ้าง', name:S.parties.a, done:!!st.a_signed_at || !!S.sig.a},
+    {n:2,label:'ลูกจ้าง', name:S.parties.b, done:!!st.b_signed_at || !!S.sig.b},
   ];
-  $('statusList').innerHTML=rows.map(r=>
-    `<div class="status-row ${r.done?'done':'wait'}"><span class="st">${r.done?'&#10003;':'&#9675;'}</span> ${esc(r.label)} ${r.done?'ลงนามแล้ว':'รอลงนาม'}</div>`).join('');
+  $('statusList').innerHTML=rows.map(r=>`
+    <div class="tl-item ${r.done?'done':'active'}">
+      <div class="tl-dot">${r.done?'✓':r.n}</div>
+      <div class="tl-body">
+        <div class="tl-title">${esc(r.label)}</div>
+        <div class="tl-desc">${esc(r.name||'—')}</div>
+        <div class="tl-meta">${r.done?'✓ ลงนามแล้ว':'🟡 รอลงนาม'}</div>
+      </div>
+    </div>`).join('');
+  emRefresh();
   const all=rows.every(r=>r.done);
   $('doneBtn').style.display=all?'block':'none';
   if(all&&S.certNo) $('certNoDisp').textContent=S.certNo;
@@ -1829,9 +2339,11 @@ async function initRemote(rowId,token,partyHint){
   if(!okc){ toast('โหลดสัญญาไม่สำเร็จ'); return; }
   S.clauseCount=S.clauseCount||18;
   renderDoc('rmDoc',S.clauses,S.appendix,false);
+  _emReadWatch('rmDoc','readBarM');
+  emRefresh();
 
   const who = party==='a' ? 'นายจ้าง' : 'ลูกจ้าง';
-  $('rmTitle').textContent='ลงนามหนังสือสัญญาจ้าง';
+  $('rmTitle').textContent='ลงนาม Employment Agreement';
   $('rmSub').textContent='คุณลงนามในฐานะ '+who+' — '+((party==='a'?S.parties.a:S.parties.b)||'');
   go('remote');
   if(already){
@@ -2751,6 +3263,7 @@ function dashRender(){
   $('dashScope').innerHTML = empSession()
     ? '&#128274; ผูกกับบัญชี LINE แล้ว &mdash; เห็นสัญญาทุกฉบับจากทุกเครื่อง'
     : '&#128274; ยังไม่ได้ผูกบัญชี &mdash; เห็นเฉพาะสัญญาที่สร้างจากเบราว์เซอร์นี้ ล้างข้อมูลเบราว์เซอร์แล้วจะหาย';
+  try{ renderWsStats(); }catch(_){}    // sync ตัวเลข Employer Workspace บนหน้าแรก
 }
 function dashPrune(){ const keep=new Set(DASH.rows.filter(r=>!r._gone).map(r=>r.id)); empRegSave(empRegList().filter(x=>keep.has(x.id))); DASH.rows=DASH.rows.filter(r=>!r._gone); dashRender(); }
 async function dashCopy(id,party){
@@ -2879,6 +3392,7 @@ async function init(){
   $('certInput').addEventListener('change',_onCert);
   posChips();
   _loadDraft();
+  _emPaintPrice();
   if(S.position){ $('posInput').value=S.position.th; if((S.jd.responsibilities||[]).length) renderJD(); }
   _updS1();
 
@@ -2902,6 +3416,8 @@ async function init(){
     }catch(_){}
   }
   _empChrome('landing');
+  // Employer Workspace overview — โหลดเบื้องหลัง ไม่บล็อกหน้าแรก
+  try{ dashInit().then(()=>{ try{ renderWsStats(); }catch(_){} }).catch(()=>{}); }catch(_){}
 }
 async function resumeContract(){
   const ok=await loadFullContent();

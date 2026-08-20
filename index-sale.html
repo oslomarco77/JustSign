@@ -161,6 +161,192 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
 .clause-body-inner { padding:0 15px 15px 55px; font-size:13.5px; line-height:1.85; color:var(--text2); }
 
 @media print { .topbar,.navbar { display:none!important; } .wrap { padding:0; } .doc { border:none; box-shadow:none; } body { background:#fff; } }
+
+/* ══════════════════════════════════════════════════════
+   TRANSACTION CHROME (batch 1) — presentation layer เท่านั้น
+   ใช้ design token ชุดเดียวกับ SignDee Notice
+   ══════════════════════════════════════════════════════ */
+.txbar { position:sticky; top:0; z-index:25; background:rgba(241,240,234,.93); backdrop-filter:blur(12px); border-bottom:1px solid var(--border); display:none; }
+.txbar.on { display:block; }
+.txbar-inner { max-width:760px; margin:0 auto; padding:12px 20px 10px; }
+.tx-top { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.tx-brand { font-family:'Anuphan'; font-size:11.5px; font-weight:800; letter-spacing:.10em; color:var(--text3); }
+.tx-brand span { color:var(--accent); }
+.tx-title { font-family:'Anuphan'; font-size:17px; font-weight:700; margin-top:1px; letter-spacing:-.01em; }
+.tx-right { text-align:right; flex:0 0 auto; }
+.tx-no { font-family:'IBM Plex Mono','SFMono-Regular',monospace; font-size:11px; color:var(--text2); letter-spacing:.02em; }
+.tx-status { display:inline-block; margin-top:5px; font-size:11.5px; font-weight:700; padding:3px 11px; border-radius:20px; }
+.tx-st-draft { background:var(--surf2); color:var(--text2); }
+.tx-st-active { background:rgba(46,134,198,.12); color:var(--accent); }
+.tx-st-wait { background:rgba(196,145,58,.14); color:#9A6F1C; }
+.tx-st-done { background:rgba(26,127,90,.12); color:var(--green); }
+.tx-track { display:flex; gap:4px; margin-top:11px; overflow-x:auto; scrollbar-width:none; }
+.tx-track::-webkit-scrollbar { display:none; }
+.tx-node { flex:1 0 auto; min-width:72px; display:flex; flex-direction:column; align-items:center; gap:4px; opacity:.42; cursor:default; }
+.tx-node.active, .tx-node.done { opacity:1; }
+.tx-node.done { cursor:pointer; }
+.tx-dot { width:20px; height:20px; border-radius:50%; background:var(--surf2); color:var(--text3); font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'Anuphan'; transition:.2s; }
+.tx-node.active .tx-dot { background:var(--accent); color:#fff; box-shadow:0 0 0 4px rgba(46,134,198,.14); }
+.tx-node.done .tx-dot { background:var(--green); color:#fff; }
+.tx-lb { font-size:10px; color:var(--text2); white-space:nowrap; }
+
+/* ── TRANSACTION SUMMARY ── */
+.tx-sum { display:none; position:sticky; top:0; z-index:24; max-width:760px; margin:0 auto; background:var(--white); border:1px solid var(--border); border-radius:0 0 16px 16px; box-shadow:var(--shadow); }
+.tx-sum.on { display:block; }
+.tx-sum summary { padding:11px 20px; cursor:pointer; font-size:12px; font-weight:700; font-family:'Anuphan'; color:var(--text2); list-style:none; letter-spacing:.06em; }
+.tx-sum summary::-webkit-details-marker { display:none; }
+.tx-sum summary::after { content:'▼'; float:right; font-size:9px; color:var(--text3); }
+.tx-sum[open] summary::after { content:'▲'; }
+.txs-body { padding:2px 20px 14px; }
+.txs-row { display:flex; justify-content:space-between; gap:12px; padding:7px 0; border-bottom:1px solid var(--border); font-size:12.5px; color:var(--text3); }
+.txs-row:last-child { border-bottom:none; }
+.txs-row b { color:var(--text); font-weight:600; text-align:right; }
+.txs-row b.num { font-family:'Anuphan'; font-weight:700; }
+@media (min-width:980px) {
+  .tx-sum { position:fixed; top:auto; bottom:20px; right:20px; left:auto; width:296px; border-radius:16px; margin:0; z-index:26; }
+  .tx-sum summary { padding:13px 18px; }
+}
+
+/* ── CURRENT STEP (hero การ์ดสีเข้ม — ตอบ 3 คำถาม: อยู่ขั้นไหน/ทำอะไร/ต่อไปคืออะไร) ── */
+.tx-hero { background:linear-gradient(160deg,#12203A,#0B1220); color:#fff; border-radius:20px; padding:18px 20px 17px; margin-bottom:22px; box-shadow:0 18px 38px -22px rgba(11,18,32,.55); }
+.txh-top { display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
+.txh-label { font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.5); font-weight:700; }
+.txh-count { font-family:'IBM Plex Mono','SFMono-Regular',monospace; font-size:11px; color:rgba(255,255,255,.45); }
+.txh-row { display:flex; align-items:center; gap:13px; margin-top:7px; }
+.txh-num { font-family:'Anuphan'; font-size:33px; font-weight:800; line-height:1; background:linear-gradient(135deg,#8FD3F4,#2E86C6); -webkit-background-clip:text; background-clip:text; color:transparent; flex:0 0 auto; }
+.txh-title { font-family:'Anuphan'; font-size:19px; font-weight:700; letter-spacing:-.02em; line-height:1.25; }
+.txh-desc { font-size:12.5px; color:rgba(255,255,255,.7); margin-top:3px; line-height:1.5; }
+.txh-next { margin-top:13px; padding-top:11px; border-top:1px solid rgba(255,255,255,.12); font-size:12px; color:rgba(255,255,255,.6); display:flex; align-items:center; gap:7px; }
+.txh-next b { color:rgba(255,255,255,.9); font-weight:600; }
+
+/* wizard group nav เดิม — แทนที่ด้วย tx-track ด้านบน (ซ่อนไว้ ไม่ลบ DOM/ฟังก์ชัน) */
+.wgn { display:none !important; }
+/* ไอคอนหัวขั้นตอนเดิม — hero การ์ดทำหน้าที่แทนแล้ว */
+.step > .step-icon { display:none; }
+
+.nav-hint b { color:var(--text2); font-weight:600; }
+@media (max-width:520px) { .txbar-inner { padding:10px 16px 8px; } .tx-title { font-size:15.5px; } .tx-hero { padding:16px 17px 15px; border-radius:18px; } .txh-num { font-size:28px; } .txh-title { font-size:17px; } }
+
+/* ══ FORM CARDS (batch 2) ══ */
+.fcard { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:18px 18px 6px; margin-bottom:14px; box-shadow:var(--shadow); }
+.fcard-h { display:flex; align-items:flex-start; gap:11px; margin-bottom:14px; }
+.fcard-ico { width:36px; height:36px; border-radius:11px; background:var(--accent-d); display:flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto; }
+.fcard-t { font-family:'Anuphan'; font-weight:700; font-size:15.5px; letter-spacing:-.01em; }
+.fcard-s { font-size:12.5px; color:var(--text3); margin-top:2px; line-height:1.45; }
+.fcard-tag { margin-left:auto; flex:0 0 auto; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; background:var(--surf2); color:var(--text3); white-space:nowrap; }
+.fcard-tag.ok { background:rgba(26,127,90,.10); color:var(--green); }
+
+/* ── สรุปเงิน 3 ก้อน + เส้นทางเงิน ── */
+.msum { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:14px; }
+.msum-c { background:var(--bg); border:1px solid var(--border); border-radius:14px; padding:12px 13px; }
+.msum-l { font-size:11.5px; color:var(--text3); font-weight:600; }
+.msum-v { font-family:'Anuphan'; font-size:19px; font-weight:800; letter-spacing:-.02em; margin-top:3px; }
+.msum-c.acc .msum-v { color:var(--accent); }
+.msum-c.grn .msum-v { color:var(--green); }
+.mflow { display:flex; align-items:stretch; gap:0; margin:2px 0 16px; overflow-x:auto; scrollbar-width:none; }
+.mflow::-webkit-scrollbar { display:none; }
+.mf-step { flex:1 0 auto; min-width:104px; text-align:center; padding:11px 8px; background:var(--bg); border:1px solid var(--border); }
+.mf-step:first-child { border-radius:12px 0 0 12px; }
+.mf-step:last-child { border-radius:0 12px 12px 0; }
+.mf-step + .mf-step { border-left:none; }
+.mf-l { font-size:11px; color:var(--text3); font-weight:600; }
+.mf-v { font-family:'Anuphan'; font-size:14.5px; font-weight:700; margin-top:3px; }
+.mf-step.now { background:var(--accent-d); border-color:rgba(46,134,198,.35); }
+.mf-step.now .mf-v { color:var(--accent); }
+
+/* ── accordion (รายละเอียดยาว) ── */
+.acc2 { border:1px solid var(--border); border-radius:14px; background:var(--white); margin-bottom:14px; overflow:hidden; }
+.acc2 summary { padding:14px 16px; cursor:pointer; font-size:13.5px; font-weight:700; font-family:'Anuphan'; color:var(--text); list-style:none; }
+.acc2 summary::-webkit-details-marker { display:none; }
+.acc2 summary::after { content:'▼'; float:right; font-size:9px; color:var(--text3); margin-top:5px; }
+.acc2[open] summary::after { content:'▲'; }
+.acc2-body { padding:0 16px 6px; }
+
+/* ── นับรูป ── */
+.pcount { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:14px; }
+.pcount-l { font-size:13px; font-weight:700; }
+.pcount-b { font-family:'Anuphan'; font-size:12px; font-weight:700; padding:4px 11px; border-radius:20px; background:var(--surf2); color:var(--text2); }
+.pcount-b.has { background:rgba(46,134,198,.12); color:var(--accent); }
+.pbar { height:5px; background:var(--surf2); border-radius:99px; overflow:hidden; margin-top:8px; }
+.pbar > i { display:block; height:100%; background:var(--accent); border-radius:99px; transition:width .3s; }
+@media (max-width:520px) { .msum { grid-template-columns:1fr 1fr; } .msum-c:first-child { grid-column:1 / -1; } .fcard { padding:16px 15px 4px; } }
+
+/* ══ REVIEW / PAY / DASHBOARD (batch 3) ══ */
+.ckl { background:var(--white); border:1px solid var(--border); border-radius:18px; padding:6px 16px; margin-bottom:16px; box-shadow:var(--shadow); }
+.ckl-row { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); }
+.ckl-row:last-child { border-bottom:none; }
+.ckl-ic { width:22px; height:22px; border-radius:50%; flex:0 0 22px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background:var(--surf2); color:var(--text3); }
+.ckl-row.ok .ckl-ic { background:rgba(26,127,90,.12); color:var(--green); }
+.ckl-b { flex:1 1 auto; min-width:0; display:block; overflow:hidden; }
+.ckl-t { font-size:13.5px; font-weight:700; display:block; }
+.ckl-v { font-size:12px; color:var(--text3); margin-top:2px; display:block; max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.ckl-e { flex:0 0 auto; background:none; border:none; font-family:inherit; font-size:12.5px; font-weight:600; color:var(--accent); cursor:pointer; padding:4px 2px; }
+
+.legal { background:rgba(46,134,198,.06); border:1px solid rgba(46,134,198,.22); border-radius:16px; padding:15px 16px; font-size:13px; line-height:1.65; color:var(--text2); }
+.legal-h { font-family:'Anuphan'; font-weight:700; font-size:13.5px; color:var(--text); margin-bottom:5px; display:flex; align-items:center; gap:7px; }
+
+/* ── ราคาแพ็กเกจ ── */
+.price-card { background:linear-gradient(160deg,#12203A,#0B1220); color:#fff; border-radius:22px; padding:26px 22px 22px; box-shadow:0 22px 46px -22px rgba(11,18,32,.55); }
+.pc-label { font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:rgba(255,255,255,.5); font-weight:700; }
+.pc-price { font-family:'Anuphan'; font-size:52px; font-weight:800; line-height:1; margin-top:6px; }
+.pc-unit { font-size:13.5px; color:rgba(255,255,255,.62); margin-top:4px; }
+.pc-list { margin-top:18px; padding-top:15px; border-top:1px solid rgba(255,255,255,.12); display:grid; gap:9px; }
+.pc-i { display:flex; align-items:flex-start; gap:9px; font-size:13.5px; color:rgba(255,255,255,.86); }
+.pc-i i { flex:0 0 auto; font-style:normal; color:#7FD1A6; font-weight:800; }
+
+/* ── signing timeline (dashboard หลังชำระ) ── */
+.stl { margin-top:4px; }
+.stl-i { display:flex; gap:12px; padding:11px 0; }
+.stl-d { width:22px; height:22px; border-radius:50%; flex:0 0 22px; display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; background:var(--surf2); color:var(--text3); font-family:'Anuphan'; }
+.stl-i.done .stl-d { background:var(--green); color:#fff; }
+.stl-i.now .stl-d { background:var(--accent); color:#fff; box-shadow:0 0 0 4px rgba(46,134,198,.14); }
+.stl-t { font-size:13.5px; font-weight:700; }
+.stl-i:not(.done):not(.now) .stl-t { color:var(--text3); font-weight:600; }
+.stl-s { font-size:12px; color:var(--text3); margin-top:2px; }
+
+/* ══ RESPONSIVE / SAFE-AREA (batch 4) ══ */
+html, body { max-width:100%; overflow-x:hidden; }
+/* ปุ่มหลักไม่ชนขอบล่างของ iPhone (home indicator) */
+.navbar { padding-bottom:calc(22px + env(safe-area-inset-bottom, 0px)); }
+.wrap { padding-bottom:calc(130px + env(safe-area-inset-bottom, 0px)); }
+/* timeline เลื่อนได้ — ไล่เฉดขอบขวาเพื่อบอกว่ายังมีต่อ */
+.txbar-inner { position:relative; }
+.txbar-inner::after { content:''; position:absolute; right:0; bottom:10px; width:26px; height:44px; pointer-events:none;
+  background:linear-gradient(90deg, rgba(241,240,234,0), rgba(241,240,234,.95)); }
+@media (min-width:760px) { .txbar-inner::after { display:none; } }
+/* กันข้อความยาว (ชื่อโครงการ/ชื่อคน/ที่อยู่) ดันหน้าจอ */
+.txs-row b, .tx-title, .txh-title, .fcard-t, .stl-t { overflow-wrap:anywhere; }
+.txs-row { align-items:flex-start; }
+.tx-sum { max-width:min(760px, 100%); }
+/* การ์ดและฟอร์มบนจอแคบ */
+@media (max-width:430px) {
+  .row { flex-wrap:wrap; }
+  .row > * { flex:1 1 46%; min-width:0; }
+  .mf-step { min-width:96px; }
+  .tx-node { min-width:64px; }
+  .tx-lb { font-size:9.5px; }
+  .ckl-e { font-size:12px; }
+  .price-card { padding:22px 18px 20px; }
+  .pc-price { font-size:44px; }
+}
+/* จอเตี้ย (มือถือแนวนอน) — ลดความสูง hero */
+@media (max-height:520px) { .tx-hero { padding:13px 16px 12px; } .txh-num { font-size:24px; } }
+/* desktop: กัน summary ลอยทับเนื้อหาเมื่อจอไม่กว้างพอ */
+@media (min-width:980px) and (max-width:1180px) { .tx-sum { width:250px; } }
+/* พิมพ์: ซ่อน chrome ทั้งหมด ให้เหลือเฉพาะเอกสาร */
+@media print { .txbar, .tx-sum, .tx-hero, .navbar, .topbar { display:none !important; } }
+
+/* ══ DEV MODE (สไตล์เดียวกับ SignDee Notice) ══ */
+.dev-fab { position:fixed; right:14px; bottom:96px; z-index:9998; background:var(--primary); color:#fff; border:none; border-radius:50%; width:50px; height:50px; font-size:20px; box-shadow:var(--shadow-lg); cursor:pointer; display:none; }
+.dev-fab.on { display:block; }
+.dev-menu { position:fixed; right:14px; bottom:154px; z-index:9998; background:var(--white); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow-lg); padding:8px; display:none; max-height:64vh; overflow:auto; }
+.dev-menu.open { display:block; }
+.dev-menu button { display:flex; align-items:center; gap:8px; width:230px; text-align:left; background:none; border:none; padding:9px 10px; border-radius:9px; font-family:inherit; font-size:13px; cursor:pointer; color:var(--text); }
+.dev-menu button:active { background:var(--bg); }
+.dev-menu .dev-sep { height:1px; background:var(--border); margin:6px 4px; }
+.dev-menu button.off { color:var(--text3); font-size:12px; }
+.dev-num { width:20px; height:20px; border-radius:50%; background:var(--accent-d); color:var(--accent); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+@media print { .dev-fab, .dev-menu { display:none !important; } }
 </style>
 </head>
 <body>
@@ -220,6 +406,26 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
 
 <!-- ══ WIZARD ══ -->
 <div id="wizard" style="display:none;">
+
+  <!-- ══ TRANSACTION BAR (batch 1) ══ -->
+  <div class="txbar" id="txbar">
+    <div class="txbar-inner">
+      <div class="tx-top">
+        <div>
+          <div class="tx-brand">SIGNDEE <span>SALE</span></div>
+          <div class="tx-title">ธุรกรรมซื้อขายคอนโด</div>
+        </div>
+        <div class="tx-right">
+          <div class="tx-no" id="txNo">TRANSACTION —</div>
+          <div class="tx-status tx-st-draft" id="txStatus">กำลังจัดทำสัญญา</div>
+        </div>
+      </div>
+      <div class="tx-track" id="txTrack"></div>
+    </div>
+  </div>
+
+  <details class="tx-sum" id="txSum"><summary>TRANSACTION SUMMARY</summary><div class="txs-body" id="txSumBody"></div></details>
+
   <div class="topbar">
     <div class="topbar-inner">
       <button class="back-btn" onclick="prevStep()">←</button>
@@ -239,24 +445,35 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
 
       <h2 class="step-title">ข้อมูลห้องชุด</h2>
       <p class="step-sub">รายละเอียดห้องชุดที่จะซื้อขาย ตามที่ปรากฏในโฉนด/หนังสือกรรมสิทธิ์</p>
-      <div class="field"><label class="field-label">ชื่ออาคารชุด <span class="req">*</span></label><input id="f_condoName" placeholder="เช่น คอนโดลุมพินี วิลล์ นครอินทร์-ริเวอร์วิว" oninput="autoSave()"></div>
-      <div class="row">
-        <div class="field"><label class="field-label">ห้องชุดเลขที่ <span class="req">*</span></label><input id="f_unitNo" placeholder="94/19" oninput="autoSave()"></div>
-        <div class="field"><label class="field-label">ชั้นที่</label><input id="f_floor" placeholder="3" oninput="autoSave()"></div>
-        <div class="field"><label class="field-label">อาคาร</label><input id="f_building" placeholder="บี" oninput="autoSave()"></div>
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">🏢</div><div><div class="fcard-t">ข้อมูลอาคารชุด</div><div class="fcard-s">ชื่อโครงการตามหนังสือกรรมสิทธิ์ห้องชุด</div></div></div>
+        <div class="field"><label class="field-label">ชื่ออาคารชุด <span class="req">*</span></label><input id="f_condoName" placeholder="เช่น คอนโดลุมพินี วิลล์ นครอินทร์-ริเวอร์วิว" oninput="autoSave()"></div>
       </div>
-      <div class="row">
-        <div class="field"><label class="field-label">เนื้อที่ (ตร.ม.) <span class="req">*</span></label><input id="f_area" type="number" step="0.01" placeholder="22.92" oninput="autoSave()"></div>
-        <div class="field"><label class="field-label">จำนวนห้องชุด</label><input id="f_units" type="number" value="1" oninput="autoSave()"></div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">🚪</div><div><div class="fcard-t">รายละเอียดห้อง</div><div class="fcard-s">เลขห้อง ชั้น อาคาร และเนื้อที่ตามที่จดทะเบียน</div></div></div>
+        <div class="row">
+          <div class="field"><label class="field-label">ห้องชุดเลขที่ <span class="req">*</span></label><input id="f_unitNo" placeholder="94/19" oninput="autoSave()"></div>
+          <div class="field"><label class="field-label">ชั้นที่</label><input id="f_floor" placeholder="3" oninput="autoSave()"></div>
+          <div class="field"><label class="field-label">อาคาร</label><input id="f_building" placeholder="บี" oninput="autoSave()"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label class="field-label">เนื้อที่ (ตร.ม.) <span class="req">*</span></label><input id="f_area" type="number" step="0.01" placeholder="22.92" oninput="autoSave()"></div>
+          <div class="field"><label class="field-label">จำนวนห้องชุด</label><input id="f_units" type="number" value="1" oninput="autoSave()"></div>
+        </div>
+      </div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">📜</div><div><div class="fcard-t">ข้อมูลกรรมสิทธิ์และที่ตั้ง</div><div class="fcard-s">โฉนด/หนังสือกรรมสิทธิ์ ที่ตั้งของอาคารชุด และวันที่ทำสัญญา</div></div></div>
         <div class="field"><label class="field-label">โฉนดเลขที่</label><input id="f_deedNo" placeholder="3218" oninput="autoSave()"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label class="field-label">ตำบล/แขวง</label><input id="f_subdistrict" placeholder="ตลาดขวัญ" oninput="autoSave()"></div>
-        <div class="field"><label class="field-label">อำเภอ/เขต</label><input id="f_district" placeholder="เมืองนนทบุรี" oninput="autoSave()"></div>
-        <div class="field"><label class="field-label">จังหวัด</label><input id="f_province" placeholder="นนทบุรี" oninput="autoSave()"></div>
-      </div>
-      <div class="row">
-        <div class="field"><label class="field-label">วันที่ทำสัญญา</label><input id="f_contractDate" type="date" oninput="autoSave()"></div>
+        <div class="row">
+          <div class="field"><label class="field-label">ตำบล/แขวง</label><input id="f_subdistrict" placeholder="ตลาดขวัญ" oninput="autoSave()"></div>
+          <div class="field"><label class="field-label">อำเภอ/เขต</label><input id="f_district" placeholder="เมืองนนทบุรี" oninput="autoSave()"></div>
+          <div class="field"><label class="field-label">จังหวัด</label><input id="f_province" placeholder="นนทบุรี" oninput="autoSave()"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label class="field-label">วันที่ทำสัญญา</label><input id="f_contractDate" type="date" oninput="autoSave()"></div>
+        </div>
       </div>
     </div>
 
@@ -265,6 +482,8 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c0-3.6 3-6 6.5-6s6.5 2.4 6.5 6"/></svg></div>
       <h2 class="step-title">ข้อมูลผู้จะขาย</h2>
       <p class="step-sub">อัปโหลดรูปบัตรเพื่อกรอกอัตโนมัติ หรือกรอกเองด้านล่าง</p>
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">👤</div><div><div class="fcard-t">ผู้จะขาย</div><div class="fcard-s">คู่สัญญาฝ่ายที่โอนกรรมสิทธิ์ห้องชุด</div></div><span class="fcard-tag">ฝ่ายที่ 1</span></div>
       <button type="button" class="ocr-btn" onclick="document.getElementById('sCardInput').click()">📷 อัปโหลดรูปบัตรประชาชน — กรอกให้อัตโนมัติ</button>
       <input type="file" id="sCardInput" accept="image/*" style="display:none" onchange="onCardPick(event,'s')">
       <div id="sOcrPanel" style="margin-bottom:6px;"></div>
@@ -275,6 +494,7 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
       </div>
       <div class="field"><label class="field-label">ที่อยู่</label><textarea id="f_sAddr" rows="2" placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" oninput="autoSave()"></textarea></div>
       <div class="field"><label class="field-label">เบอร์โทรศัพท์</label><input id="f_sPhone" inputmode="tel" placeholder="08X-XXX-XXXX" oninput="autoSave()"></div>
+      </div>
     </div>
 
     <!-- STEP 3 — ผู้จะซื้อ -->
@@ -302,6 +522,8 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><circle cx="10" cy="8" r="3"/><path d="M4 20c0-3.3 2.7-5.6 6-5.6"/><path d="M14.5 16.5l1.8 1.8L20 14.5"/></svg></div>
       <h2 class="step-title">ข้อมูลผู้จะซื้อ</h2>
       <p class="step-sub">อัปโหลดรูปบัตรเพื่อกรอกอัตโนมัติ หรือกรอกเองด้านล่าง</p>
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">👤</div><div><div class="fcard-t">ผู้จะซื้อ</div><div class="fcard-s">คู่สัญญาฝ่ายที่รับโอนกรรมสิทธิ์ห้องชุด</div></div><span class="fcard-tag">ฝ่ายที่ 2</span></div>
       <button type="button" class="ocr-btn" onclick="document.getElementById('bCardInput').click()">📷 อัปโหลดรูปบัตรประชาชน — กรอกให้อัตโนมัติ</button>
       <input type="file" id="bCardInput" accept="image/*" style="display:none" onchange="onCardPick(event,'b')">
       <div id="bOcrPanel" style="margin-bottom:6px;"></div>
@@ -312,6 +534,7 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
       </div>
       <div class="field"><label class="field-label">ที่อยู่</label><textarea id="f_bAddr" rows="2" placeholder="บ้านเลขที่ หมู่ ตำบล อำเภอ จังหวัด รหัสไปรษณีย์" oninput="autoSave()"></textarea></div>
       <div class="field"><label class="field-label">เบอร์โทรศัพท์</label><input id="f_bPhone" inputmode="tel" placeholder="09X-XXX-XXXX" oninput="autoSave()"></div>
+      </div>
     </div>
 
     <!-- STEP 4 — การชำระเงิน -->
@@ -337,9 +560,17 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
     <!-- STEP 6 — การชำระเงิน -->
     <div class="step" id="ws6">
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="6" width="19" height="13" rx="2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="10" y2="14.5"/></svg></div>
-      <h2 class="step-title">การชำระเงิน</h2>
-      <p class="step-sub">ราคาซื้อขาย เงินมัดจำ และเงินส่วนที่เหลือ</p>
-      <div class="field"><label class="field-label">ราคาซื้อขายรวม (บาท) <span class="req">*</span></label><input id="f_totalPrice" type="number" placeholder="1190000" oninput="recalc();autoSave()"><div class="field-micro" id="totalWords"></div></div>
+      <h2 class="step-title">ราคาและการชำระ</h2>
+      <p class="step-sub">ราคาซื้อขาย เงินมัดจำ และเงินส่วนที่เหลือของธุรกรรมนี้</p>
+      <div id="txMoney"></div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">💰</div><div><div class="fcard-t">ราคาซื้อขาย</div><div class="fcard-s">ราคารวมที่ตกลงกันสำหรับห้องชุดนี้</div></div></div>
+        <div class="field"><label class="field-label">ราคาซื้อขายรวม (บาท) <span class="req">*</span></label><input id="f_totalPrice" type="number" placeholder="1190000" oninput="recalc();autoSave()"><div class="field-micro" id="totalWords"></div></div>
+      </div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">💵</div><div><div class="fcard-t">เงินมัดจำ</div><div class="fcard-s">จำนวน วันที่วาง และช่องทางที่ผู้จะซื้อชำระ</div></div></div>
       <div class="row">
         <div class="field"><label class="field-label">เงินมัดจำ (บาท)</label><input id="f_depositAmt" type="number" placeholder="10000" oninput="recalc();autoSave()"></div>
         <div class="field"><label class="field-label">วันที่วางมัดจำ</label><input id="f_depositDate" type="date" oninput="autoSave()"></div>
@@ -353,7 +584,15 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
         </select>
       </div>
       <div id="depositChannelBox" style="margin-bottom:16px;"></div>
+      </div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">💳</div><div><div class="fcard-t">เงินส่วนที่เหลือ</div><div class="fcard-s">ชำระ ณ วันจดทะเบียนโอนกรรมสิทธิ์ (คำนวณอัตโนมัติ)</div></div></div>
       <div class="field"><label class="field-label">เงินส่วนที่เหลือ (บาท) — ชำระวันโอนกรรมสิทธิ์</label><input id="f_remaining" type="number" readonly style="background:var(--surf2)"><div class="field-micro" id="remainWords"></div></div>
+      </div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">📎</div><div><div class="fcard-t">หลักฐานการวางมัดจำ</div><div class="fcard-s">แนบสลิปไว้เป็นหลักฐานประกอบสัญญา</div></div></div>
       <div class="field">
         <label class="field-label">สลิปการโอนมัดจำ <span style="color:var(--text3);font-weight:400;">(ไม่บังคับ)</span></label>
         <input type="file" id="f_depSlipInput" accept="image/*" style="display:none" onchange="onSlipPick(event)">
@@ -366,6 +605,7 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
           <button class="btn-ghost" style="margin-top:8px;" onclick="clearSlip()">🗑️ ลบสลิป</button>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- STEP 5 — โอนกรรมสิทธิ์ + ค่าธรรมเนียม -->
@@ -373,6 +613,8 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><path d="M3 8h13M16 8l-3.5-3.5M16 8l-3.5 3.5"/><path d="M21 16H8M8 16l3.5-3.5M8 16l3.5 3.5"/></svg></div>
       <h2 class="step-title">การโอนกรรมสิทธิ์</h2>
       <p class="step-sub">กำหนดวันโอน และการแบ่งภาระค่าธรรมเนียม/ภาษี</p>
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">📅</div><div><div class="fcard-t">กำหนดการโอน</div><div class="fcard-s">เดือน/ปีที่นัดจดทะเบียน ณ สำนักงานที่ดิน</div></div></div>
       <div class="field"><label class="field-label">กำหนดจดทะเบียนโอนภายใน</label>
         <div style="display:flex;gap:10px;">
           <select id="f_tdMonth" onchange="_syncTransferDeadline()" style="flex:2;"></select>
@@ -380,16 +622,23 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
         </div>
         <input id="f_transferDeadline" type="hidden">
         <div class="field-micro">เดือน/ปีที่จะไปจดทะเบียนโอน ณ สำนักงานที่ดิน</div></div>
+      </div>
 
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">💰</div><div><div class="fcard-t">ค่าใช้จ่าย ณ วันโอน</div><div class="fcard-s">ตกลงกันว่าใครรับภาระค่าธรรมเนียมและภาษี</div></div></div>
       <div class="fee-group">
         <div class="fee-q">ค่าใช้จ่าย ณ วันโอน</div>
-        <div class="field-micro" style="margin-bottom:9px;">เช่น ค่าธรรมเนียมการโอน ภาษีเงินได้ ภาษีธุรกิจเฉพาะ ค่าอากรแสตมป์ ค่าพยาน เป็นต้น</div>
+        <details class="acc2" style="margin:6px 0 10px;"><summary>ค่าใช้จ่ายนี้รวมอะไรบ้าง?</summary><div class="acc2-body"><div class="field-micro" style="margin-bottom:12px;line-height:1.6;">ค่าธรรมเนียมการโอน · ภาษีเงินได้หัก ณ ที่จ่าย · ภาษีธุรกิจเฉพาะ · ค่าอากรแสตมป์ · ค่าพยาน และค่าใช้จ่ายอื่นที่เกิดขึ้น ณ สำนักงานที่ดินในวันจดทะเบียนโอน</div></div></details>
         <div class="seg" id="segTransfer">
           <div class="seg-opt active" data-v="ผู้จะขาย" onclick="pickFee('Transfer',this)">ผู้ขายจ่าย</div>
           <div class="seg-opt" data-v="ผู้จะซื้อ" onclick="pickFee('Transfer',this)">ผู้ซื้อจ่าย</div>
           <div class="seg-opt" data-v="คนละครึ่ง" onclick="pickFee('Transfer',this)">คนละครึ่ง</div>
         </div>
       </div>
+      </div>
+
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">🏦</div><div><div class="fcard-t">ค่าจดจำนอง</div><div class="fcard-s">กรณีผู้จะซื้อใช้สินเชื่อจากธนาคาร</div></div></div>
       <div class="fee-group">
         <div class="fee-q">ค่าจดจำนอง (กรณีผู้ซื้อใช้สินเชื่อธนาคาร)</div>
         <div class="seg" id="segMortgage">
@@ -398,14 +647,17 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
           <div class="seg-opt" data-v="คนละครึ่ง" onclick="pickFee('Mortgage',this)">คนละครึ่ง</div>
         </div>
       </div>
+      </div>
     </div>
 
     <!-- STEP 6 — ตรวจทาน -->
     <!-- STEP 6 — สภาพห้องชุด -->
     <div class="step" id="ws8">
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="3" y="7" width="18" height="13" rx="2.5"/><circle cx="12" cy="13.5" r="3.6"/><path d="M8.5 7l1.3-2.2h4.4L15.5 7"/></svg></div>
-      <h2 class="step-title">สภาพห้องชุด</h2>
+      <h2 class="step-title">หลักฐานสภาพห้อง</h2>
       <p class="step-sub">ถ่ายรูปสภาพห้องชุดก่อนโอน เพื่อเป็นหลักฐานแนบท้ายสัญญา (ไม่บังคับ)</p>
+      <div class="fcard">
+        <div class="fcard-h"><div class="fcard-ico">📸</div><div><div class="fcard-t">สภาพห้องก่อนโอน</div><div class="fcard-s">JPG / PNG · สูงสุด 20 รูป · แนบท้ายสัญญาเป็นหลักฐาน</div></div></div>
       <input type="file" id="unitPhotoInput" accept="image/*" multiple style="display:none" onchange="onUnitPhotos(event)">
       <div onclick="document.getElementById('unitPhotoInput').click()" style="border:2px dashed var(--border2);border-radius:16px;padding:34px 20px;text-align:center;cursor:pointer;background:var(--white);">
         <div style="font-size:40px;">📁</div>
@@ -413,35 +665,50 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
         <div style="font-size:12.5px;color:var(--text3);margin-top:4px;">เลือกหลายรูปพร้อมกันได้ · JPG, PNG · สูงสุด 20 รูป</div>
         <button type="button" class="btn-next" style="width:auto;padding:10px 22px;margin-top:14px;" onclick="event.stopPropagation();document.getElementById('unitPhotoInput').click()">+ เพิ่มรูป</button>
       </div>
-      <div style="font-size:13px;font-weight:700;margin-top:12px;">รูปที่เพิ่มแล้ว: <span id="photoCount">0</span> / 20</div>
+      <div class="pcount">
+        <span class="pcount-l">รูปที่เพิ่มแล้ว</span>
+        <span class="pcount-b" id="photoCountChip"><span id="photoCount">0</span> / 20 รูป</span>
+      </div>
+      <div class="pbar"><i id="photoBar" style="width:0%"></i></div>
       <div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;"></div>
-      <div class="summary-note" style="margin-top:16px;">💡 ขั้นตอนนี้เป็นตัวเลือก แต่แนะนำอย่างยิ่ง รูปถ่ายสภาพห้องช่วยป้องกันข้อพิพาทเรื่องความเสียหาย</div>
+      <div class="summary-note" style="margin:16px 0 12px;">💡 ขั้นตอนนี้เป็นตัวเลือก แต่แนะนำอย่างยิ่ง รูปถ่ายสภาพห้องช่วยป้องกันข้อพิพาทเรื่องความเสียหาย</div>
+      </div>
     </div>
 
     <!-- STEP 7 — ตรวจสอบข้อมูลก่อนสร้างสัญญา -->
     <div class="step" id="ws9">
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="6" y="4" width="12" height="17" rx="1.5"/><path d="M9 4V3.3A1.3 1.3 0 0 1 10.3 2h3.4A1.3 1.3 0 0 1 15 3.3V4"/><path d="M9.2 12.5l2 2 4-4.3"/></svg></div>
-      <h2 class="step-title">ตรวจสอบข้อมูลก่อนสร้างสัญญา</h2>
-      <p class="step-sub">ตรวจสอบข้อมูลทั้งหมดให้ถูกต้องก่อนดำเนินการต่อ สามารถกด "แก้ไข" ได้ทุกส่วน</p>
+      <h2 class="step-title">ตรวจสอบธุรกรรม</h2>
+      <p class="step-sub">ทวนข้อมูลทั้งหมดของธุรกรรมนี้ให้ถูกต้องก่อนสร้างสัญญา — กด "แก้ไข" เพื่อกลับไปที่ขั้นตอนนั้นได้ทุกส่วน</p>
+      <div class="ckl" id="txChecklist"></div>
       <div id="reviewSummary"></div>
       <div class="doc" id="contractDoc" style="display:none;"></div>
-      <div class="summary-note">
-        ℹ️ นี่คือสัญญา<b>จะซื้อจะขาย</b> (สัญญาผูกพันก่อนโอน) — การโอนกรรมสิทธิ์จริงต้องไปจดทะเบียนที่<b>สำนักงานที่ดิน</b> เอกสารนี้ไม่ได้ทำหน้าที่โอนกรรมสิทธิ์
+      <div class="legal">
+        <div class="legal-h">ℹ️ สำคัญ</div>
+        นี่คือสัญญา<b>จะซื้อจะขาย</b> (สัญญาผูกพันก่อนโอน) — การโอนกรรมสิทธิ์จริงต้องไปจดทะเบียนที่<b>สำนักงานที่ดิน</b> เอกสารนี้ไม่ได้ทำหน้าที่โอนกรรมสิทธิ์
       </div>
     </div>
 
     <!-- STEP 8 — ชำระค่าบริการ -->
     <div class="step" id="ws10">
       <div class="step-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="1em" height="1em"><rect x="2.5" y="6" width="19" height="13" rx="2"/><line x1="2.5" y1="10" x2="21.5" y2="10"/><line x1="6" y1="14.5" x2="10" y2="14.5"/></svg></div>
-      <h2 class="step-title">ชำระค่าบริการ</h2>
-      <p class="step-sub">ค่าบริการจัดทำสัญญาออนไลน์ ชำระผ่าน PromptPay</p>
+      <h2 class="step-title">ค่าบริการจัดทำและลงนามสัญญา</h2>
+      <p class="step-sub">ชำระครั้งเดียวต่อธุรกรรม — ปลดล็อกการสร้างสัญญาและการลงนามออนไลน์</p>
 
       <div id="payBox">
-        <div style="text-align:center;padding:22px;border:1px solid var(--border);border-radius:var(--r);background:var(--white);box-shadow:var(--shadow);">
-          <div style="font-family:'Anuphan',sans-serif;font-size:52px;font-weight:700;color:var(--text);line-height:1;">฿790</div>
-          <div style="color:var(--text2);font-size:13.5px;margin-top:6px;">ต่อสัญญา · รวมสร้าง PDF + เซ็นทางไกล</div>
+        <div class="price-card">
+          <div class="pc-label">ค่าบริการต่อธุรกรรม</div>
+          <div class="pc-price">฿790</div>
+          <div class="pc-unit">ชำระครั้งเดียว · ครอบคลุมทั้งธุรกรรมนี้</div>
+          <div class="pc-list">
+            <div class="pc-i"><i>✓</i><span>จัดทำสัญญาจะซื้อจะขายอาคารชุด</span></div>
+            <div class="pc-i"><i>✓</i><span>ไฟล์ PDF พร้อมภาคผนวกและหลักฐานประกอบ</span></div>
+            <div class="pc-i"><i>✓</i><span>อ่านสัญญาออนไลน์ทั้งสองฝ่าย</span></div>
+            <div class="pc-i"><i>✓</i><span>ส่งลิงก์ให้คู่สัญญาลงนามจากมือถือตัวเอง</span></div>
+            <div class="pc-i"><i>✓</i><span>ลงนามออนไลน์ + ใบรับรองการลงนาม</span></div>
+          </div>
         </div>
-        <button class="btn-next" id="payBtn" style="margin-top:18px;" onclick="startPayment()">ชำระ ฿790 ผ่าน PromptPay</button>
+        <button class="btn-next" id="payBtn" style="margin-top:18px;" onclick="startPayment()">ชำระ ฿790 และเริ่มลงนาม →</button>
         <button id="devSkipPayBtn" style="display:none;margin-top:10px;width:100%;padding:12px;border:1.5px dashed #d97706;border-radius:12px;background:rgba(217,119,6,.08);color:#d97706;font-family:'Sarabun',sans-serif;font-weight:700;cursor:pointer;" onclick="devSkipPayment()">⚡ ข้ามการชำระเงิน (DEV)</button>
         <div class="nav-hint">ข้อมูลถูกบันทึกอัตโนมัติ · ปลอดภัยด้วยการเข้ารหัส</div>
       </div>
@@ -459,11 +726,27 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
         <div class="nav-hint">เมื่อชำระสำเร็จ ระบบจะดำเนินการต่อให้อัตโนมัติ</div>
       </div>
 
-      <div id="paidBox" style="display:none;text-align:center;padding:36px 20px;">
-        <div style="font-size:56px;margin-bottom:12px;">✅</div>
-        <div style="font-family:'Anuphan',sans-serif;font-size:24px;font-weight:700;margin-bottom:6px;">ชำระเงินสำเร็จ!</div>
-        <div style="color:var(--text2);font-size:14px;line-height:1.6;">บันทึกสัญญาเรียบร้อยแล้ว</div>
-        <button class="btn-next" style="margin-top:20px;" onclick="showStep(11)">ถัดไป: อ่านและยอมรับสัญญา →</button>
+      <div id="paidBox" style="display:none;padding:8px 0 20px;">
+        <div class="tx-hero" style="margin-bottom:18px;">
+          <div class="txh-top"><span class="txh-label">ธุรกรรมเปิดใช้งานแล้ว</span><span class="txh-count" id="paidTxNo">—</span></div>
+          <div class="txh-row"><div class="txh-num">✓</div>
+            <div><div class="txh-title">ชำระค่าบริการเรียบร้อย</div>
+            <div class="txh-desc">สัญญาถูกบันทึกในระบบแล้ว ขั้นต่อไปคืออ่านสัญญาให้ครบก่อนลงนาม</div></div></div>
+          <div class="txh-next">ขั้นตอนต่อไป · <b>อ่านและยอมรับสัญญา</b></div>
+        </div>
+        <div class="fcard">
+          <div class="fcard-h"><div class="fcard-ico">🧭</div><div><div class="fcard-t">สถานะธุรกรรม</div><div class="fcard-s">ขั้นตอนที่เหลือจนสัญญาสมบูรณ์</div></div></div>
+          <div class="stl" style="padding-bottom:10px;">
+            <div class="stl-i done"><div class="stl-d">✓</div><div><div class="stl-t">สร้างธุรกรรม</div><div class="stl-s">กรอกข้อมูลห้องชุด คู่สัญญา ราคา และการโอน</div></div></div>
+            <div class="stl-i done"><div class="stl-d">✓</div><div><div class="stl-t">ตรวจสอบข้อมูล</div><div class="stl-s">ทวนข้อมูลทั้งหมดของธุรกรรม</div></div></div>
+            <div class="stl-i done"><div class="stl-d">✓</div><div><div class="stl-t">ชำระค่าบริการ</div><div class="stl-s">฿790 ต่อธุรกรรม</div></div></div>
+            <div class="stl-i now"><div class="stl-d">4</div><div><div class="stl-t">อ่านสัญญา</div><div class="stl-s">อ่านให้ครบทุกข้อก่อนลงนาม</div></div></div>
+            <div class="stl-i"><div class="stl-d">5</div><div><div class="stl-t">ผู้จะขายลงนาม</div><div class="stl-s">ลงลายมือชื่ออิเล็กทรอนิกส์</div></div></div>
+            <div class="stl-i"><div class="stl-d">6</div><div><div class="stl-t">ผู้จะซื้อลงนาม</div><div class="stl-s">ลงนามผ่านลิงก์บนมือถือตัวเอง</div></div></div>
+            <div class="stl-i"><div class="stl-d">7</div><div><div class="stl-t">ธุรกรรมเสร็จสมบูรณ์</div><div class="stl-s">ดาวน์โหลด PDF + ใบรับรองการลงนาม</div></div></div>
+          </div>
+        </div>
+        <button class="btn-next" style="margin-top:6px;" onclick="showStep(11)">อ่านสัญญา →</button>
       </div>
     </div>
 
@@ -615,7 +898,24 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
   </div>
 </div>
 
-<!-- ══ DEV toolbar (แสดงเมื่อ ?dev=<secret>) ══ -->
+<!-- ══ DEV MODE (แสดงเมื่อ ?dev=<secret>) — สไตล์เดียวกับ SignDee Notice ══ -->
+<button class="dev-fab" id="devFab" onclick="toggleDev()">⚡</button>
+<div class="dev-menu" id="devMenu">
+  <button onclick="devFill()"><span class="dev-num">1</span>เติมข้อมูลจำลองทั้งหมด</button>
+  <button onclick="devSkipPay()"><span class="dev-num">2</span>ข้ามการชำระเงิน</button>
+  <button onclick="devGo(9)"><span class="dev-num">3</span>ตรวจสอบธุรกรรม</button>
+  <button onclick="devGo(10)"><span class="dev-num">4</span>หน้าชำระค่าบริการ</button>
+  <button onclick="devGo(11)"><span class="dev-num">5</span>อ่านและยอมรับสัญญา</button>
+  <button onclick="devGo(12)"><span class="dev-num">6</span>ลงลายมือชื่อ</button>
+  <button onclick="devCopySignLink('buyer')"><span class="dev-num">7</span>คัดลอกลิงก์เซ็น (ผู้จะซื้อ)</button>
+  <button onclick="devCopySignLink('seller')"><span class="dev-num">8</span>คัดลอกลิงก์เซ็น (ผู้จะขาย)</button>
+  <button onclick="devReset()"><span class="dev-num">9</span>ล้างธุรกรรม (เริ่มใหม่)</button>
+  <div class="dev-sep"></div>
+  <button onclick="devSetSecret()"><span class="dev-num">🔑</span><span id="devSecretLabel">ตั้งรหัส DEV</span></button>
+  <button class="off" onclick="location.href='?dev=off'">ปิด DEV MODE</button>
+</div>
+
+<!-- ══ DEV toolbar เดิม (ยังอยู่ในหน้า แต่ไม่แสดงแล้ว — เมนูด้านบนทำหน้าที่แทน) ══ -->
 <div id="devBar" style="display:none;position:fixed;right:12px;bottom:12px;z-index:5000;background:#14171F;color:#fff;border-radius:12px;padding:9px;box-shadow:0 4px 20px rgba(0,0,0,.3);font-size:12px;width:170px;">
   <div style="font-weight:700;margin-bottom:7px;opacity:.6;">⚡ DEV MODE</div>
   <button onclick="_devFill()" style="display:block;width:100%;margin-bottom:5px;padding:7px 10px;background:#333;border:none;border-radius:8px;color:#fff;font-size:12px;cursor:pointer;">📝 กรอกข้อมูลตัวอย่าง</button>
@@ -625,7 +925,7 @@ input:focus,select,textarea:focus { outline:none; border-color:var(--accent); }
 
 <script>
 const TOTAL_STEPS = 12;
-const STEP_LABELS = ['ข้อมูลห้องชุด','ข้อมูลผู้จะขาย','สำเนาบัตรผู้จะขาย','ข้อมูลผู้จะซื้อ','สำเนาบัตรผู้จะซื้อ','การชำระเงิน','การโอนกรรมสิทธิ์','สภาพห้องชุด','ตรวจสอบข้อมูล','ชำระค่าบริการ','อ่านและยอมรับสัญญา','ลงลายมือชื่อ'];
+const STEP_LABELS = ['ข้อมูลห้องชุด','ข้อมูลผู้จะขาย','สำเนาบัตรผู้จะขาย','ข้อมูลผู้จะซื้อ','สำเนาบัตรผู้จะซื้อ','ราคาและการชำระ','การโอนกรรมสิทธิ์','หลักฐานสภาพห้อง','ตรวจสอบธุรกรรม','ชำระค่าบริการ','อ่านและยอมรับสัญญา','ลงลายมือชื่อ'];
 let curStep = 1;
 window._creatorRole = 'seller';
 window._fee = { Transfer:'ผู้จะขาย', Mortgage:'ผู้จะซื้อ' };
@@ -1125,17 +1425,33 @@ async function devSkipPayment() {
   if (!rid) { alert('บันทึกไม่สำเร็จ'); btn.disabled=false; btn.textContent='⚡ ข้ามการชำระเงิน (DEV)'; return; }
   let devOk = false;
   try {
+    const _sec = _saleDevSecret();
     const r = await fetch(SALE_API+'/api/create-payment-intent', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'dev_skip', kind:'sale', contract_id: rid, secret: _saleDevSecret() })
+      body: JSON.stringify({ action:'dev_skip', kind:'sale', contract_id: rid, secret: _sec })
     });
     const j = await r.json().catch(()=>({}));
     devOk = !!j.ok;
-    if (!devOk) throw new Error(j.error || 'secret ไม่ถูกต้อง');
+    if (!devOk) {
+      /* รายงานให้ตรงจุด: endpoint นี้เป็น backend ของ Vercel ไม่ใช่ Supabase */
+      const code = j.error || j.code || ('http_' + r.status);
+      const HOW = {
+        bad_secret:        'รหัส DEV ไม่ตรงกับ env DEV_SKIP_SECRET บน Vercel\n\nวิธีแก้:\n • เปิดหน้านี้ด้วย  ?dev=<รหัสที่ตั้งใน DEV_SKIP_SECRET>\n • หรือกด ⚡ → "ตั้งรหัส DEV" แล้วพิมพ์รหัสให้ตรง\n • ตรวจ Vercel → Settings → Environment Variables (Production) แล้ว redeploy',
+        bad_dev_secret:    'รหัส DEV ไม่ตรงกับ env DEV_SKIP_SECRET บน Vercel (ดูวิธีแก้ด้านบน)',
+        dev_skip_disabled: 'ยังไม่ได้ตั้ง env DEV_SKIP_SECRET บน Vercel → ฟีเจอร์นี้ถูกปิดไว้\n\nวิธีแก้: ตั้งค่า DEV_SKIP_SECRET ใน Vercel (Production) แล้ว redeploy',
+        contract_not_found:'ไม่พบธุรกรรมนี้ในฐานข้อมูล — ลองกด "เติมข้อมูลจำลอง" แล้วเดินถึงขั้นชำระเงินใหม่'
+      };
+      alert('ข้ามการชำระเงินไม่สำเร็จ\n\nรหัสข้อผิดพลาด: ' + code
+        + '\nรหัส DEV ที่ส่งไป: ' + (_sec ? (_sec.slice(0,2) + '•••' + _sec.slice(-1) + ' (' + _sec.length + ' ตัวอักษร)') : '(ว่าง)')
+        + '\nปลายทาง: ' + (SALE_API || location.origin) + '/api/create-payment-intent'
+        + '\n\n' + (HOW[code] || 'ตรวจ log ของ /api/create-payment-intent บน Vercel'));
+      btn.disabled = false; btn.textContent = '⚡ ข้ามการชำระเงิน (DEV)';
+      return;
+    }
   } catch(e) {
-    console.error('dev_mark_sale_paid failed:', e);
-    const msg = (e && (e.message || e.hint || e.details)) ? (e.message || '') + (e.hint ? '\nhint: '+e.hint : '') : String(e);
-    alert('ข้ามไม่สำเร็จ\n\nError จาก Supabase:\n' + msg + '\n\nถ้าเพิ่งรัน SQL: ให้รัน  NOTIFY pgrst, \'reload schema\';  แล้วลองใหม่');
+    console.error('dev_skip failed:', e);
+    alert('ข้ามการชำระเงินไม่สำเร็จ (เชื่อมต่อ backend ไม่ได้)\n\n' + (e && e.message || e)
+      + '\n\nปลายทาง: ' + (SALE_API || location.origin) + '/api/create-payment-intent');
     btn.disabled = false; btn.textContent = '⚡ ข้ามการชำระเงิน (DEV)';
     return;
   }
@@ -2487,7 +2803,7 @@ window.addEventListener('DOMContentLoaded', () => {
   sdRenderMember();
   const params = new URLSearchParams(location.search);
   if (_isDev()) {
-    const bar = document.getElementById('devBar'); if (bar) bar.style.display='block';
+    const fab = document.getElementById('devFab'); if (fab) fab.classList.add('on');
     const sk = document.getElementById('devSkipPayBtn'); if (sk) sk.style.display='block';
   }
   const saleRead = _urlParam('saleRead');
@@ -2692,5 +3008,451 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- Turnstile (กันบอท) -->
 <div id="cfTurnstile" style="display:none;"></div>
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=_cfTurnstileOnload" async defer></script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   SignDee Sale — TRANSACTION CHROME (batch 1)
+   Presentation layer เท่านั้น: อ่านจาก state/ฟังก์ชันเดิม (_saleData,
+   curStep, window.contractRowId) ไม่สร้าง state ใหม่ ไม่แตะ business logic
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+
+  /* 7 ขั้นของ "ธุรกรรม" — map จาก 12 step เดิม (ไม่เปลี่ยน step logic) */
+  var TX_NODES = [
+    { k:'property', label:'ห้องชุด',        steps:[1],         title:'ข้อมูลห้องชุด',        desc:'ระบุข้อมูลห้องชุดตามโฉนด/หนังสือกรรมสิทธิ์' },
+    { k:'parties',  label:'คู่สัญญา',        steps:[2,3,4,5],   title:'คู่สัญญา',             desc:'ข้อมูลและสำเนาบัตรของผู้จะขายและผู้จะซื้อ' },
+    { k:'price',    label:'ราคา/ชำระ',      steps:[6],         title:'ราคาและการชำระ',      desc:'ราคาซื้อขาย เงินมัดจำ และเงินส่วนที่เหลือ' },
+    { k:'transfer', label:'การโอน',          steps:[7,8],       title:'การโอนกรรมสิทธิ์',     desc:'กำหนดวันโอน ค่าธรรมเนียม และหลักฐานสภาพห้อง' },
+    { k:'review',   label:'ตรวจสอบ',         steps:[9],         title:'ตรวจสอบธุรกรรม',      desc:'ทวนข้อมูลทั้งหมดก่อนสร้างสัญญา' },
+    { k:'pay',      label:'ชำระค่าบริการ',   steps:[10],        title:'ชำระค่าบริการ',       desc:'฿790 ต่อธุรกรรม — ปลดล็อกการลงนามออนไลน์' },
+    { k:'sign',     label:'ลงนาม',           steps:[11,12],     title:'อ่านและลงนาม',        desc:'อ่านสัญญาให้ครบแล้วลงลายมือชื่อ' }
+  ];
+  var STEP_DESC = {
+    1:'ระบุข้อมูลห้องชุดตามโฉนด/หนังสือกรรมสิทธิ์',
+    2:'ข้อมูลผู้จะขาย — อัปโหลดบัตรเพื่อกรอกอัตโนมัติได้',
+    3:'สำเนาบัตรผู้จะขาย สำหรับภาคผนวก ก',
+    4:'ข้อมูลผู้จะซื้อ — อัปโหลดบัตรเพื่อกรอกอัตโนมัติได้',
+    5:'สำเนาบัตรผู้จะซื้อ สำหรับภาคผนวก ก',
+    6:'ราคาซื้อขาย เงินมัดจำ และเงินส่วนที่เหลือ',
+    7:'กำหนดวันโอน และการแบ่งภาระค่าธรรมเนียม/ภาษี',
+    8:'หลักฐานสภาพห้องชุดก่อนโอน (สูงสุด 20 รูป)',
+    9:'ทวนข้อมูลทั้งหมดของธุรกรรมก่อนสร้างสัญญา',
+    10:'ชำระ ฿790 เพื่อเปิดใช้งานธุรกรรมและเริ่มลงนาม',
+    11:'อ่านสัญญาให้ครบทุกข้อก่อนลงนาม',
+    12:'ลงลายมือชื่อของคุณ แล้วส่งให้คู่สัญญาลงนาม'
+  };
+
+  function $id(x){ return document.getElementById(x); }
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  function baht(n){ n = Number(n)||0; return n ? ('฿' + n.toLocaleString('th-TH')) : '—'; }
+  function curStepNow(){ return (typeof curStep === 'number' && curStep) ? curStep : 1; }
+  function nodeIndexFor(n){
+    for (var i=0;i<TX_NODES.length;i++) if (TX_NODES[i].steps.indexOf(n) !== -1) return i;
+    return 0;
+  }
+  function txData(){
+    try { return (typeof _saleData === 'function') ? _saleData() : {}; } catch(e){ return {}; }
+  }
+  /* สถานะธุรกรรม — อนุมานจาก step ปัจจุบันและสถานะที่ระบบเดิมบันทึกไว้ */
+  function txStatus(){
+    var n = curStepNow();
+    try {
+      if (window._saleSignedAll === true) return { label:'เสร็จสมบูรณ์', cls:'tx-st-done' };
+      /* เซ็นครบ → _pollOwnDone() เดิมเติมปุ่มดาวน์โหลดใน #ownDoneExtra */
+      var de = document.getElementById('ownDoneExtra');
+      if (de && de.innerHTML.trim()) return { label:'เสร็จสมบูรณ์', cls:'tx-st-done' };
+      /* จ่ายแล้ว → pollPayment()/devSkipPayment() เดิมเปิด #paidBox */
+      var pb = document.getElementById('paidBox');
+      if (pb && pb.style.display === 'block') return { label:'ชำระแล้ว · รอลงนาม', cls:'tx-st-active' };
+    } catch(e){}
+    if (n >= 11) return { label:'รอการลงนาม',    cls:'tx-st-wait' };
+    if (n === 10) return { label:'รอชำระค่าบริการ', cls:'tx-st-wait' };
+    if (n === 9)  return { label:'รอตรวจสอบ',    cls:'tx-st-active' };
+    return { label:'กำลังจัดทำสัญญา', cls:'tx-st-draft' };
+  }
+  function txNo(){
+    var id = null;
+    try { id = window.contractRowId || localStorage.getItem('signdee_sale_row_id'); } catch(e){}
+    return id ? ('TRANSACTION #' + String(id).replace(/-/g,'').slice(0,8).toUpperCase()) : 'TRANSACTION · ร่างใหม่';
+  }
+
+  /* ── TRANSACTION BAR ── */
+  function renderTxBar(){
+    var bar = $id('txbar'); if (!bar) return;
+    var wiz = $id('wizard');
+    var on = !!(wiz && wiz.style.display !== 'none');
+    bar.classList.toggle('on', on);
+    if (!on) return;
+    $id('txNo').textContent = txNo();
+    var st = txStatus(), el = $id('txStatus');
+    el.textContent = st.label; el.className = 'tx-status ' + st.cls;
+
+    var n = curStepNow(), ai = nodeIndexFor(n);
+    $id('txTrack').innerHTML = TX_NODES.map(function(g, i){
+      var cls = i < ai ? 'done' : (i === ai ? 'active' : '');
+      var jump = (i < ai) ? (' onclick="__txJump(' + g.steps[0] + ')"') : '';
+      return '<div class="tx-node ' + cls + '"' + jump + '>'
+        + '<span class="tx-dot">' + (i < ai ? '✓' : (i+1)) + '</span>'
+        + '<span class="tx-lb">' + esc(g.label) + '</span></div>';
+    }).join('');
+  }
+  /* ย้อนกลับไปขั้นที่ผ่านมาแล้ว — ใช้ showStep เดิม (ไม่ข้ามไปข้างหน้า) */
+  window.__txJump = function(step){
+    if (typeof showStep !== 'function') return;
+    if (step > curStepNow()) return;
+    showStep(step);
+  };
+
+  /* ── TRANSACTION SUMMARY ── */
+  function renderTxSummary(){
+    var box = $id('txSum'); if (!box) return;
+    var wiz = $id('wizard');
+    box.classList.toggle('on', !!(wiz && wiz.style.display !== 'none'));
+    var d = txData();
+    var remain = Math.max(0, (Number(d.total)||0) - (Number(d.dep)||0));
+    var st = txStatus();
+    var rows = [
+      ['🏢 อาคารชุด', d.condo || '—'],
+      ['🚪 ห้องเลขที่', d.unit || '—'],
+      ['👤 ผู้จะขาย', d.sName || '—'],
+      ['👤 ผู้จะซื้อ', d.bName || '—'],
+      ['💰 ราคาซื้อขาย', baht(d.total), true],
+      ['💵 เงินมัดจำ', baht(d.dep), true],
+      ['💳 เงินคงเหลือ', baht(remain), true],
+      ['📅 กำหนดโอน', d.deadline || '—'],
+      ['🔖 สถานะ', st.label]
+    ];
+    $id('txSumBody').innerHTML = rows.map(function(r){
+      return '<div class="txs-row"><span>' + esc(r[0]) + '</span><b' + (r[2] ? ' class="num"' : '') + '>' + esc(r[1]) + '</b></div>';
+    }).join('');
+  }
+
+  /* ── CURRENT STEP (hero) — ย้ายการ์ดเดียวไปไว้บนสุดของ step ที่ active ── */
+  function heroEl(){
+    var el = $id('txHero');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'txHero';
+      el.className = 'tx-hero';
+    }
+    return el;
+  }
+  function renderTxHero(){
+    var n = curStepNow();
+    var step = $id('ws' + n); if (!step) return;
+    var gi = nodeIndexFor(n), g = TX_NODES[gi], nx = TX_NODES[gi+1];
+    var el = heroEl();
+    el.innerHTML =
+      '<div class="txh-top"><span class="txh-label">ขั้นตอนปัจจุบัน</span>'
+      + '<span class="txh-count">' + n + ' / ' + (typeof TOTAL_STEPS==='number'?TOTAL_STEPS:12) + '</span></div>'
+      + '<div class="txh-row"><div class="txh-num">' + (n<10?('0'+n):n) + '</div>'
+      + '<div><div class="txh-title">' + esc((typeof STEP_LABELS!=='undefined' && STEP_LABELS[n-1]) || g.title) + '</div>'
+      + '<div class="txh-desc">' + esc(STEP_DESC[n] || g.desc) + '</div></div></div>'
+      + (nx ? '<div class="txh-next">ขั้นตอนต่อไป · <b>' + esc(nx.title) + '</b></div>'
+            : '<div class="txh-next">ขั้นตอนสุดท้ายของธุรกรรม</div>');
+    if (step.firstChild !== el) step.insertBefore(el, step.firstChild);
+    /* ขั้นชำระเงินหลังจ่ายแล้ว: dashboard มี hero ของตัวเอง → ไม่ซ้อนสองใบ */
+    var pb = document.getElementById('paidBox');
+    el.style.display = (n === 10 && pb && pb.style.display === 'block') ? 'none' : '';
+  }
+
+  /* ── ปุ่มหลักด้านล่าง: บอกว่ากดแล้วไปไหน (ไม่แตะ onclick เดิม) ── */
+  function renderNavHint(){
+    var hint = document.querySelector('.nav-hint'); if (!hint) return;
+    var n = curStepNow(), gi = nodeIndexFor(n), nx = TX_NODES[gi+1];
+    var nextLabel = (typeof STEP_LABELS!=='undefined' && STEP_LABELS[n]) ? STEP_LABELS[n] : (nx ? nx.title : '');
+    hint.innerHTML = nextLabel
+      ? ('ถัดไป · <b>' + esc(nextLabel) + '</b> &nbsp;·&nbsp; บันทึกอัตโนมัติ')
+      : 'บันทึกอัตโนมัติ · กดย้อนกลับได้ตลอด';
+  }
+
+  function renderTxChrome(){
+    try { renderTxBar(); } catch(e){}
+    try { renderTxSummary(); } catch(e){}
+    try { renderTxHero(); } catch(e){}
+    try { renderNavHint(); } catch(e){}
+  }
+  window.renderTxChrome = renderTxChrome;
+
+  /* hook showStep เดิม (chain — ไม่แทนที่ของเดิม) */
+  var _origShowStep = window.showStep;
+  if (typeof _origShowStep === 'function') {
+    window.showStep = function(){
+      var r = _origShowStep.apply(this, arguments);
+      setTimeout(renderTxChrome, 0);
+      return r;
+    };
+  }
+  /* hook chooseRole — เข้าสู่ wizard ครั้งแรก */
+  var _origChooseRole = window.chooseRole;
+  if (typeof _origChooseRole === 'function') {
+    window.chooseRole = function(){
+      var r = _origChooseRole.apply(this, arguments);
+      setTimeout(renderTxChrome, 0);
+      return r;
+    };
+  }
+  /* อัปเดต summary เมื่อผู้ใช้พิมพ์/เลือกข้อมูล (debounce) */
+  var _t = null;
+  document.addEventListener('input', function(){
+    clearTimeout(_t); _t = setTimeout(function(){ try{ renderTxSummary(); renderTxBar(); }catch(e){} }, 260);
+  }, true);
+  document.addEventListener('change', function(){
+    clearTimeout(_t); _t = setTimeout(function(){ try{ renderTxSummary(); renderTxBar(); }catch(e){} }, 260);
+  }, true);
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderTxChrome);
+  else setTimeout(renderTxChrome, 0);
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   SignDee Sale — batch 2 (presentation)
+   • money summary/flow: อ่านจาก input เดิม + ผลของ recalc() เดิม (ไม่คำนวณเอง)
+   • photo progress: อ่านจาก #photoCount ที่ renderPhotoGrid() เดิมเขียนไว้
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  function $id(x){ return document.getElementById(x); }
+  function n(v){ var x = parseFloat(String(v==null?'':v).replace(/,/g,'')); return isFinite(x) ? x : 0; }
+  function baht(v){ v = n(v); return v ? ('฿' + v.toLocaleString('th-TH')) : '—'; }
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+
+  function thMonthYear(iso){
+    if (!iso) return '—';
+    var m = String(iso).match(/^(\d{4})-(\d{2})/);
+    if (!m) return String(iso);
+    var MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return MON[parseInt(m[2],10)-1] + ' ' + (parseInt(m[1],10) + 543);
+  }
+
+  function renderMoney(){
+    var box = $id('txMoney'); if (!box) return;
+    var total = n(($id('f_totalPrice')||{}).value);
+    var dep   = n(($id('f_depositAmt')||{}).value);
+    var rem   = n(($id('f_remaining')||{}).value);      /* ← ผลของ recalc() เดิม */
+    var due   = (($id('f_transferDeadline')||{}).value) || '';
+    box.innerHTML =
+      '<div class="msum">'
+      + '<div class="msum-c"><div class="msum-l">ราคาซื้อขาย</div><div class="msum-v">' + baht(total) + '</div></div>'
+      + '<div class="msum-c acc"><div class="msum-l">เงินมัดจำ</div><div class="msum-v">' + baht(dep) + '</div></div>'
+      + '<div class="msum-c grn"><div class="msum-l">คงเหลือวันโอน</div><div class="msum-v">' + baht(rem) + '</div></div>'
+      + '</div>'
+      + '<div class="mflow">'
+      + '<div class="mf-step"><div class="mf-l">ราคาซื้อขาย</div><div class="mf-v">' + baht(total) + '</div></div>'
+      + '<div class="mf-step now"><div class="mf-l">วางมัดจำ</div><div class="mf-v">' + baht(dep) + '</div></div>'
+      + '<div class="mf-step"><div class="mf-l">คงเหลือ</div><div class="mf-v">' + baht(rem) + '</div></div>'
+      + '<div class="mf-step"><div class="mf-l">ชำระวันโอน</div><div class="mf-v">' + esc(thMonthYear(due)) + '</div></div>'
+      + '</div>';
+  }
+
+  function renderPhotoBar(){
+    var c = $id('photoCount'), bar = $id('photoBar'), chip = $id('photoCountChip');
+    if (!c || !bar) return;
+    var k = n(c.textContent);
+    bar.style.width = Math.min(100, k / 20 * 100) + '%';
+    if (chip) chip.classList.toggle('has', k > 0);
+  }
+
+  function renderB2(){ try{ renderMoney(); }catch(e){} try{ renderPhotoBar(); }catch(e){} }
+  window.renderSaleCards = renderB2;
+
+  /* ต่อ hook เดิมของ batch 1 (chain — ไม่แทนที่) */
+  var _prevChrome = window.renderTxChrome;
+  if (typeof _prevChrome === 'function') {
+    window.renderTxChrome = function(){ var r = _prevChrome.apply(this, arguments); renderB2(); return r; };
+  }
+  var _prevShow = window.showStep;
+  if (typeof _prevShow === 'function') {
+    window.showStep = function(){ var r = _prevShow.apply(this, arguments); setTimeout(renderB2, 0); return r; };
+  }
+  /* renderPhotoGrid เดิมอัปเดต #photoCount → ต่อท้ายให้อัปเดตแถบด้วย */
+  var _prevGrid = window.renderPhotoGrid;
+  if (typeof _prevGrid === 'function') {
+    window.renderPhotoGrid = function(){ var r = _prevGrid.apply(this, arguments); setTimeout(renderPhotoBar, 0); return r; };
+  }
+  var _t = null;
+  document.addEventListener('input', function(e){
+    if (!e.target || !e.target.id) return;
+    if (!/^f_(totalPrice|depositAmt|tdMonth|tdYear)$/.test(e.target.id)) return;
+    clearTimeout(_t); _t = setTimeout(renderMoney, 120);
+  }, true);
+  document.addEventListener('change', function(){ clearTimeout(_t); _t = setTimeout(renderMoney, 120); }, true);
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', renderB2);
+  else setTimeout(renderB2, 0);
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   SignDee Sale — batch 3 (presentation)
+   เช็กลิสต์ตรวจสอบธุรกรรม: อ่านจาก _saleData() เดิม · ปุ่มแก้ไขเรียก showStep() เดิม
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  function $id(x){ return document.getElementById(x); }
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"]/g, function(c){ return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]; }); }
+  function baht(v){ var n = Number(v)||0; return n ? ('฿' + n.toLocaleString('th-TH')) : ''; }
+  function d(){ try { return (typeof _saleData === 'function') ? _saleData() : {}; } catch(e){ return {}; } }
+
+  function renderChecklist(){
+    var box = $id('txChecklist'); if (!box) return;
+    var x = d();
+    var photos = (x.photos && x.photos.length) || 0;
+    var rows = [
+      { t:'ห้องชุด',   v: [x.condo, x.unit ? ('ห้อง ' + x.unit) : '', x.area ? (x.area + ' ตร.ม.') : ''].filter(Boolean).join(' · '), step:1 },
+      { t:'ผู้จะขาย',  v: [x.sName, x.sPhone].filter(Boolean).join(' · '), step:2 },
+      { t:'ผู้จะซื้อ',  v: [x.bName, x.bPhone].filter(Boolean).join(' · '), step:4 },
+      { t:'ราคาซื้อขาย', v: baht(x.total), step:6 },
+      { t:'เงินมัดจำ',  v: [baht(x.dep), x.depMethod].filter(Boolean).join(' · '), step:6 },
+      { t:'การโอนกรรมสิทธิ์', v: [x.deadline, x.feeT ? ('ค่าโอน: ' + x.feeT) : ''].filter(Boolean).join(' · '), step:7 },
+      { t:'หลักฐานสภาพห้อง', v: photos ? (photos + ' รูป') : '', step:8, optional:true }
+    ];
+    box.innerHTML = rows.map(function(r){
+      var ok = !!(r.v && String(r.v).trim());
+      return '<div class="ckl-row ' + (ok ? 'ok' : '') + '">'
+        + '<span class="ckl-ic">' + (ok ? '✓' : '–') + '</span>'
+        + '<span class="ckl-b"><span class="ckl-t">' + esc(r.t) + '</span>'
+        + '<span class="ckl-v">' + esc(ok ? r.v : (r.optional ? 'ไม่ได้แนบ (ไม่บังคับ)' : 'ยังไม่ได้กรอก')) + '</span></span>'
+        + '<button type="button" class="ckl-e" onclick="showStep(' + r.step + ')">แก้ไข</button>'
+        + '</div>';
+    }).join('');
+  }
+
+  function renderPaidHeader(){
+    var el = $id('paidTxNo'); if (!el) return;
+    var id = null;
+    try { id = window.contractRowId || localStorage.getItem('signdee_sale_row_id'); } catch(e){}
+    el.textContent = id ? ('#' + String(id).replace(/-/g,'').slice(0,8).toUpperCase()) : '—';
+  }
+
+  function renderB3(){ try{ renderChecklist(); }catch(e){} try{ renderPaidHeader(); }catch(e){} }
+  window.renderSaleReview = renderB3;
+
+  /* chain ต่อจาก batch 1/2 — ไม่แทนที่ของเดิม */
+  var _prevChrome = window.renderTxChrome;
+  if (typeof _prevChrome === 'function') {
+    window.renderTxChrome = function(){ var r = _prevChrome.apply(this, arguments); renderB3(); return r; };
+  }
+  var _prevShow = window.showStep;
+  if (typeof _prevShow === 'function') {
+    window.showStep = function(){ var r = _prevShow.apply(this, arguments); setTimeout(renderB3, 0); return r; };
+  }
+  /* buildSummary() เดิมถูกเรียกตอนเข้าขั้นตรวจสอบ → ต่อท้ายให้ render เช็กลิสต์ด้วย */
+  var _prevSummary = window.buildSummary;
+  if (typeof _prevSummary === 'function') {
+    window.buildSummary = function(){ var r = _prevSummary.apply(this, arguments); setTimeout(renderChecklist, 0); return r; };
+  }
+  /* เมื่อระบบเดิมเปิด #paidBox / เติม #ownDoneExtra → อัปเดตแถบสถานะให้ตรง */
+  function watch(id){
+    var el = document.getElementById(id); if (!el || !window.MutationObserver) return;
+    new MutationObserver(function(){
+      try { if (window.renderTxChrome) window.renderTxChrome(); } catch(e){}
+    }).observe(el, { attributes:true, attributeFilter:['style'], childList:true });
+  }
+  function watchAll(){ watch('paidBox'); watch('ownDoneExtra'); }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ renderB3(); watchAll(); });
+  else { setTimeout(renderB3, 0); setTimeout(watchAll, 0); }
+})();
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════
+   SignDee Sale — DEV MODE (โครงเดียวกับ SignDee Notice)
+   ทุกปุ่มเรียกฟังก์ชันเดิมของ Sale: _devFill / devSkipPayment / showStep /
+   copySaleSignLink · ไม่มี business logic ใหม่ · เปิดด้วย ?dev=<secret> เท่านั้น
+   ══════════════════════════════════════════════════════════════ */
+(function(){
+  'use strict';
+  function $id(x){ return document.getElementById(x); }
+  function closeMenu(){ var m = $id('devMenu'); if (m) m.classList.remove('open'); }
+  function devOn(){ try { return typeof _isDev === 'function' && _isDev(); } catch(e){ return false; } }
+  function rowId(){
+    try { return window.contractRowId || localStorage.getItem('signdee_sale_row_id') || null; } catch(e){ return null; }
+  }
+
+  window.toggleDev = function(){ var m = $id('devMenu'); if (m) m.classList.toggle('open'); };
+
+  /* 1 — เติมข้อมูลจำลอง (ฟังก์ชันเดิม) แล้วพากลับไปขั้นแรกเพื่อดูผล */
+  window.devFill = function(){
+    closeMenu();
+    if (typeof _devFill === 'function') _devFill();
+    if (typeof showStep === 'function') showStep(1);
+  };
+
+  /* 2 — ข้ามการชำระเงิน: ไปขั้นชำระก่อน แล้วเรียก devSkipPayment() เดิม
+        (ปุ่มเดิม #devSkipPayBtn ต้องมีอยู่ในหน้า เพราะฟังก์ชันเดิมอ้างถึง) */
+  window.devSkipPay = async function(){
+    closeMenu();
+    if (typeof showStep === 'function') showStep(10);
+    var sk = $id('devSkipPayBtn'); if (sk) sk.style.display = 'block';
+    if (typeof devSkipPayment === 'function') { try { await devSkipPayment(); } catch(e){ alert('ข้ามไม่สำเร็จ: ' + (e && e.message || e)); } }
+  };
+
+  /* 3-6 — กระโดดไปขั้นตอน (ใช้ showStep เดิม) */
+  window.devGo = function(n){
+    closeMenu();
+    if (typeof showStep === 'function') showStep(n);
+  };
+
+  /* 7-8 — คัดลอกลิงก์เซ็นของแต่ละฝ่าย (ใช้ _saleSignUrl + copySaleSignLink เดิม) */
+  window.devCopySignLink = function(party){
+    closeMenu();
+    var rid = rowId();
+    if (!rid) { alert('ยังไม่มีธุรกรรมในระบบ — กด "เติมข้อมูลจำลอง" แล้วเดินถึงขั้นชำระเงินก่อน'); return; }
+    var token = (party === 'seller' ? 'rs_' : 'rb_') + rid;
+    var url = (typeof _saleSignUrl === 'function')
+      ? _saleSignUrl(token)
+      : (location.origin + location.pathname + '?saleRead=' + token);
+    if (typeof copySaleSignLink === 'function') copySaleSignLink(url);
+    else prompt('ลิงก์เซ็น:', url);
+  };
+
+  /* 9 — ล้างธุรกรรมแล้วเริ่มใหม่ (ล้างเฉพาะคีย์ของ Sale · คง secret dev ไว้) */
+  window.devReset = function(){
+    closeMenu();
+    if (!confirm('ล้างร่างธุรกรรมนี้และเริ่มใหม่?')) return;
+    try {
+      ['signdee_sale_draft','signdee_sale_row_id','signdee_sale_photos','signdee_sale_slip',
+       'signdee_sale_paid','signdee_sale_role'].forEach(function(k){ localStorage.removeItem(k); });
+    } catch(e){}
+    location.href = location.pathname;
+  };
+
+  /* ตั้งรหัส DEV เอง (ต้องตรงกับ env DEV_SKIP_SECRET บน Vercel) */
+  window.devSetSecret = function(){
+    var cur = '';
+    try { cur = localStorage.getItem('signdee_sale_dev') || ''; } catch(e){}
+    var v = prompt('รหัส DEV (ต้องตรงกับ env DEV_SKIP_SECRET บน Vercel)\n\nรหัสปัจจุบัน: ' + (cur || '(ว่าง)'), cur);
+    if (v === null) return;
+    try { localStorage.setItem('signdee_sale_dev', v.trim()); } catch(e){}
+    updateSecretLabel();
+    alert(v.trim() ? 'บันทึกรหัส DEV แล้ว — ลอง "ข้ามการชำระเงิน" อีกครั้ง' : 'ล้างรหัส DEV แล้ว');
+  };
+  function updateSecretLabel(){
+    var el = $id('devSecretLabel'); if (!el) return;
+    var cur = '';
+    try { cur = localStorage.getItem('signdee_sale_dev') || ''; } catch(e){}
+    el.textContent = cur ? ('ตั้งรหัส DEV · ' + cur.slice(0,2) + '•••' + cur.slice(-1)) : 'ตั้งรหัส DEV (ยังไม่ตั้ง)';
+  }
+
+  /* ปิดเมนูเมื่อคลิกที่อื่น */
+  document.addEventListener('click', function(e){
+    var m = $id('devMenu'), f = $id('devFab');
+    if (!m || !m.classList.contains('open')) return;
+    if (m.contains(e.target) || (f && f.contains(e.target))) return;
+    m.classList.remove('open');
+  }, true);
+
+  /* เผื่อ init เดิมทำงานไปแล้วก่อนสคริปต์นี้ถูกอ่าน */
+  function boot(){ if (devOn()) { var f = $id('devFab'); if (f) f.classList.add('on'); } updateSecretLabel(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else setTimeout(boot, 0);
+})();
+</script>
 </body>
 </html>
