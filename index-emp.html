@@ -1127,7 +1127,6 @@ const EM_PHASE_NODE = { step1:0, step1b:1, step2:2, proc:2, preview:3, pay:4, re
    ก่อนจ่าย server ส่ง decoy ที่มี 🔒 มาให้เสมอ */
 function _emPaid(){
   if(S._paidAt) return true;
-  try{ if(S.rowId && localStorage.getItem('emp_paid_at_'+S.rowId)) return true; }catch(_){}
   const c3 = S.clauses && S.clauses.c3;
   return !!(c3 && String(c3).indexOf('🔒') === -1);
 }
@@ -2434,8 +2433,8 @@ async function buildEvidencePDF(){
     const jur=(A&&A.jur)||null;
     const hash=row.doc_hash||S.docHash||'';
     const cno=row.cert_no||S.certNo||('SDE-'+(new Date().getFullYear()+543)+'-'+hash.slice(0,12).toUpperCase());
-    let paidIso=row.paid_at; if(!paidIso){ try{ paidIso=localStorage.getItem('emp_paid_at_'+row.id)||null; }catch(_){} }
-    const dateTh=_pdDateTh(paidIso||row.created_at);
+    const documentDate=String(row.created_at||'').slice(0,10);
+    const dateTh=_pdDateTh(documentDate);
     const n=(S.clauseCount)||(cl.c19?19:18);
 
     const placeArr = jur
