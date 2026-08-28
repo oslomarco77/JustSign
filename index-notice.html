@@ -2722,7 +2722,7 @@ async function adsFirePurchase(rowId){
     });
     j=await r.json();
   }catch(e){ _adsBusy=false; _adsLog('เรียก backend ไม่สำเร็จ',e); return; }
-  _adsBusy=false; _adsDone[rowId]=true;
+  _adsBusy=false;
 
   if(!j || !j.fire){ _adsLog('ไม่ยิง —', (j&&j.reason)||'ไม่ทราบสาเหตุ', j); return; }
   if(_adsSentLocal(j.transaction_id)){ _adsLog('ยิงไปแล้วในเครื่องนี้', j.transaction_id); return; }
