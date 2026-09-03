@@ -1,0 +1,16 @@
+{
+  "_comment": "เพิ่มบล็อกนี้เข้าไปใน functions ของ vercel.json เดิม",
+  "functions": {
+    "api/commerce/orders/index.js":      { "maxDuration": 30 },
+    "api/commerce/orders/[id]/payment.js": { "maxDuration": 30 },
+    "api/commerce/orders/[id]/status.js":  { "maxDuration": 30 },
+    "api/commerce/admin/orders.js":      { "maxDuration": 30 },
+    "api/webhooks/beam.js":              { "maxDuration": 30 },
+    "api/download/[token].js":           { "maxDuration": 30 }
+  },
+  "_rewrites_optional": [
+    { "source": "/landlord-guide",  "destination": "/landlord-guide.html" },
+    { "source": "/purchase/success","destination": "/purchase-success.html" },
+    { "source": "/pay",             "destination": "/pay.html" }
+  ]
+}

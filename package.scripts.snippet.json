@@ -1,0 +1,7 @@
+{
+  "_comment": "เพิ่ม scripts นี้เข้าไปใน package.json เดิม (ไม่มี dependency ใหม่)",
+  "scripts": {
+    "test": "node --test tests/commerce.test.js",
+    "test:watch": "node --test --watch tests/commerce.test.js"
+  }
+}
