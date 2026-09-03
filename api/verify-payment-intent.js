@@ -13,7 +13,20 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
-const EXPECTED_AMOUNT = 79000; // ฿790 — กันการยิง PI ที่ยอดไม่ตรง
+const EXPECTED_AMOUNT = 79000; // ฿790 — กันการยิง PI ที่ยอดไม่ตรง (default)
+
+/* ราคา + ตารางปลายทาง แยกตาม product — ต้องตรงกับ PRICE_BY_PRODUCT ใน create-payment-intent.js
+   ⚠️ product ที่ไม่อยู่ใน map นี้จะตกไปที่ rental → เขียนลงตาราง contracts ผิดตาราง
+      (เคยทำให้ NDA จ่ายเงินสำเร็จแต่ payment_completed ไม่ถูกเขียน → ปลดล็อกไม่ได้)
+      เพิ่มผลิตภัณฑ์ใหม่ต้องเพิ่มที่นี่ทุกครั้ง */
+const PRODUCT_MAP = {
+  rental: { amount: 79000,  table: 'contracts',      refCol: 'payment_ref' },
+  sale:   { amount: 79000,  table: 'sale_contracts', refCol: 'payment_intent_id' },
+  notice: { amount: 299000, table: 'notice_cases',   refCol: 'payment_ref' },
+  nda:    { amount: 79000,  table: 'nda_contracts',  refCol: 'payment_ref' },
+  emp:    { amount: 79000,  table: 'emp_contracts',  refCol: 'payment_ref' },
+};
+function productCfg(p){ return PRODUCT_MAP[p] || PRODUCT_MAP.rental; }
 // ⚠️ ปรับให้ตรง schema จริง: ชื่อคอลัมน์ primary key ของตาราง contracts
 const ID_COLUMN = 'id';
 
@@ -26,7 +39,9 @@ const BEAM_BASE = (process.env.BEAM_ENV === 'production')
   : 'https://playground.api.beamcheckout.com';
 
 // ดึงสถานะ charge จาก Beam โดยตรง (ไม่เชื่อ client)
-async function verifyBeamCharge(chargeId, contractId) {
+// expectedAmount = ยอดที่ต้องตรงตาม product (ไม่งั้น notice ฿2,990 จะถูกเทียบกับ ฿790)
+async function verifyBeamCharge(chargeId, contractId, expectedAmount) {
+  const want = Number(expectedAmount) || EXPECTED_AMOUNT;
   if (!BEAM_MERCHANT_ID || !BEAM_API_KEY) return { ok:false, reason:'missing_beam_env' };
   const auth = Buffer.from(`${BEAM_MERCHANT_ID}:${BEAM_API_KEY}`).toString('base64');
   const r = await fetch(`${BEAM_BASE}/api/v1/charges/${encodeURIComponent(chargeId)}`, {
@@ -39,7 +54,7 @@ async function verifyBeamCharge(chargeId, contractId) {
   if (status !== 'SUCCEEDED') return { ok:false, reason:'not_succeeded', status };
 
   // ตรวจยอด + สัญญา (ถ้า Beam ส่งกลับมา)
-  if (j.amount != null && Number(j.amount) !== EXPECTED_AMOUNT) return { ok:false, reason:'amount_mismatch', status };
+  if (j.amount != null && Number(j.amount) !== want) return { ok:false, reason:'amount_mismatch', status };
   if (j.currency && String(j.currency).toUpperCase() !== 'THB') return { ok:false, reason:'currency_mismatch', status };
   if (j.referenceId && String(j.referenceId) !== String(contractId)) return { ok:false, reason:'contract_mismatch', status };
 
@@ -65,15 +80,8 @@ function beamSignatureOk(rawBody, headerSig) {
   } catch (e) { return null; }
 }
 
-// map product → ตาราง + คอลัมน์ ref
-function _productTarget(product) {
-  if (product === 'sale') return { table: 'sale_contracts', refCol: 'payment_intent_id' };
-  if (product === 'nda')  return { table: 'nda_contracts',  refCol: 'payment_ref' };
-  if (product === 'emp')  return { table: 'emp_contracts',  refCol: 'payment_ref' };
-  return { table: 'contracts', refCol: 'payment_ref' };
-}
-
-// เขียน payment_completed ให้สัญญา (หาว่าอยู่ตาราง contracts / sale_contracts / nda_contracts)
+// เขียน payment_completed ให้สัญญา (ไล่หาว่าอยู่ตารางไหน)
+// ⚠️ ต้องมีครบทุกผลิตภัณฑ์ ไม่งั้น webhook จะหา row ไม่เจอแล้วเงียบไปเฉย ๆ
 async function markPaidByContractId(contractId, chargeId) {
   const sbHeaders = {
     apikey: SUPABASE_SERVICE_KEY,
@@ -84,13 +92,13 @@ async function markPaidByContractId(contractId, chargeId) {
   const targets = [
     { table: 'contracts',      refCol: 'payment_ref' },
     { table: 'sale_contracts', refCol: 'payment_intent_id' },
+    { table: 'notice_cases',   refCol: 'payment_ref' },
     { table: 'nda_contracts',  refCol: 'payment_ref' },
     { table: 'emp_contracts',  refCol: 'payment_ref' },
   ];
   for (const t of targets) {
     const patch = { payment_completed: true };
     patch[t.refCol] = chargeId;
-    if (t.table === 'emp_contracts') { patch.paid_at = new Date().toISOString(); patch.status = 'paid'; }
     const r = await fetch(
       `${SUPABASE_URL}/rest/v1/${t.table}?${ID_COLUMN}=eq.${encodeURIComponent(contractId)}`,
       { method: 'PATCH', headers: sbHeaders, body: JSON.stringify(patch) }
@@ -122,7 +130,13 @@ async function handleBeamWebhook(req, res) {
   if (!chargeId || !contractId) return res.status(200).json({ ok: true, skipped: 'missing_ids' });
 
   // 🔒 ยืนยันกับ Beam โดยตรง — ไม่เชื่อ payload
-  const v = await verifyBeamCharge(chargeId, contractId);
+  //    webhook ไม่รู้ product → ตรวจยอดโดยยอมรับราคาที่ระบบรองรับทั้งหมด
+  const allowed = Object.values(PRODUCT_MAP).map(c => c.amount);
+  let v = { ok:false, reason:'amount_mismatch' };
+  for (const amt of allowed) {
+    v = await verifyBeamCharge(chargeId, contractId, amt);
+    if (v.ok || v.reason !== 'amount_mismatch') break;
+  }
   if (!v.ok) {
     console.warn('[beam-webhook] verify failed:', v.reason, chargeId);
     return res.status(200).json({ ok: true, paid: false, reason: v.reason });   // 200 กัน Beam retry ซ้ำ
@@ -158,13 +172,22 @@ module.exports = async (req, res) => {
 
     // ── Beam: ตรวจสถานะกับ Beam แล้วเขียน payment_completed ผ่าน service_role ──
     if (gateway === 'beam') {
-      const v = await verifyBeamCharge(piId, contractId);
+      const cfg    = productCfg(body.product);
+      const v = await verifyBeamCharge(piId, contractId, cfg.amount);
       if (!v.ok) return res.status(200).json({ paid:false, status:v.status || null, reason:v.reason });
 
-      const { table, refCol } = _productTarget(body.product);
+      const table  = cfg.table;
       const patch  = { payment_completed: true };
-      patch[refCol] = v.ref;
-      if (table === 'emp_contracts') { patch.paid_at = new Date().toISOString(); patch.status = 'paid'; }
+      patch[cfg.refCol] = v.ref;
+      if (table === 'notice_cases') {
+        patch.payment_provider = 'beam';
+        patch.paid_at = new Date().toISOString();
+        patch.status  = 'demand_ready';
+      }
+      if (table === 'nda_contracts' || table === 'emp_contracts') {
+        patch.paid_at = new Date().toISOString();
+        patch.status  = 'paid';
+      }
       const w = await fetch(
         `${SUPABASE_URL}/rest/v1/${table}?${ID_COLUMN}=eq.${encodeURIComponent(contractId)}`,
         { method:'PATCH',
@@ -173,6 +196,10 @@ module.exports = async (req, res) => {
           body: JSON.stringify(patch) }
       );
       if (!w.ok) return res.status(500).json({ error:'Supabase write failed', detail: await w.text() });
+      // PATCH ที่ไม่ตรงแถวใด ๆ ก็คืน 200 — ต้องเช็คจำนวนแถวจริง ไม่งั้นจะบอก paid ทั้งที่ไม่ได้เขียนอะไร
+      const wrows = await w.json().catch(() => []);
+      if (!Array.isArray(wrows) || !wrows.length)
+        return res.status(404).json({ paid:false, reason:'contract_not_found', table });
       return res.status(200).json({ paid:true, status:'succeeded', payment_ref:v.ref, gateway:'beam' });
     }
 
@@ -187,7 +214,7 @@ module.exports = async (req, res) => {
     // 2) ตรวจเงื่อนไขครบ: succeeded + ยอดตรง + สกุลตรง + contract ตรง (จาก metadata)
     let reason = null;
     if (pi.status !== 'succeeded') reason = 'not_succeeded';
-    else if (pi.amount !== EXPECTED_AMOUNT) reason = 'amount_mismatch';
+    else if (pi.amount !== productCfg(body.product).amount) reason = 'amount_mismatch';
     else if (pi.currency !== 'thb') reason = 'currency_mismatch';
     else if (pi.metadata?.contract_id !== contractId) reason = 'contract_mismatch';
 
@@ -196,11 +223,20 @@ module.exports = async (req, res) => {
     }
 
     // 3) ผ่านหมด → เขียน payment_completed ผ่าน service_role (ข้าม trigger ได้เฉพาะ service_role)
-    // เลือกตารางตาม product: sale → sale_contracts (คอลัมน์ payment_intent_id), อื่นๆ → contracts (payment_ref)
-    const { table, refCol } = _productTarget(body.product);
+    // เลือกตารางตาม product: sale → sale_contracts · notice → notice_cases · nda → nda_contracts · อื่นๆ → contracts
+    const cfg2   = productCfg(body.product);
+    const table  = cfg2.table;
     const patchBody = { payment_completed: true };
-    patchBody[refCol] = pi.id;
-    if (table === 'emp_contracts') { patchBody.paid_at = new Date().toISOString(); patchBody.status = 'paid'; }
+    patchBody[cfg2.refCol] = pi.id;
+    if (table === 'notice_cases') {
+      patchBody.payment_provider = 'stripe';
+      patchBody.paid_at = new Date().toISOString();
+      patchBody.status  = 'demand_ready';
+    }
+    if (table === 'nda_contracts' || table === 'emp_contracts') {
+      patchBody.paid_at = new Date().toISOString();
+      patchBody.status  = 'paid';
+    }
     const patchRes = await fetch(
       `${SUPABASE_URL}/rest/v1/${table}?${ID_COLUMN}=eq.${encodeURIComponent(contractId)}`,
       {
@@ -219,6 +255,9 @@ module.exports = async (req, res) => {
       const detail = await patchRes.text();
       return res.status(500).json({ error: 'Supabase write failed', detail });
     }
+    const prows = await patchRes.json().catch(() => []);
+    if (!Array.isArray(prows) || !prows.length)
+      return res.status(404).json({ paid: false, reason: 'contract_not_found', table });
 
     return res.status(200).json({ paid: true, status: 'succeeded', payment_ref: pi.id });
   } catch (err) {
