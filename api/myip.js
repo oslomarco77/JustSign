@@ -327,10 +327,53 @@ function partyDetailLine(p, card) {
   return { name, id, addr, age: ageFromDob(dob) };
 }
 
+// ════════════════════════════════════════════════════════════════
+//  NDA TEMPLATE — ฉบับ MUTUAL (ทั้งสองฝ่ายเปิดเผยข้อมูลต่อกัน)
+//
+//  ⚠️⚠️ ยังไม่เปิดใช้งาน — รอข้อความจากทนาย ⚠️⚠️
+//
+//  วิธีเปิดใช้งาน (ทำ 2 อย่าง ไม่ต้องแก้ที่อื่นเลย):
+//    1. วางข้อความ verbatim จากไฟล์ Word ฉบับ Mutual ลงใน c1–c8 / intro / closing
+//       ด้านล่าง — ใส่ให้ครบทุกช่อง ห้ามเว้นว่าง ห้ามแต่งเอง
+//       ช่องที่เติมค่าได้: {SUBJECT} {OBJECTIVE} ในข้อ 1 · {YEARS} {START} {END} ในข้อ 7
+//       (ถ้าฉบับ Mutual วางเลขข้ออื่น ให้ย้าย placeholder ไปตามข้อจริง)
+//    2. เปลี่ยน ready: false → true
+//
+//  จนกว่าจะทำ 2 ข้อนี้ ระบบจะปฏิเสธคำขอ nda_type='mutual' พร้อมข้อความ
+//  บอกผู้ใช้ตรง ๆ — ไม่มีทางที่เอกสาร Mutual ปลอมจะหลุดออกไป
+// ════════════════════════════════════════════════════════════════
+const NDA_T_MUTUAL = {
+  ready: false,
+  c1: '', c2: '', c3: '', c4: '', c5: '', c6: '', c7: '', c8: '',
+  intro: '', closing: '',
+};
+function ndaMutualReady() {
+  if (!NDA_T_MUTUAL.ready) return false;
+  // กันเผลอตั้ง ready=true ทั้งที่ยังกรอกไม่ครบ
+  for (let i = 1; i <= 8; i++) if (!String(NDA_T_MUTUAL['c' + i] || '').trim()) return false;
+  return true;
+}
+
+/* เลือกชุดข้อความตามประเภท NDA แล้วเติมเฉพาะช่องว่าง
+   คืน null เมื่อขอ mutual แต่เทมเพลตยังไม่พร้อม — จุดเรียกต้องเช็ค */
 function buildNdaClauses(ctx) {
-  const c1 = NDA_T.c1.replace('{SUBJECT}', ctx.subject || ctx.purpose).replace('{OBJECTIVE}', ctx.objective || ctx.purpose);
-  const c7 = NDA_T.c7.replace('{YEARS}', ctx.years).replace('{START}', ctx.start_th).replace('{END}', ctx.end_th);
-  return { c1, c2: NDA_T.c2, c3: NDA_T.c3, c4: NDA_T.c4, c5: NDA_T.c5, c6: NDA_T.c6, c7, c8: NDA_T.c8 };
+  const mutual = (ctx.nda_type === 'mutual');
+  if (mutual && !ndaMutualReady()) return null;
+  const T = mutual ? NDA_T_MUTUAL : NDA_T;
+  const c1 = String(T.c1).replace('{SUBJECT}', ctx.subject || ctx.purpose).replace('{OBJECTIVE}', ctx.objective || ctx.purpose);
+  const c7 = String(T.c7).replace('{YEARS}', ctx.years).replace('{START}', ctx.start_th).replace('{END}', ctx.end_th);
+  return { c1, c2: T.c2, c3: T.c3, c4: T.c4, c5: T.c5, c6: T.c6, c7, c8: T.c8 };
+}
+/* intro / closing ก็ต้องสลับตามประเภทด้วย */
+function ndaMeta2(ndaType) {
+  const T = (ndaType === 'mutual' && ndaMutualReady()) ? NDA_T_MUTUAL : NDA_T;
+  return { intro: T.intro || NDA_T.intro, closing: T.closing || NDA_T.closing };
+}
+/* ชื่อเรียกคู่สัญญาตามประเภท — ฉบับ Mutual ทั้งสองฝ่ายเป็นทั้งผู้ให้และผู้รับ */
+function ndaRoleNames(ndaType) {
+  return (ndaType === 'mutual')
+    ? { a: 'คู่สัญญาฝ่ายที่หนึ่ง', b: 'คู่สัญญาฝ่ายที่สอง' }
+    : { a: 'ผู้ให้ข้อมูล', b: 'ผู้รับข้อมูล' };
 }
 
 // AI ช่วยแยกเฉพาะ "ช่องว่าง" ข้อ 1 จากข้อความที่ผู้ใช้พิมพ์เอง (ไม่ร่างเนื้อกฎหมาย)
@@ -367,6 +410,380 @@ async function extractSlots(ctx) {
   } catch (_) { return fb; }
 }
 
+// ════════════════════════════════════════════════════════════════
+//  SignDee NOTICE — ทวงถามค่าเช่า / บอกเลิกสัญญา / แจ้งตำรวจ
+//  ⚠️ เนื้อหนังสือประกอบที่ server เท่านั้น — ยังไม่ชำระเงิน = ไม่ส่งเนื้อหาออก
+//  ข้อความ verbatim จากไฟล์ Word ของ Ken เติมเฉพาะช่องว่าง
+// ════════════════════════════════════════════════════════════════
+const NOTICE_TABLE = 'notice_cases';
+const TH_MO = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+
+function ntDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso); if (isNaN(d.getTime())) return '';
+  return d.getDate() + ' ' + TH_MO[d.getMonth()] + ' พ.ศ. ' + (d.getFullYear() + 543);
+}
+function ntParts(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  if (isNaN(d.getTime())) return { d: '........', m: '.....................', y: '...........' };
+  return { d: String(d.getDate()), m: TH_MO[d.getMonth()], y: String(d.getFullYear() + 543) };
+}
+function ntMoney(v) { return (Number(v) || 0).toLocaleString('en-US'); }
+function ntDash(v) { return (v && String(v).trim()) ? String(v).trim() : '........................'; }
+function ntMonthLabel(m, y) { if (!m || !y) return ''; return TH_MO[parseInt(m, 10) - 1] + ' ' + (parseInt(y, 10) + 543); }
+function ntBaht(numV) {
+  let n = Math.round(Number(numV) || 0);
+  if (n === 0) return 'ศูนย์บาทถ้วน';
+  const d = ['','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+  const p = ['','สิบ','ร้อย','พัน','หมื่น','แสน'];
+  function rg(g) {
+    const str = String(g), len = str.length; let o = '';
+    for (let i = 0; i < len; i++) {
+      const dig = parseInt(str[i], 10), pos = len - 1 - i;
+      if (!dig) continue;
+      if (pos === 0 && dig === 1 && len > 1) o += 'เอ็ด';
+      else if (pos === 1 && dig === 2) o += 'ยี่สิบ';
+      else if (pos === 1 && dig === 1) o += 'สิบ';
+      else o += d[dig] + p[pos];
+    }
+    return o;
+  }
+  const mil = Math.floor(n / 1000000), rest = n % 1000000;
+  let o = '';
+  if (mil) o += rg(mil) + 'ล้าน';
+  if (rest) o += rg(rest);
+  return o + 'บาทถ้วน';
+}
+function ntAddr2(a) {
+  const s2 = String(a || '').trim(); if (!s2) return ['', ''];
+  const m = /(อำเภอ|เขต)/.exec(s2);
+  if (!m) return [s2, ''];
+  return [s2.slice(0, m.index).trim(), s2.slice(m.index).trim()];
+}
+function ntPropRef(LS) {
+  const parts = [LS.ptype || 'ทรัพย์ที่เช่า'];
+  if (LS.pno) parts.push('โครงการ ' + LS.pno);
+  parts.push(LS.house ? ('เลขที่ ' + LS.house) : 'เลขที่ ........................');
+  return parts.join(' ');
+}
+function ntBreachList(row) {
+  return (Array.isArray(row.breaches) ? row.breaches : [])
+    .map(b => (b && b.type === 'อื่นๆ โปรดระบุ') ? String(b.note || '').trim() : ((b && b.type) || ''))
+    .filter(Boolean);
+}
+function ntBreachBody(list) {
+  return (list.length === 1 ? list[0] : list.map((x, i) => '(' + (i + 1) + ') ' + x).join(' ')) +
+         ' ซึ่งเป็นการผิดสัญญาเช่าในสาระสำคัญ';
+}
+function ntTenantName(T) {
+  return [T.name, T.name2].filter(Boolean).join(' และ ') || '........................................';
+}
+function ntLeaseRef(LS) {
+  return [LS.leaseNo ? ('เลขที่ ' + LS.leaseNo) : '', LS.leaseDate ? ('ลงวันที่ ' + ntDate(LS.leaseDate)) : '']
+           .filter(Boolean).join(' ') || '[เลขที่ ลงวันที่ ]';
+}
+
+// ── ① หนังสือทวงถามค่าเช่า ──
+function ntBuildDemand(row) {
+  const L = row.landlord || {}, T = row.tenant || {}, LS = row.lease || {}, AR = row.arrears || {};
+  const DM = row.demand || {};
+  const ip = ntParts(DM.issuedDate), lp = ntParts(LS.leaseDate);
+  const bl = ntBreachList(row);
+  const hasAr = Number(AR.total || 0) > 0;
+  const days = DM.days || 15;
+  const rentMonths = (AR.rentItems || []).map(x => ntMonthLabel(x.m, x.y)).filter(Boolean).join(', ');
+  const utilMonths = (AR.utilItems || []).map(x => ntMonthLabel(x.m, x.y)).filter(Boolean).join(', ');
+  const brBody = bl.length ? ntBreachBody(bl) : '';
+  const brSolo = bl.length ? ('ข้อเท็จจริงปรากฏว่า ท่านได้ปฏิบัติผิดเงื่อนไขของสัญญาเช่าดังกล่าวข้างต้น กล่าวคือ ' + brBody) : '';
+  const brAdd  = bl.length ? ('นอกจากนี้ ท่านยังได้ปฏิบัติผิดเงื่อนไขของสัญญาเช่าดังกล่าวข้างต้น กล่าวคือ ' + brBody) : '';
+  const act = hasAr
+    ? (bl.length ? 'ดำเนินการชำระเงินค่าเช่าและค่าน้ำประปา/ค่าไฟฟ้าดังกล่าวข้างต้นให้แก่ข้าพเจ้า และแก้ไขการปฏิบัติผิดสัญญาให้ถูกต้อง'
+                 : 'ดำเนินการชำระเงินค่าเช่าและค่าน้ำประปา/ค่าไฟฟ้าดังกล่าวข้างต้นให้แก่ข้าพเจ้า')
+    : 'ระงับการกระทำดังกล่าว และแก้ไขการปฏิบัติผิดสัญญาให้ถูกต้อง';
+  const failTxt = hasAr
+    ? (bl.length ? 'ท่านยังคงละเลยไม่ชำระเงินจำนวนดังกล่าวหรือไม่แก้ไขการปฏิบัติผิดสัญญา' : 'ท่านยังคงละเลยไม่ชำระเงินจำนวนดังกล่าว')
+    : 'ท่านยังคงละเลยไม่แก้ไขการปฏิบัติผิดสัญญา';
+  const subject = (hasAr && bl.length) ? 'ขอให้ชำระค่าเช่าค้างชำระ และปฏิบัติตามสัญญาเช่าให้ถูกต้อง'
+                : (bl.length ? 'ขอให้ปฏิบัติตามสัญญาเช่าให้ถูกต้อง' : 'ขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้า');
+  const p2 = hasAr
+    ? ('ปรากฏว่า ท่านได้ค้างชำระค่าเช่าประจำเดือน ' + ntDash(rentMonths) +
+       ' เป็นเงินทั้งสิ้น ' + ntMoney(AR.rentTotal) + ' บาท (' + ntBaht(AR.rentTotal) + ')' +
+       (Number(AR.utilTotal || 0) > 0 ? '  รวมถึงค่าน้ำประปาและค่าไฟฟ้าประจำเดือน ' + ntDash(utilMonths) + ' เป็นเงิน ' + ntMoney(AR.utilTotal) + ' บาท' : '') +
+       ' รวมทั้งสิ้น ' + ntMoney(AR.total) + ' บาท (' + ntBaht(AR.total) + ')' + (brAdd ? ('  ' + brAdd) : ''))
+    : brSolo;
+  return {
+    place2: ntAddr2(LS.paddr || ''),
+    dateLine: 'วันที่ ' + ip.d + ' เดือน ' + ip.m + ' พ.ศ. ' + ip.y,
+    subject, to: ntTenantName(T),
+    ref: 'อ้างถึง สัญญาเช่า ' + ntLeaseRef(LS),
+    p1: 'ตามที่ท่านได้ทำสัญญาเช่าที่อ้างถึง ' + ntPropRef(LS) +
+        ' ตามสัญญาเช่าลงวันที่ ' + lp.d + ' เดือน ' + lp.m + ' พ.ศ. ' + lp.y +
+        ' โดยกำหนดชำระค่าเช่าทุกวันที่ ' + ntDash(LS.dueDay) + ' ของเดือน ในอัตราเดือนละ ' + ntMoney(LS.rent) + ' บาท ความละเอียดแจ้งแล้วนั้น',
+    p2,
+    p3: 'ในการนี้ จึงขอให้ท่าน' + act + 'ภายในกำหนด ' + days +
+        ' วัน นับแต่วันที่ท่านได้รับหนังสือฉบับนี้ หากพ้นกำหนดเวลาดังกล่าวแล้ว ' + failTxt +
+        ' ข้าพเจ้ามีความจำเป็นต้องขอใช้สิทธิบอกเลิกสัญญาเช่า' +
+        (DM.softTone ? '' : ' ตัดการจ่ายสาธารณูปโภค การเข้าออกทรัพย์ที่ให้เช่า') + ' และดำเนินการตามกฎหมายต่อไป',
+    signer: L.name || '',
+  };
+}
+
+// ── ② หนังสือบอกเลิกสัญญาเช่า ──
+function ntBuildTerminate(row) {
+  const L = row.landlord || {}, T = row.tenant || {}, LS = row.lease || {}, AR = row.arrears || {};
+  const DM = row.demand || {}, TM = row.terminate || {};
+  const ip = ntParts(TM.issuedDate), lp = ntParts(LS.leaseDate), dp = ntParts(DM.issuedDate);
+  const days = TM.days || 7;
+  const bl = ntBreachList(row);
+  const hasAr = Number(AR.total || 0) > 0;
+  const lead = hasAr
+    ? ('ปรากฏว่า แต่ท่านยังคงละเลยมิได้ทำการชำระเงินค่าเช่าและค่าน้ำ/ค่าไฟฟ้าที่ค้างชำระแต่อย่างใด' +
+       (bl.length ? (' อีกทั้งยังคงปฏิบัติผิดเงื่อนไขของสัญญาเช่า กล่าวคือ ' + ntBreachBody(bl) + ' โดยมิได้แก้ไขให้ถูกต้อง') : ''))
+    : ('ปรากฏว่า ท่านยังคงปฏิบัติผิดเงื่อนไขของสัญญาเช่า กล่าวคือ ' + ntBreachBody(bl) + ' โดยมิได้แก้ไขให้ถูกต้องแต่อย่างใด');
+  const tail = TM.softTone
+    ? 'หากท่านไม่ย้ายออกภายในกำหนดเวลาดังกล่าว ข้าพเจ้าจะดำเนินการตามกฎหมาย โดยใช้สิทธิทางศาลเพื่อขับไล่และเรียกค่าเสียหายจากท่านต่อไป'
+    : 'หากท่านไม่ย้ายออกภายในกำหนดเวลาดังกล่าว ข้าพเจ้าจะเข้าดำเนินการล็อกประตูสถานที่เช่า ตัดสาธารณูปโภค การเข้าออกทรัพย์ที่ให้เช่า ขนย้ายทรัพย์สิน บริวาร ย้ายออกจากสถานที่เช่า และดำเนินการตามกฎหมายต่อไป';
+  return {
+    place2: ntAddr2(LS.paddr || ''),
+    dateLine: 'วันที่ ' + ip.d + ' เดือน ' + ip.m + ' พ.ศ. ' + ip.y,
+    subject: 'บอกเลิกสัญญาเช่า และขอให้ส่งมอบพื้นที่เช่าคืน',
+    to: ntTenantName(T),
+    ref1: 'อ้างถึง  1. สัญญาเช่า ' + ntLeaseRef(LS),
+    ref2: '           2. หนังสือ ฉบับลงวันที่ ' + dp.d + ' เดือน ' + dp.m + ' พ.ศ. ' + dp.y + ' เรื่อง ขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้า',
+    p1: 'ตามที่ท่านได้ทำสัญญาเช่าที่อ้างถึง 1. ' + ntPropRef(LS) +
+        ' ตามสัญญาเช่าลงวันที่ ' + lp.d + ' เดือน ' + lp.m + ' พ.ศ. ' + lp.y +
+        ' โดยกำหนดชำระค่าเช่าทุกวันที่ ' + ntDash(LS.dueDay) + ' ของเดือน ในอัตราเดือนละ ' + ntMoney(LS.rent) +
+        ' บาท และหนังสือขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้าอ้างถึง 2. ซึ่งท่านได้รับไว้โดยชอบแล้ว ความละเอียดแจ้งแล้วนั้น',
+    p2: lead + ' ด้วยเหตุนี้ ข้าพเจ้าในฐานะผู้ให้เช่า จึงขอใช้สิทธิบอกเลิกสัญญาเช่าที่อ้างถึง 1. โดยให้สัญญาเช่าเป็นอันสิ้นสุดลงนับแต่วันที่ท่านได้รับหนังสือฉบับนี้ และขอให้ท่านดำเนินการขนย้ายทรัพย์สิน บริวาร และย้ายออกจากสถานที่เช่าภายในกำหนด ' +
+        days + ' วัน นับแต่วันที่ได้รับหนังสือฉบับนี้ พร้อมทั้งชำระค่าเช่าที่ค้างชำระ ค่าน้ำประปา ค่าไฟฟ้า และค่าเสียหายจากการขาดประโยชน์จนถึงวันที่ย้ายออกจริง ตลอดจนส่งมอบกุญแจและคีย์การ์ดคืนแก่ข้าพเจ้า ณ วันที่ย้ายออก ' + tail,
+    signer: L.name || '',
+  };
+}
+
+// ── ③ หนังสือแจ้งตำรวจ (ลงบันทึกประจำวัน) ──
+function ntBuildPolice(row) {
+  const L = row.landlord || {}, T = row.tenant || {}, LS = row.lease || {}, AR = row.arrears || {};
+  const DM = row.demand || {}, EV = row.evidence || {}, P = EV.police || {};
+  const dp = ntParts(P.date), lp = ntParts(LS.leaseDate);
+  const cs = ((row.demand_delivery || {}).copies) || [];
+  const rentMonths = (AR.rentItems || []).map(x => ntMonthLabel(x.m, x.y)).filter(Boolean).join(', ');
+  const bl = ntBreachList(row);
+  const facts = [];
+  let i = 1;
+  facts.push(i++ + '. ข้าพเจ้า ' + ntDash(L.name) + (L.id13 ? (' เลขประจำตัวประชาชน ' + L.id13) : '') +
+    ' เป็นผู้ให้เช่า ' + ntPropRef(LS) + ' ตั้งอยู่ ' + ntDash(LS.paddr));
+  facts.push(i++ + '. ข้าพเจ้าได้ทำสัญญาเช่ากับ ' + ntDash(ntTenantName(T)) +
+    ' ตามสัญญาเช่า' + (LS.leaseNo ? (' เลขที่ ' + LS.leaseNo) : '') +
+    ' ลงวันที่ ' + lp.d + ' เดือน ' + lp.m + ' พ.ศ. ' + lp.y +
+    ' อัตราค่าเช่าเดือนละ ' + ntMoney(LS.rent) + ' บาท กำหนดชำระทุกวันที่ ' + ntDash(LS.dueDay) + ' ของเดือน');
+  if (Number(AR.total || 0) > 0) {
+    facts.push(i++ + '. ผู้เช่าผิดนัดไม่ชำระค่าเช่าประจำเดือน ' + ntDash(rentMonths) +
+      ' รวมค่าเช่าและค่าสาธารณูปโภคค้างชำระเป็นเงินทั้งสิ้น ' + ntMoney(AR.total) + ' บาท (' + ntBaht(AR.total) + ')');
+  }
+  if (bl.length) facts.push(i++ + '. ผู้เช่าปฏิบัติผิดเงื่อนไขของสัญญาเช่า กล่าวคือ ' + ntBreachBody(bl));
+  const sent = cs.filter(c => c && c.sentDate);
+  if (sent.length) {
+    const c = sent[0];
+    const addr = [c.house, c.road, c.sub ? ('ตำบล/แขวง' + c.sub) : '', c.dist ? ('อำเภอ/เขต' + c.dist) : '', c.prov, c.zip].filter(Boolean).join(' ');
+    facts.push(i++ + '. ข้าพเจ้าได้มีหนังสือทวงถามให้ชำระหนี้ ส่งทางไปรษณีย์ลงทะเบียนตอบรับ' +
+      (c.tracking ? (' เลขที่สิ่งของ ' + c.tracking) : '') +
+      ' เมื่อวันที่ ' + ntDate(c.sentDate) + ' ไปยังที่อยู่ตามบัตรประชาชนของผู้เช่า คือ ' + ntDash(addr));
+    const rec = cs.filter(c2 => c2 && c2.recvDate);
+    if (rec.length) {
+      const r = rec[rec.length - 1];
+      facts.push(i++ + '. ผู้เช่าได้รับหนังสือดังกล่าวแล้วเมื่อวันที่ ' + ntDate(r.recvDate) +
+        (r.recvName ? (' โดยมี ' + r.recvName + ' เป็นผู้ลงชื่อรับ') : '') +
+        ' ปรากฏตามใบตอบรับ (ป.133) ที่แนบมาพร้อมนี้');
+      if (DM.deadlineDate) {
+        facts.push(i++ + '. หนังสือดังกล่าวกำหนดให้ผู้เช่าชำระหนี้ภายใน ' + (DM.days || 15) +
+          ' วันนับแต่วันที่ได้รับ ซึ่งครบกำหนดในวันที่ ' + ntDate(DM.deadlineDate) +
+          ' แต่จนถึงขณะนี้ผู้เช่ายังคงเพิกเฉย มิได้ชำระหนี้แต่อย่างใด');
+      }
+    }
+  }
+  facts.push(i++ + '. ข้าพเจ้าจึงมาแจ้งความไว้เป็นหลักฐาน เพื่อประโยชน์ในการดำเนินการตามกฎหมายต่อไป');
+  return {
+    dateLine: 'วันที่ ' + dp.d + ' เดือน ' + dp.m + ' พ.ศ. ' + dp.y,
+    station: P.station || '........................................',
+    stationAddr: P.stationAddr || '',
+    subject: 'ขอความอนุเคราะห์ลงบันทึกประจำวันไว้เป็นหลักฐาน',
+    facts,
+    purpose: 'ทั้งนี้ ข้าพเจ้าประสงค์ขอให้พนักงานสอบสวนบันทึกข้อเท็จจริงข้างต้นไว้เป็นหลักฐานในบันทึกประจำวัน เพื่อใช้ประกอบการดำเนินคดีตามกฎหมายและการใช้สิทธิทางศาลต่อไป',
+    attach: ['สำเนาสัญญาเช่า', 'สำเนาหนังสือทวงถามให้ชำระหนี้', 'ใบตอบรับไปรษณีย์ลงทะเบียน (ป.133)', 'สำเนาบัตรประจำตัวประชาชนของข้าพเจ้า'],
+    signer: L.name || '', phone: L.phone || '',
+  };
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  POST { action:'notice_conversion', row_id, gclid?, source? }
+//  Google Ads Purchase conversion — "ผู้ตัดสิน" ว่ายิงได้หรือไม่ อยู่ที่ฝั่งนี้เท่านั้น
+//
+//  คืน { ok, fire, reason, transaction_id, value, currency }
+//    fire=true  → frontend ยิง gtag('event','purchase') ได้ (ครั้งเดียวเท่านั้น)
+//    fire=false → reason = 'unpaid' | 'already_sent' | 'not_found'
+//
+//  กัน duplicate แบบ atomic: PATCH เฉพาะแถวที่ ads_conversion_sent_at ยัง null
+//  (PostgREST filter) → ถ้าสองแท็บยิงพร้อมกัน จะมีแค่แท็บเดียวที่ได้ row กลับมา
+// ══════════════════════════════════════════════════════════════════════
+const NOTICE_PRICE_THB = 2990;   // ฿2,990 ต่อเคส (ตรงกับ PRICE ที่ใช้สร้าง charge)
+
+async function handleNoticeConversion(req, res, body) {
+  const rowId = body.row_id;
+  if (!rowId) return res.status(400).json({ ok: false, code: 'missing_row_id', message_th: 'ไม่พบรหัสเคส' });
+
+  const row = await sbGetT(NOTICE_TABLE, rowId);
+  if (!row) return res.status(404).json({ ok: true, fire: false, reason: 'not_found' });
+
+  // (1) ต้องชำระเงินสำเร็จจริงตามฐานข้อมูลเท่านั้น — ไม่เชื่อ client
+  if (row.payment_completed !== true)
+    return res.status(200).json({ ok: true, fire: false, reason: 'unpaid' });
+
+  // (2) ส่งไปแล้ว → ห้ามส่งซ้ำ
+  if (row.ads_conversion_sent_at)
+    return res.status(200).json({
+      ok: true, fire: false, reason: 'already_sent',
+      transaction_id: row.ads_transaction_id || null,
+      sent_at: row.ads_conversion_sent_at,
+    });
+
+  const txnId = String(row.payment_ref || row.case_no || ('NT-' + rowId)).slice(0, 100);
+  const value = Number(row.ads_value || row.payment_amount || NOTICE_PRICE_THB) || NOTICE_PRICE_THB;
+
+  // (3) จองสิทธิ์ยิง conversion แบบ atomic — อัปเดตเฉพาะแถวที่ยังไม่เคยส่ง
+  let claimed = false;
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/${NOTICE_TABLE}`
+      + `?id=eq.${encodeURIComponent(rowId)}&ads_conversion_sent_at=is.null`;
+    const r = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`,
+        'Content-Type': 'application/json', Prefer: 'return=representation',
+      },
+      body: JSON.stringify({
+        ads_conversion_sent_at: new Date().toISOString(),
+        ads_transaction_id: txnId,
+        ads_value: value,
+        ads_gclid: (body.gclid || row.ads_gclid || null),
+        ads_source: (body.source && typeof body.source === 'object') ? body.source : (row.ads_source || null),
+      }),
+    });
+    const updated = await r.json().catch(() => []);
+    claimed = r.ok && Array.isArray(updated) && updated.length > 0;
+  } catch (e) {
+    return res.status(500).json({ ok: false, code: 'claim_failed', detail: String(e.message || e).slice(0, 160) });
+  }
+
+  if (!claimed)   // มีคนอื่นจองไปก่อนแล้วเสี้ยววินาทีนี้
+    return res.status(200).json({ ok: true, fire: false, reason: 'already_sent' });
+
+  return res.status(200).json({
+    ok: true, fire: true,
+    transaction_id: txnId,
+    value: value,
+    currency: 'THB',
+    case_no: row.case_no || null,
+  });
+}
+
+// ── POST { action:'notice_conv_status', row_id } — อ่านอย่างเดียว (ใช้ debug/ตรวจสอบ) ──
+async function handleNoticeConvStatus(req, res, body) {
+  const rowId = body.row_id;
+  if (!rowId) return res.status(400).json({ ok: false, code: 'missing_row_id' });
+  const row = await sbGetT(NOTICE_TABLE, rowId);
+  if (!row) return res.status(404).json({ ok: false, code: 'not_found' });
+  return res.status(200).json({
+    ok: true,
+    paid: row.payment_completed === true,
+    paid_at: row.paid_at || null,
+    payment_ref: row.payment_ref || null,
+    conversion_sent_at: row.ads_conversion_sent_at || null,
+    transaction_id: row.ads_transaction_id || null,
+    value: row.ads_value || null,
+    gclid: row.ads_gclid || null,
+  });
+}
+
+// ── POST { action:'notice_doc', row_id, doc:'demand'|'terminate'|'police' } ──
+//  ส่งรูปแบบกลาง: { ok, locked, case_no, doc:{ place,dateLine,subject,to,refs[],paras[],attach[],signRole,signer,phone,noIndent } }
+//  🔒 locked = true → doc มีเฉพาะส่วนหัว (paras ว่าง) เนื้อหาไม่ออกจาก server
+async function handleNoticeDoc(req, res, body) {
+  const rowId = body.row_id;
+  const kind  = body.doc || 'demand';
+  if (!rowId) return res.status(400).json({ ok: false, code: 'missing_row_id', message_th: 'ไม่พบรหัสเคส' });
+  if (!['demand', 'terminate', 'police'].includes(kind))
+    return res.status(400).json({ ok: false, code: 'bad_doc', message_th: 'ไม่รู้จักเอกสาร' });
+
+  const row = await sbGetT(NOTICE_TABLE, rowId);
+  if (!row) return res.status(404).json({ ok: false, code: 'not_found', message_th: 'ไม่พบเคส' });
+
+  const paid = (row.payment_completed === true);
+  const LS = row.lease || {}, T = row.tenant || {}, L = row.landlord || {};
+
+  let doc;
+  if (kind === 'police') {
+    const EV = row.evidence || {}, P = EV.police || {};
+    const dp = ntParts(P.date);
+    const full = paid ? ntBuildPolice(row) : null;
+    doc = {
+      place: '',
+      dateLine: 'วันที่ ' + dp.d + ' เดือน ' + dp.m + ' พ.ศ. ' + dp.y,
+      subject: 'ขอความอนุเคราะห์ลงบันทึกประจำวันไว้เป็นหลักฐาน',
+      to: 'พนักงานสอบสวน ' + (P.station || '........................................'),
+      refs: P.stationAddr ? [P.stationAddr] : [],
+      paras: full ? full.facts.concat([full.purpose]) : [],
+      attach: full ? full.attach : [],
+      signRole: 'ผู้แจ้ง',
+      signer: L.name || '',
+      phone: L.phone || '',
+      noIndent: true,
+    };
+  } else if (kind === 'terminate') {
+    const TM = row.terminate || {}, DM = row.demand || {};
+    const ip = ntParts(TM.issuedDate), dp = ntParts(DM.issuedDate);
+    const full = paid ? ntBuildTerminate(row) : null;
+    doc = {
+      place: LS.paddr || '',
+      dateLine: 'วันที่ ' + ip.d + ' เดือน ' + ip.m + ' พ.ศ. ' + ip.y,
+      subject: 'บอกเลิกสัญญาเช่า และขอให้ส่งมอบพื้นที่เช่าคืน',
+      to: ntTenantName(T),
+      refs: [
+        'อ้างถึง  1. สัญญาเช่า ' + ntLeaseRef(LS),
+        '           2. หนังสือ ฉบับลงวันที่ ' + dp.d + ' เดือน ' + dp.m + ' พ.ศ. ' + dp.y + ' เรื่อง ขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้า',
+      ],
+      paras: full ? [full.p1, full.p2] : [],
+      attach: [],
+      signRole: '(ผู้ให้เช่า)',
+      signer: L.name || '',
+      phone: '',
+    };
+  } else {
+    const DM = row.demand || {};
+    const ip = ntParts(DM.issuedDate);
+    const full = paid ? ntBuildDemand(row) : null;
+    // หัวเรื่องคำนวณจากเหตุที่เลือก — เปิดให้เห็นได้ก่อนจ่าย (ไม่ใช่เนื้อหา)
+    const bl = ntBreachList(row);
+    const hasAr = Number((row.arrears || {}).total || 0) > 0;
+    const subject = (hasAr && bl.length) ? 'ขอให้ชำระค่าเช่าค้างชำระ และปฏิบัติตามสัญญาเช่าให้ถูกต้อง'
+                  : (bl.length ? 'ขอให้ปฏิบัติตามสัญญาเช่าให้ถูกต้อง'
+                               : 'ขอให้ชำระค่าเช่าค้างชำระและค่าน้ำประปา/ค่าไฟฟ้า');
+    doc = {
+      place: LS.paddr || '',
+      dateLine: 'วันที่ ' + ip.d + ' เดือน ' + ip.m + ' พ.ศ. ' + ip.y,
+      subject,
+      to: ntTenantName(T),
+      refs: ['อ้างถึง สัญญาเช่า ' + ntLeaseRef(LS)],
+      paras: full ? [full.p1, full.p2, full.p3] : [],
+      attach: [],
+      signRole: '(ผู้ให้เช่า)',
+      signer: L.name || '',
+      phone: '',
+    };
+  }
+
+  return res.status(200).json({ ok: true, locked: !paid, case_no: row.case_no || '', doc });
+}
+
 // ── POST { action:'generate', row_id } ──
 async function handleNdaGenerate(req, res, body) {
   const rowId = body.row_id;
@@ -387,13 +804,30 @@ async function handleNdaGenerate(req, res, body) {
   const now = new Date();
   const start = now, end = addMonths(now, months);
   const slots = await extractSlots({ purpose });   // AI เติมเฉพาะช่องว่างข้อ 1 (มี fallback)
+
+  /* ประเภท NDA: ผู้ใช้เลือกเองมีน้ำหนักสูงสุด → ค่าที่เคยบันทึกไว้ในแถว → AI เดา
+     (AI เดาไว้เป็น fallback เฉย ๆ ห้ามให้ทับสิ่งที่ผู้ใช้เลือก) */
+  const _wanted = ['one_way', 'mutual'].includes(body.nda_type) ? body.nda_type
+                : (['one_way', 'mutual'].includes(row.nda_type) ? row.nda_type : slots.nda_type);
+  if (_wanted === 'mutual' && !ndaMutualReady())
+    return res.status(400).json({
+      ok: false, code: 'mutual_not_ready',
+      message_th: 'ฉบับ Mutual NDA ยังไม่เปิดใช้งาน — อยู่ระหว่างรอทนายรีวิวข้อความ กรุณาเลือก One-way NDA ไปก่อน',
+    });
+  const ndaType = _wanted, risk = slots.risk_level;
+
   const ctx = {
     purpose, years: (months / 12 % 1 === 0) ? String(months / 12) : (months + ' เดือน'),
     subject: slots.subject, objective: slots.objective,
     start_th: thDate(start), end_th: thDate(end),
+    nda_type: ndaType,
   };
   const clauses = buildNdaClauses(ctx);   // 8 ข้อ verbatim + slot
+  if (!clauses)
+    return res.status(400).json({ ok: false, code: 'mutual_not_ready',
+      message_th: 'ฉบับ Mutual NDA ยังไม่เปิดใช้งาน — อยู่ระหว่างรอทนายรีวิวข้อความ' });
 
+  const _t2 = ndaMeta2(ndaType), _roles = ndaRoleNames(ndaType);
   // meta หัวสัญญา (รายละเอียดคู่สัญญาตามฟอร์ม Word)
   const meta = {
     contract_no: row.contract_no || '',
@@ -401,13 +835,13 @@ async function handleNdaGenerate(req, res, body) {
     a: partyDetailLine(row.party_a, row.a_card),
     b: partyDetailLine(row.party_b, row.b_card),
     years: ctx.years, start_th: ctx.start_th, end_th: ctx.end_th,
-    intro: NDA_T.intro, closing: NDA_T.closing,
+    intro: _t2.intro, closing: _t2.closing,
+    nda_type: ndaType, roles: _roles,
   };
 
   // hash ของสัญญาฉบับเต็ม (เรียงข้อ 1-8)
   const fullText = Array.from({ length: 8 }, (_, i) => clauses['c' + (i + 1)]).join('\n\n');
   const hash = sha256(fullText);
-  const ndaType = slots.nda_type, risk = slots.risk_level;
 
   const hist = Array.isArray(row.hash_history) ? row.hash_history.slice() : [];
   hist.push({ stage: 'generated', hash, ts: new Date().toISOString() });
@@ -449,12 +883,17 @@ async function handleNdaContent(req, res, body) {
   //   รหัสไม่เคยอยู่ในซอร์สฝั่ง client — ผู้ใช้ทั่วไปข้ามไม่ได้
   const _devSecrets = [process.env.NDA_DEV_KEY, process.env.ADMIN_PASSWORD].filter(Boolean);
   const devKeyOk = !!body.dev_key && _devSecrets.includes(body.dev_key);
-  if (body.skip === true && body.dev_key && !devKeyOk)
+  const _envSkip  = (process.env.NDA_ALLOW_SKIP === '1');
+  // dev_key ผิด → 401 เฉพาะตอนที่ deployment นี้ "ไม่ได้" เปิด NDA_ALLOW_SKIP ไว้
+  //   เดิมเช็คก่อน NDA_ALLOW_SKIP ทำให้รหัส dev ค้างเก่าใน localStorage
+  //   บล็อกการข้ามบน staging ทั้งที่ env อนุญาตอยู่แล้ว
+  if (body.skip === true && body.dev_key && !devKeyOk && !_envSkip)
     return res.status(401).json({ ok: false, code: 'bad_dev_key', message_th: 'รหัสผ่าน dev ไม่ถูกต้อง' });
 
-  if (!paid && body.skip === true && (process.env.NDA_ALLOW_SKIP === '1' || devKeyOk)) {
+  if (!paid && body.skip === true && (_envSkip || devKeyOk)) {
     await sbPatch(rowId, { payment_completed: true, payment_ref: 'SKIP-TEST', status: 'paid' });
     await ndaAudit(row, 'payment_skipped_staging', req, { via: devKeyOk ? 'dev_key' : 'env' });
+    row.payment_completed = true;
     paid = true;
   }
 
@@ -466,12 +905,14 @@ async function handleNdaContent(req, res, body) {
   if (!tokenOk && body.token)
     return res.status(403).json({ ok: false, code: 'bad_token', message_th: 'ลิงก์ลงนามไม่ถูกต้อง' });
 
+  const _t2c = ndaMeta2(row.nda_type);
   const meta = {
     contract_no: row.contract_no || '',
     date_th: thDate(new Date(row.created_at || Date.now())),
     a: partyDetailLine(row.party_a, row.a_card),
     b: partyDetailLine(row.party_b, row.b_card),
-    intro: NDA_T.intro, closing: NDA_T.closing,
+    intro: _t2c.intro, closing: _t2c.closing,
+    nda_type: row.nda_type || 'one_way', roles: ndaRoleNames(row.nda_type),
   };
   return res.status(200).json({
     ok: true, doc_hash: row.doc_hash, clauses: row.clauses_json || null, meta,
@@ -505,6 +946,61 @@ async function handleNdaNotify(req, res, body) {
   if (!r.ok) return res.status(502).json({ ok: false, code: 'line_push_failed', message_th: 'ส่งลิงก์ผ่าน LINE ไม่สำเร็จ', detail: (await r.text().catch(() => '')).slice(0, 200) });
   await ndaAudit(row, 'notify_sent', req, { party, channel: 'line' });
   return res.status(200).json({ ok: true, sent: true, link });
+}
+
+// ════════════════════════════════════════════════════════════════
+//  NDA — อ่านข้อมูลที่ anon อ่านไม่ได้แล้ว (หลังรัน nda_rls_fix.sql)
+//  nda_rls_fix.sql ตัด SELECT ของ anon เหลือ 10 คอลัมน์ที่ไม่เป็นความลับ
+//  (clauses_json / party_a / party_b / a_card / b_card / ลายเซ็น / audit_log
+//   อ่านผ่าน service_role เท่านั้น) — 2 action ด้านล่างคือทางเข้าที่ถูกต้อง
+//
+//  ⚠️ ตั้งใจไม่ใส่ 2 action นี้ใน _needsHuman (Turnstile) เพราะไม่มีค่าใช้จ่าย
+//     ไม่เรียก AI และ nda_row ถูกกั้นด้วย payment_completed อยู่แล้ว
+// ════════════════════════════════════════════════════════════════
+
+// ── POST { action:'nda_row', row_id, token? } ──────────────────────────────
+//  คืน "แถวเต็ม" ผ่าน service_role — ใช้แทน sb.from('nda_contracts').select('*')
+//  ที่ฝั่ง client ทำไม่ได้แล้ว (สร้าง Evidence PDF · กู้คืนสัญญาจากลิงก์ ?reload=)
+//  🔒 กั้นด้วย payment_completed เหมือน action:'content' — ยังไม่จ่าย = ไม่มีเนื้อหาออกจาก server
+async function handleNdaRow(req, res, body) {
+  const rowId = body.row_id;
+  if (!rowId) return res.status(400).json({ ok: false, code: 'missing_row_id', message_th: 'ไม่พบรหัสสัญญา' });
+
+  const row = await sbGet(rowId);
+  if (!row) return res.status(404).json({ ok: false, code: 'not_found', message_th: 'ไม่พบสัญญา' });
+
+  if (row.payment_completed !== true)
+    return res.status(403).json({ ok: false, code: 'locked', message_th: 'ยังไม่ปลดล็อก (ต้องชำระเงินก่อน)' });
+
+  // ส่ง token มาต้องเป็น token ที่ถูกต้อง (ผู้ลงนามทางไกล) — ไม่ส่งก็ได้ (ผู้ร่างที่ถือ row_id)
+  const token = String(body.token || '').trim();
+  if (token && token !== row.a_read_token && token !== row.b_read_token)
+    return res.status(403).json({ ok: false, code: 'bad_token', message_th: 'ลิงก์ลงนามไม่ถูกต้อง' });
+
+  return res.status(200).json({ ok: true, row });
+}
+
+// ── POST { action:'nda_verify_last4', row_id, party:'a'|'b', last4 } ───────
+//  ตรวจเลขบัตร 4 ตัวท้ายฝั่ง server — เดิม client ดึง party_a/party_b (เลขบัตร 13 หลัก
+//  + ที่อยู่เต็ม) มาเทียบเอง = เปิดข้อมูล PDPA ให้ใครก็ได้ที่มี row_id
+//  คืนแค่ผลเทียบ ไม่คืนเลขบัตรกลับไปเลย
+async function handleNdaVerifyLast4(req, res, body) {
+  const rowId = body.row_id, party = body.party;
+  if (!rowId || !['a', 'b'].includes(party))
+    return res.status(400).json({ ok: false, code: 'bad_params', message_th: 'พารามิเตอร์ไม่ครบ' });
+
+  const row = await sbGet(rowId);
+  if (!row) return res.status(404).json({ ok: false, code: 'not_found', message_th: 'ไม่พบสัญญา' });
+
+  const p     = (party === 'a') ? row.party_a : row.party_b;
+  const id13  = String((p && p.id13) || '').replace(/\D/g, '');
+  const last4 = String(body.last4 || '').replace(/\D/g, '');
+
+  return res.status(200).json({
+    ok: true,
+    match: !!(id13.length === 13 && last4.length === 4 && id13.slice(-4) === last4),
+    already_signed: !!(party === 'a' ? row.a_signed_at : row.b_signed_at),
+  });
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -892,10 +1388,13 @@ async function handleEmpContent(req, res, body) {
 
   const _devSecrets = [process.env.EMP_DEV_KEY, process.env.NDA_DEV_KEY, process.env.ADMIN_PASSWORD].filter(Boolean);
   const devKeyOk = !!body.dev_key && _devSecrets.includes(body.dev_key);
-  if (body.skip === true && body.dev_key && !devKeyOk)
+  const _envSkip  = (process.env.EMP_ALLOW_SKIP === '1' || process.env.NDA_ALLOW_SKIP === '1');
+  // บั๊กลำดับเดียวกับ NDA — dev_key ค้างเก่าใน localStorage เคยบล็อกการข้ามบน staging
+  // ทั้งที่ EMP_ALLOW_SKIP=1 อนุญาตอยู่แล้ว · production ไม่ตั้ง env นี้ พฤติกรรมเดิมไม่เปลี่ยน
+  if (body.skip === true && body.dev_key && !devKeyOk && !_envSkip)
     return res.status(401).json({ ok: false, code: 'bad_dev_key', message_th: 'รหัสผ่าน dev ไม่ถูกต้อง' });
 
-  if (!paid && body.skip === true && (process.env.EMP_ALLOW_SKIP === '1' || process.env.NDA_ALLOW_SKIP === '1' || devKeyOk)) {
+  if (!paid && body.skip === true && (_envSkip || devKeyOk)) {
     await sbPatchT(EMP_TABLE, rowId, { payment_completed: true, payment_ref: 'SKIP-TEST', status: 'paid', paid_at: new Date().toISOString() });
     paid = true;
   }
@@ -1079,8 +1578,13 @@ module.exports = async (req, res) => {
     // NDA generate / content / notify
     if (body && body.action) {
       try {
+        if (body.action === 'notice_doc') return await handleNoticeDoc(req, res, body);
+        if (body.action === 'notice_conversion')  return await handleNoticeConversion(req, res, body);
+        if (body.action === 'notice_conv_status') return await handleNoticeConvStatus(req, res, body);
         if (body.action === 'generate') return await handleNdaGenerate(req, res, body);
         if (body.action === 'content')  return await handleNdaContent(req, res, body);
+        if (body.action === 'nda_row')          return await handleNdaRow(req, res, body);
+        if (body.action === 'nda_verify_last4') return await handleNdaVerifyLast4(req, res, body);
         if (body.action === 'notify')   return await handleNdaNotify(req, res, body);
         if (body.action === 'signed_notify') return await handleNdaSignedNotify(req, res, body);
         if (body.action === 'emp_jd')       return await handleEmpJd(req, res, body);
