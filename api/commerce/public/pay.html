@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ชำระเงิน · SignDee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@700;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1F0EA;--surface:#FEFEFC;--line:#E6E4DC;--ink:#14171F;--ink2:#5B6270;--ink3:#8E95A3;
+  --deep:#0B1220;--accent:#2E86C6;--good:#1a7f5a;--warn:#C4913A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',system-ui,sans-serif;padding:24px 16px;line-height:1.8}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:2rem 1.6rem;
+  width:min(24rem,100%);text-align:center;
+  box-shadow:0 1px 2px rgba(11,18,32,.04),0 16px 40px -20px rgba(11,18,32,.25)}
+.brand{display:flex;align-items:center;justify-content:center;gap:.55rem;margin-bottom:1.4rem}
+.bm{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;place-items:center;
+  font-family:'Anuphan';font-weight:800;color:#06121C;font-size:.95rem}
+.bn{font-family:'Anuphan';font-weight:800;font-size:1rem}
+.bn i{font-style:normal;color:var(--accent)}
+h1{font-family:'Anuphan';font-size:1.25rem;font-weight:800;margin-bottom:.4rem;line-height:1.35}
+p{color:var(--ink2);font-size:.93rem}
+.amt{font-family:'Anuphan';font-weight:800;font-size:2.4rem;line-height:1.1;margin:.2rem 0 .1rem;
+  font-variant-numeric:tabular-nums}
+.amt small{font-size:.95rem;font-weight:600;color:var(--ink2);margin-left:.3rem}
+.qr{background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem;margin:1.1rem auto .8rem;
+  width:min(15rem,100%)}
+.qr img{width:100%;display:block;image-rendering:pixelated}
+.timer{font-family:'Anuphan';font-weight:700;font-size:.85rem;color:var(--ink2);
+  font-variant-numeric:tabular-nums}
+.timer b{color:var(--warn)}
+.steps{text-align:left;background:#F7F6F1;border-radius:12px;padding:.9rem 1rem;margin-top:1.1rem;
+  font-size:.85rem;color:var(--ink2);line-height:1.9}
+.steps b{font-family:'Anuphan';color:var(--ink)}
+.spin{width:32px;height:32px;border:3px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;margin:0 auto 1rem;animation:s .9s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.tick{width:46px;height:46px;border-radius:50%;background:#E8F2ED;color:var(--good);display:grid;
+  place-items:center;margin:0 auto 1rem;font-size:1.5rem;font-weight:700}
+.btn{display:inline-block;margin-top:1.2rem;background:var(--deep);color:#fff;text-decoration:none;
+  font-family:'Anuphan';font-weight:700;font-size:1rem;padding:.85rem 1.9rem;border-radius:999px;
+  border:0;cursor:pointer;transition:.15s}
+.btn:hover{background:var(--accent);color:#06121C}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.ord{font-family:'Anuphan';font-size:.75rem;color:var(--ink3);letter-spacing:.04em;margin-top:1.2rem}
+.hint{font-size:.78rem;color:var(--ink3);margin-top:.9rem;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand"><div class="bm">S</div><div class="bn">Sign<i>Dee</i></div></div>
+  <div id="body">
+    <div class="spin"></div>
+    <h1>กำลังเตรียม QR…</h1>
+  </div>
+  <div class="ord" id="ord"></div>
+</div>
+
+<script>
+(function () {
+  var el = document.getElementById('body');
+  var ordEl = document.getElementById('ord');
+
+  var params = new URLSearchParams(location.search);
+  var orderNumber = params.get('o') || params.get('order') || null;
+  try { if (!orderNumber) orderNumber = localStorage.getItem('sd_last_order'); } catch (_) {}
+
+  var token = null;
+  try { if (orderNumber) token = localStorage.getItem('sd_order_' + orderNumber); } catch (_) {}
+
+  if (orderNumber) ordEl.textContent = 'เลขที่คำสั่งซื้อ ' + orderNumber;
+
+  function render(html) { el.innerHTML = html; }
+  var baht = function (satang) { return (Number(satang) / 100).toLocaleString('th-TH'); };
+
+  function problem(msg, retry) {
+    render('<h1>ยังชำระเงินไม่สำเร็จ</h1><p>' + msg + '</p>' +
+      (retry ? '<button class="btn" id="again" type="button">ขอ QR ใหม่</button>' : '') +
+      '<p class="hint">ถ้าคุณโอนไปแล้ว ไม่ต้องโอนซ้ำ — ทักแชตเพจพร้อมแจ้งเลขที่คำสั่งซื้อ แล้วเราจะตรวจสอบให้</p>');
+    var b = document.getElementById('again');
+    if (b) b.addEventListener('click', renew);
+  }
+
+  if (!orderNumber || !token) {
+    problem('ไม่พบข้อมูลคำสั่งซื้อในเครื่องนี้ อาจเปิดจากอุปกรณ์อื่น');
+    return;
+  }
+
+  var statusUrl = '/api/commerce/orders/' + encodeURIComponent(orderNumber) +
+                  '/status?t=' + encodeURIComponent(token);
+
+  /* ── ขอ QR ใบใหม่เมื่อของเดิมหมดอายุ ── */
+  async function renew() {
+    render('<div class="spin"></div><h1>กำลังขอ QR ใหม่…</h1>');
+    try {
+      await fetch('/api/commerce/orders/' + encodeURIComponent(orderNumber) + '/payment',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    } catch (_) {}
+    tries = 0;
+    poll();
+  }
+
+  var countdownTimer = null;
+
+  function showQr(d) {
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+
+    render('<h1>สแกนเพื่อชำระเงิน</h1>' +
+      '<div class="amt">' + baht(d.amount) + '<small>บาท</small></div>' +
+      '<p>พร้อมเพย์ · SignDee</p>' +
+      '<div class="qr"><img alt="QR พร้อมเพย์" src="' + d.qr.image + '"></div>' +
+      '<div class="timer" id="tm"></div>' +
+      '<div class="steps">' +
+      '<b>วิธีจ่าย</b><br>1. เปิดแอปธนาคาร เลือกสแกน<br>' +
+      '2. สแกน QR นี้ แล้วยืนยันยอด ' + baht(d.amount) + ' บาท<br>' +
+      '3. รอสักครู่ หน้านี้จะเปลี่ยนเองเมื่อได้รับเงิน</div>' +
+      '<p class="hint">อย่าปิดหน้านี้จนกว่าจะขึ้นว่าชำระเงินสำเร็จ</p>');
+
+    var tm = document.getElementById('tm');
+    var until = d.qr.expires_at ? Date.parse(d.qr.expires_at) : 0;
+
+    function tick() {
+      if (!until) { tm.textContent = ''; return; }
+      var left = Math.max(0, Math.floor((until - Date.now()) / 1000));
+      if (left <= 0) {
+        clearInterval(countdownTimer); countdownTimer = null;
+        problem('QR หมดอายุแล้ว กดปุ่มด้านล่างเพื่อขอใหม่', true);
+        return;
+      }
+      var m = Math.floor(left / 60), s = left % 60;
+      tm.innerHTML = 'QR หมดอายุใน <b>' + m + ':' + String(s).padStart(2, '0') + '</b>';
+    }
+    tick();
+    countdownTimer = setInterval(tick, 1000);
+  }
+
+  function paid(url) {
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+    render('<div class="tick">✓</div><h1>ชำระเงินเรียบร้อยแล้วค่ะ</h1>' +
+      '<p>ดาวน์โหลดคู่มือได้จากปุ่มด้านล่าง</p>' +
+      '<a class="btn" href="' + url + '">ดาวน์โหลด eBook</a>' +
+      '<p class="hint">แนะนำให้เซฟไฟล์เก็บไว้ในเครื่อง ลิงก์นี้ใช้ได้ชั่วคราวและจำกัดจำนวนครั้ง</p>');
+  }
+
+  var tries = 0;
+  var shownQr = false;
+
+  async function poll() {
+    tries++;
+    try {
+      var r = await fetch(statusUrl, { cache: 'no-store' });
+      var d = await r.json();
+
+      if (!r.ok) { problem('ไม่พบคำสั่งซื้อนี้ หรือลิงก์ไม่ถูกต้อง'); return; }
+
+      if (d.download_url) { paid(d.download_url); return; }
+
+      if (d.status === 'PAID' || d.status === 'DELIVERED') {
+        if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+        render('<div class="tick">✓</div><h1>ชำระเงินเรียบร้อยแล้วค่ะ</h1>' +
+          '<p>กำลังเตรียมไฟล์ให้ กรุณารอสักครู่</p>');
+      } else if (d.qr && d.qr.expired) {
+        problem('QR หมดอายุแล้ว กดปุ่มด้านล่างเพื่อขอใหม่', true);
+        return;
+      } else if (d.qr && d.qr.image && !shownQr) {
+        shownQr = true;
+        showQr(d);
+      } else if (!d.qr && !shownQr) {
+        problem('ยังไม่มีรายการชำระเงินสำหรับคำสั่งซื้อนี้', true);
+        return;
+      }
+    } catch (_) { /* เน็ตสะดุด — วนต่อ */ }
+
+    setTimeout(poll, tries < 20 ? 3000 : 6000);   // ~1 นาทีแรกถี่หน่อย แล้วค่อยผ่อน
+  }
+
+  poll();
+})();
+</script>
+</body>
+</html>
