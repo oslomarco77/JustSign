@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>คู่มือเจ้าของห้องเช่า 299 บาท · SignDee</title>
+<meta name="description" content="ผู้เช่าไม่จ่าย ต้องให้เวลากี่วัน ทำอะไรได้บ้าง — คู่มือ 30 หน้า พร้อมใช้วันนี้">
+<meta property="og:title" content="คู่มือเอาตัวรอดของเจ้าของห้องเช่าในยุค AI">
+<meta property="og:description" content="30 หน้า · 299 บาท · ดาวน์โหลดทันทีหลังชำระเงิน">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@600;700;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0B1220; --card:#141C2B; --line:#25303F;
+  --ink:#FFFFFF; --ink2:#B4BECD; --ink3:#7C8798;
+  --accent:#6EC3EA; --accent2:#2E86C6; --good:#4ED6A0; --warn:#F0C05A;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:'Sarabun',system-ui,sans-serif;
+  font-size:17px;line-height:1.8;-webkit-font-smoothing:antialiased;
+  padding-bottom:calc(5.6rem + env(safe-area-inset-bottom))}
+h1,h2,.dis{font-family:'Anuphan','Sarabun',sans-serif;letter-spacing:-.02em;line-height:1.25}
+.wrap{width:min(30rem,calc(100% - 2.2rem));margin-inline:auto}
+:focus-visible{outline:2.5px solid var(--accent);outline-offset:3px;border-radius:8px}
+
+/* ── hero ── */
+header{padding:2.2rem 0 2rem;text-align:center}
+.brand{display:inline-flex;align-items:center;gap:.5rem;margin-bottom:1.6rem}
+.bm{width:26px;height:26px;border-radius:8px;background:var(--accent2);display:grid;place-items:center;
+  font-family:'Anuphan';font-weight:800;color:#06121C;font-size:.85rem}
+.bn{font-family:'Anuphan';font-weight:800;font-size:.95rem}
+.bn i{font-style:normal;color:var(--accent)}
+.tag{display:inline-block;font-family:'Anuphan';font-size:.7rem;font-weight:700;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--accent);border:1px solid var(--line);
+  padding:.3rem .8rem;border-radius:999px;margin-bottom:1.1rem}
+h1{font-size:clamp(1.75rem,7.5vw,2.3rem);font-weight:800}
+.sub{color:var(--ink2);margin-top:.9rem;font-size:1rem}
+
+/* ── pain list ── */
+section{padding:1.6rem 0}
+h2{font-size:1.15rem;font-weight:800;margin-bottom:.9rem}
+.pain{display:grid;gap:.55rem;margin-top:.2rem}
+.pain div{background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:.75rem .95rem;font-size:.95rem;color:var(--ink2)}
+.pain b{color:var(--ink);font-family:'Anuphan';font-weight:700}
+
+/* ── what's inside ── */
+ul{list-style:none;display:grid;gap:.75rem;margin-top:.4rem}
+li{padding-left:1.6rem;position:relative;font-size:.97rem;color:var(--ink2)}
+li::before{content:"";position:absolute;left:0;top:.68em;width:7px;height:7px;border-radius:50%;
+  background:var(--accent)}
+li b{color:var(--ink);font-family:'Anuphan';font-weight:700}
+
+/* ── proof strip ── */
+.facts{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-top:1.4rem;text-align:center}
+.facts div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.8rem .4rem}
+.facts b{display:block;font-family:'Anuphan';font-weight:800;font-size:1.25rem;color:var(--accent)}
+.facts span{font-size:.72rem;color:var(--ink3)}
+
+.note{font-size:.8rem;color:var(--ink3);line-height:1.7;margin-top:1.5rem}
+
+/* ── sticky buy bar ── */
+.bar{position:fixed;left:0;right:0;bottom:0;background:rgba(11,18,32,.94);
+  backdrop-filter:blur(12px);border-top:1px solid var(--line);
+  padding:.8rem 0 calc(.8rem + env(safe-area-inset-bottom));z-index:10}
+.bar .wrap{display:flex;align-items:center;gap:.8rem}
+.price{font-family:'Anuphan';font-weight:800;font-size:1.6rem;line-height:1;white-space:nowrap;
+  font-variant-numeric:tabular-nums}
+.price small{font-size:.75rem;font-weight:600;color:var(--ink3);margin-left:.2rem}
+button{flex:1;background:var(--accent);color:#06121C;border:0;border-radius:999px;
+  font-family:'Anuphan';font-weight:800;font-size:1.02rem;padding:.95rem 1rem;cursor:pointer;
+  transition:.15s;min-height:3rem}
+button:active:not(:disabled){transform:scale(.98)}
+button:disabled{opacity:.6;cursor:progress}
+.err{display:none;background:#3A1D1D;color:#FFB4A9;border-radius:10px;padding:.7rem .9rem;
+  font-size:.85rem;margin-top:.7rem}
+footer{padding:0 0 2rem;font-size:.75rem;color:var(--ink3);line-height:1.75}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="brand"><div class="bm">S</div><div class="bn">Sign<i>Dee</i></div></div>
+    <div class="tag">Landlord AI Survival Playbook</div>
+    <h1>ผู้เช่าไม่จ่าย<br>คุณทำอะไรได้บ้าง</h1>
+    <p class="sub">คู่มือ 30 หน้า ที่บอกว่าต้องให้เวลากี่วัน<br>ส่งหนังสืออะไร และห้ามทำอะไรเด็ดขาด</p>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <h2>เปิดเล่มนี้ตอนไหน</h2>
+    <div class="pain">
+      <div><b>ห้องว่างนาน</b> — ไม่รู้จะเขียนประกาศยังไงให้คนทัก</div>
+      <div><b>ผู้เช่าเริ่มจ่ายช้า</b> — ทวงยังไงไม่ให้เสียเรื่อง</div>
+      <div><b>ค้างค่าเช่าหลายเดือน</b> — จะบอกเลิกสัญญาต้องทำอะไรก่อน</div>
+      <div><b>ผู้เช่าไม่ยอมย้ายออก</b> — อะไรทำได้ อะไรติดคุก</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>ในเล่มมีอะไร</h2>
+    <ul>
+      <li><b>Decision Tree</b> — เปิดก่อนส่งข้อความแรง ๆ หาผู้เช่า</li>
+      <li><b>Emergency Page</b> — หน้าเดียวจบ เซฟเก็บไว้ในมือถือ</li>
+      <li><b>AI Prompt Pack 9 ชุด</b> — copy ไปใช้ได้ทันที</li>
+      <li><b>Checklist วันส่งมอบ / วันรับห้องคืน</b> — ปริ้นใช้ได้เลย</li>
+      <li><b>ต้องให้เวลากี่วัน</b> — 15 หรือ 30 ตอบไว้ชัด ๆ พร้อมที่มา</li>
+    </ul>
+
+    <div class="facts">
+      <div><b>30</b><span>หน้า</span></div>
+      <div><b>9</b><span>AI prompts</span></div>
+      <div><b>ทันที</b><span>ได้ไฟล์</span></div>
+    </div>
+
+    <p class="note">
+      ไฟล์ PDF อ่านได้ทั้งมือถือและคอม · ชำระด้วยพร้อมเพย์ สแกน QR
+      ได้ลิงก์ดาวน์โหลดทันทีหลังชำระเงิน ไม่ต้องรอแอดมิน
+    </p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    คู่มือนี้ให้ข้อมูลทั่วไปสำหรับเจ้าของห้องเช่า ไม่ถือเป็นความเห็นทางกฎหมายรายกรณี
+    ก่อนนำข้อสัญญาหรือหนังสือใด ๆ ไปใช้จริง ควรตรวจสอบกับแบบสัญญามาตรฐานล่าสุดของ สคบ. (ocpb.go.th)
+    หรือปรึกษาทนายความ
+  </div>
+</footer>
+
+<div class="bar">
+  <div class="wrap">
+    <div class="price">299<small>บาท</small></div>
+    <button id="buy" type="button">ซื้อเลย · สแกนจ่าย</button>
+  </div>
+  <div class="wrap"><div class="err" id="err"></div></div>
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('buy');
+  var err = document.getElementById('err');
+
+  function fail(msg) {
+    btn.disabled = false;
+    btn.textContent = 'ซื้อเลย · สแกนจ่าย';
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  // หน้านี้สำหรับคนมาจาก TikTok — ล็อก source ไว้ ไม่ให้เดาผิด
+  function tracking() {
+    var p = new URLSearchParams(location.search);
+    var t = { source: 'tiktok' };
+    if (p.get('ref')) t.source_reference = p.get('ref');       // ระบุคลิป/แคมเปญได้
+    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content'].forEach(function (k) {
+      if (p.get(k)) t[k] = p.get(k);
+    });
+    if (p.get('pain')) t.pain_category = p.get('pain');
+    return t;
+  }
+
+  btn.addEventListener('click', async function () {
+    btn.disabled = true;
+    btn.textContent = 'กำลังสร้าง QR…';
+    err.style.display = 'none';
+
+    try {
+      var body = Object.assign({ product_code: 'LANDLORD_AI_GUIDE' }, tracking());
+
+      var r1 = await fetch('/api/commerce/orders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      });
+      var order = await r1.json();
+      if (!r1.ok) throw new Error(order.error || 'order_failed');
+
+      try {
+        localStorage.setItem('sd_order_' + order.order_number, order.lookup_token);
+        localStorage.setItem('sd_last_order', order.order_number);
+      } catch (_) {}
+
+      var r2 = await fetch('/api/commerce/orders/' + encodeURIComponent(order.order_id) + '/payment',
+        { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+      var pay = await r2.json();
+      if (!r2.ok || !pay.payment_url) throw new Error(pay.error || 'payment_failed');
+
+      location.href = pay.payment_url;
+    } catch (e) {
+      fail('ยังสร้างรายการชำระเงินไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
+  });
+})();
+</script>
+</body>
+</html>

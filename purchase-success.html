@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>สถานะการชำระเงิน · SignDee</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@700;800&family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1F0EA;--surface:#FEFEFC;--line:#E6E4DC;--ink:#14171F;--ink2:#5B6270;--ink3:#8E95A3;
+  --deep:#0B1220;--accent:#2E86C6;--good:#1a7f5a;--warn:#C4913A;--bad:#c0392b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--ink);
+  font-family:'Sarabun',system-ui,sans-serif;padding:24px;line-height:1.8}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:2.2rem 1.9rem;
+  width:min(28rem,100%);text-align:center;box-shadow:0 1px 2px rgba(11,18,32,.04),0 16px 40px -20px rgba(11,18,32,.25)}
+.brand{display:flex;align-items:center;justify-content:center;gap:.55rem;margin-bottom:1.6rem}
+.bm{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;place-items:center;
+  font-family:'Anuphan';font-weight:800;color:#06121C;font-size:.95rem}
+.bn{font-family:'Anuphan';font-weight:800;font-size:1rem}
+.bn i{font-style:normal;color:var(--accent)}
+h1{font-family:'Anuphan';font-size:1.35rem;font-weight:800;margin-bottom:.5rem;line-height:1.35}
+p{color:var(--ink2);font-size:.95rem}
+.ord{font-family:'Anuphan';font-size:.8rem;color:var(--ink3);letter-spacing:.04em;margin-top:1.2rem}
+.spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--accent);
+  border-radius:50%;margin:0 auto 1.2rem;animation:s .9s linear infinite}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.tick{width:46px;height:46px;border-radius:50%;background:#E8F2ED;color:var(--good);display:grid;
+  place-items:center;margin:0 auto 1.1rem;font-size:1.5rem;font-weight:700}
+.btn{display:inline-block;margin-top:1.4rem;background:var(--deep);color:#fff;text-decoration:none;
+  font-family:'Anuphan';font-weight:700;font-size:1rem;padding:.9rem 2rem;border-radius:999px;transition:.15s}
+.btn:hover{background:var(--accent);color:#06121C}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.hint{font-size:.8rem;color:var(--ink3);margin-top:1rem;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand"><div class="bm">S</div><div class="bn">Sign<i>Dee</i></div></div>
+  <div id="body">
+    <div class="spin"></div>
+    <h1>กำลังตรวจสอบการชำระเงิน…</h1>
+    <p>ระบบกำลังยืนยันกับผู้ให้บริการชำระเงิน กรุณาอย่าปิดหน้านี้</p>
+  </div>
+  <div class="ord" id="ord"></div>
+</div>
+
+<script>
+(function () {
+  var el = document.getElementById('body');
+  var ordEl = document.getElementById('ord');
+
+  var params = new URLSearchParams(location.search);
+  var orderNumber = params.get('o') || params.get('order') || null;
+  try { if (!orderNumber) orderNumber = localStorage.getItem('sd_last_order'); } catch (_) {}
+
+  var token = null;
+  try { if (orderNumber) token = localStorage.getItem('sd_order_' + orderNumber); } catch (_) {}
+
+  if (orderNumber) ordEl.textContent = 'เลขที่คำสั่งซื้อ ' + orderNumber;
+
+  function render(html) { el.innerHTML = html; }
+
+  function paid(url) {
+    render('<div class="tick">✓</div>' +
+      '<h1>ชำระเงินเรียบร้อยแล้วค่ะ</h1>' +
+      '<p>ดาวน์โหลดคู่มือได้จากปุ่มด้านล่าง</p>' +
+      '<a class="btn" href="' + url + '">ดาวน์โหลด eBook</a>' +
+      '<p class="hint">แนะนำให้เซฟไฟล์เก็บไว้ในเครื่อง ลิงก์นี้ใช้ได้ชั่วคราวและจำกัดจำนวนครั้ง</p>');
+  }
+
+  function stillPending(n) {
+    render('<div class="spin"></div>' +
+      '<h1>กำลังรอยืนยันการชำระเงิน</h1>' +
+      '<p>ปกติใช้เวลาไม่เกินหนึ่งนาที ระบบกำลังตรวจสอบให้อยู่</p>' +
+      '<p class="hint">ตรวจสอบครั้งที่ ' + n + '</p>');
+  }
+
+  function problem(msg, retry) {
+    render('<h1>ยังไม่สามารถยืนยันการชำระเงินได้</h1>' +
+      '<p>' + msg + '</p>' +
+      (retry ? '<a class="btn" href="' + retry + '">ลองชำระเงินอีกครั้ง</a>' : '') +
+      '<a class="btn ghost" href="/landlord-guide.html" style="margin-left:.4rem">กลับหน้าหลัก</a>' +
+      '<p class="hint">ถ้าคุณชำระเงินไปแล้ว ไม่ต้องจ่ายซ้ำ — ทักแชตเพจพร้อมแจ้งเลขที่คำสั่งซื้อ แล้วเราจะตรวจสอบให้</p>');
+  }
+
+  if (!orderNumber || !token) {
+    problem('ไม่พบข้อมูลคำสั่งซื้อในเครื่องนี้ อาจเปิดจากอุปกรณ์อื่น');
+    return;
+  }
+
+  var tries = 0;
+  var MAX = 40;                       // ~2 นาที
+  var url = '/api/commerce/orders/' + encodeURIComponent(orderNumber) +
+            '/status?t=' + encodeURIComponent(token);
+
+  async function poll() {
+    tries++;
+    try {
+      var r = await fetch(url, { cache: 'no-store' });
+      var d = await r.json();
+
+      if (r.ok && d.download_url) { paid(d.download_url); return; }
+
+      if (r.ok && (d.status === 'PAID' || d.status === 'DELIVERED')) {
+        render('<div class="tick">✓</div><h1>ชำระเงินเรียบร้อยแล้วค่ะ</h1>' +
+          '<p>กำลังเตรียมไฟล์ให้ กรุณารอสักครู่</p>');
+      } else if (r.ok && d.status === 'PENDING_PAYMENT') {
+        if (tries >= MAX) {
+          problem('ยังไม่พบการชำระเงินของคำสั่งซื้อนี้', d.payment_url || null);
+          return;
+        }
+        stillPending(tries);
+      } else if (!r.ok) {
+        problem('ไม่พบคำสั่งซื้อนี้ หรือลิงก์ไม่ถูกต้อง');
+        return;
+      }
+    } catch (_) {
+      if (tries >= MAX) { problem('เชื่อมต่อระบบไม่ได้ กรุณาลองใหม่อีกครั้ง'); return; }
+    }
+    if (tries < MAX) setTimeout(poll, tries < 10 ? 2000 : 5000);
+  }
+
+  poll();
+})();
+</script>
+</body>
+</html>
