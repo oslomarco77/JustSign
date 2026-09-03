@@ -1229,12 +1229,46 @@ function empCtxFrom(row) {
   };
 }
 
+/* ── SD-407 (จาก origin/main): วันที่เอกสารและอายุต้อง deterministic ──
+   empDocumentDate ยึด created_at เป็น UTC · empAgeOnDate คำนวณอายุ ณ วันออกเอกสาร
+   ทำให้ doc_hash เท่าเดิมทุกครั้งที่ render ซ้ำ */
+function empDocumentDate(row) {
+  const value = new Date(row.created_at);
+  if (!Number.isFinite(value.getTime())) throw new Error('employment_document_date_invalid');
+  return value.toISOString().slice(0, 10);
+}
+
+function empAgeOnDate(card, referenceDate) {
+  const dob = card && card.ocr_raw && card.ocr_raw.date_of_birth;
+  if (!dob) return '';
+  const birth = new Date(dob), reference = new Date(referenceDate + 'T00:00:00.000Z');
+  if (!Number.isFinite(birth.getTime()) || !Number.isFinite(reference.getTime())) return '';
+  let age = reference.getUTCFullYear() - birth.getUTCFullYear();
+  const month = reference.getUTCMonth() - birth.getUTCMonth();
+  if (month < 0 || (month === 0 && reference.getUTCDate() < birth.getUTCDate())) age--;
+  return age >= 0 && age < 130 ? String(age) : '';
+}
+
+function empThaiDocumentDate(referenceDate) {
+  const [year, month, day] = referenceDate.split('-').map(Number);
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน',
+    'กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  return `${day} ${months[month - 1]} พ.ศ. ${year + 543}`;
+}
+
 function empMeta(row, ctx, clauses) {
+  const referenceDate = empDocumentDate(row);
+  const employer = Object.assign({}, partyDetailLine(row.party_a, row.a_card),
+    { jur: (row.party_a && row.party_a.jur) || null });
+  const employee = partyDetailLine(row.party_b, row.b_card);
+  employer.age = empAgeOnDate(row.a_card, referenceDate);
+  employee.age = empAgeOnDate(row.b_card, referenceDate);
   return {
     contract_no: row.contract_no || '',
-    date_th: thDate(new Date(row.created_at || Date.now())),
-    a: Object.assign({}, partyDetailLine(row.party_a, row.a_card), { jur: (row.party_a && row.party_a.jur) || null }),
-    b: partyDetailLine(row.party_b, row.b_card),
+    document_date: referenceDate,
+    date_th: empThaiDocumentDate(referenceDate),
+    a: employer,
+    b: employee,
     position: ctx.position,
     start_th: ctx.start_th, end_th: ctx.end_th,
     clause_count: EMPT.empClauseCount(clauses),
@@ -1411,12 +1445,10 @@ async function handleEmpContent(req, res, body) {
     row.creator_party = body.creator_party;
   }
 
-  let clauses = row.clauses, meta = row.meta;
-  if (!clauses) {                       // เผื่อ generate ไม่สำเร็จ — ประกอบใหม่
-    const ctx = empCtxFrom(row);
-    clauses = EMPT.buildEmpClauses(ctx);
-    meta = empMeta(row, ctx, clauses);
-  }
+  let clauses = row.clauses;
+  const ctx = empCtxFrom(row);
+  if (!clauses) clauses = EMPT.buildEmpClauses(ctx); // เผื่อ generate ไม่สำเร็จ — ประกอบใหม่
+  const meta = empMeta(row, ctx, clauses); // SD-407: วันที่/อายุใช้ authority semantic เดียวกันเสมอ
   return res.status(200).json({
     ok: true, doc_hash: row.doc_hash, clauses, meta,
     appendix: empAppendix(row),
