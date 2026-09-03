@@ -15,6 +15,7 @@
   --green:#1a7f5a; --green-l:rgba(26,127,90,0.08);
   --amber:#C4913A; --amber-l:rgba(196,145,58,0.10);
   --red:#c0392b; --red-l:rgba(192,57,43,0.08);
+  --purple:#8E6BC4; --purple-l:rgba(142,107,196,0.10);
   --r:16px; --r-lg:24px;
   --shadow:0 2px 10px rgba(11,18,32,0.06), 0 1px 3px rgba(11,18,32,0.04);
   --shadow-lg:0 20px 48px -18px rgba(11,18,32,0.24), 0 2px 8px rgba(11,18,32,0.06);
@@ -43,52 +44,82 @@ input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-d); 
 #app { display:none; min-height:100vh; }
 .shell { display:grid; grid-template-columns:230px 1fr; min-height:100vh; }
 .side { background:var(--white); border-right:1px solid var(--border); padding:22px 14px; display:flex; flex-direction:column; }
-.side .brand { padding:0 8px; margin-bottom:28px; }
-.nav-item { display:flex; align-items:center; gap:11px; padding:11px 13px; border-radius:12px; cursor:pointer; color:var(--text2); font-weight:500; font-size:14px; margin-bottom:3px; transition:.14s; }
+.side .brand { padding:0 8px; margin-bottom:24px; }
+.nav-sec { font-size:10.5px; font-weight:700; color:var(--text3); letter-spacing:.06em; padding:12px 13px 6px; }
+.nav-item { display:flex; align-items:center; gap:11px; padding:10px 13px; border-radius:12px; cursor:pointer; color:var(--text2); font-weight:500; font-size:14px; margin-bottom:2px; transition:.14s; }
 .nav-item:hover { background:var(--surf2); color:var(--text); }
 .nav-item.active { background:var(--accent-d); color:var(--accent); font-weight:700; }
 .nav-icon { width:18px; text-align:center; font-size:14px; }
-.nav-badge { margin-left:auto; font-size:11px; font-weight:700; background:var(--red-l); color:var(--red); padding:1px 7px; border-radius:20px; }
+.nav-dot { width:9px; height:9px; border-radius:3px; flex:0 0 9px; }
+.nav-badge { margin-left:auto; font-size:11px; font-weight:700; background:var(--surf2); color:var(--text3); padding:1px 7px; border-radius:20px; }
+.nav-badge.red { background:var(--red-l); color:var(--red); }
 .side-foot { margin-top:auto; padding:14px; background:var(--surf2); border-radius:var(--r); text-align:center; }
 
 .main { padding:26px 30px 40px; overflow-x:hidden; }
-.top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:22px; flex-wrap:wrap; }
+.top { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
 .eyebrow { font-size:11.5px; color:var(--text3); font-weight:600; letter-spacing:.04em; margin-bottom:5px; }
 .page-title { font-size:26px; font-weight:700; letter-spacing:-.02em; }
-.top-actions { display:flex; gap:8px; }
+.top-actions { display:flex; gap:8px; align-items:center; }
+.stamp { font-size:11.5px; color:var(--text3); }
+
+/* ── TABS ── */
+.tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:18px; background:var(--white); border:1px solid var(--border); border-radius:99px; padding:5px; box-shadow:var(--shadow); width:fit-content; max-width:100%; }
+.tab { display:flex; align-items:center; gap:7px; padding:8px 15px; border-radius:99px; cursor:pointer; font-size:13.5px; font-weight:600; color:var(--text2); border:none; background:none; font-family:'Sarabun'; transition:.14s; white-space:nowrap; }
+.tab:hover { background:var(--surf2); }
+.tab.active { background:var(--primary); color:#fff; }
+.tab .tdot { width:8px; height:8px; border-radius:3px; }
+.tab .tnum { font-size:11.5px; opacity:.7; font-weight:700; }
 
 /* ── CARDS ── */
-.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px; }
+.cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:14px; }
 .card { background:var(--white); border:1px solid var(--border); border-radius:var(--r); padding:17px 18px; box-shadow:var(--shadow); }
 .card-label { font-size:12px; color:var(--text3); font-weight:600; margin-bottom:7px; }
 .card-value { font-family:'Anuphan'; font-size:24px; font-weight:700; letter-spacing:-.02em; }
 .card-sub { font-size:11.5px; color:var(--text3); margin-top:3px; }
 
+/* ── PRODUCT MINI CARDS ── */
+.prods { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+.prod { background:var(--white); border:1px solid var(--border); border-left:4px solid var(--border2); border-radius:14px; padding:14px 15px; box-shadow:var(--shadow); cursor:pointer; transition:.15s; }
+.prod:hover { transform:translateY(-2px); box-shadow:var(--shadow-lg); }
+.prod.off { opacity:.5; }
+.prod-name { font-family:'Anuphan'; font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:7px; }
+.prod-num { font-family:'Anuphan'; font-size:22px; font-weight:700; margin-top:6px; letter-spacing:-.02em; }
+.prod-meta { font-size:11.5px; color:var(--text3); margin-top:3px; line-height:1.55; }
+.prod-warn { font-size:11px; color:var(--red); margin-top:4px; }
+
 /* ── PANELS ── */
+.grid2 { display:grid; grid-template-columns:1.4fr 1fr; gap:14px; align-items:start; margin-bottom:14px; }
 .grid3 { display:grid; grid-template-columns:1.25fr 1fr 1fr; gap:14px; align-items:start; }
 .panel { background:var(--white); border:1px solid var(--border); border-radius:var(--r); box-shadow:var(--shadow); overflow:hidden; }
-.panel-head { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid var(--border); }
+.panel-head { display:flex; justify-content:space-between; align-items:center; padding:16px 18px; border-bottom:1px solid var(--border); gap:10px; flex-wrap:wrap; }
 .panel-title { font-family:'Anuphan'; font-weight:700; font-size:15px; }
 .panel-body { padding:16px 18px; }
-.pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; background:var(--surf2); color:var(--text3); }
+.pill { font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; background:var(--surf2); color:var(--text3); white-space:nowrap; }
 .pill.green { background:var(--green-l); color:var(--green); }
 .pill.amber { background:var(--amber-l); color:var(--amber); }
 .pill.red { background:var(--red-l); color:var(--red); }
 .pill.blue { background:var(--accent-d); color:var(--accent); }
+.tag { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; color:#fff; white-space:nowrap; }
+
+/* ── CHART ── */
+.chart-box { height:240px; position:relative; }
+.legend { display:flex; gap:12px; flex-wrap:wrap; font-size:11.5px; color:var(--text2); margin-top:10px; }
+.legend span { display:inline-flex; align-items:center; gap:5px; }
+.legend i { width:9px; height:9px; border-radius:3px; display:inline-block; }
 
 /* ── PROGRESS ── */
 .prog-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:10px; }
 .prog-bar { flex:1; min-width:160px; height:6px; background:var(--surf2); border-radius:20px; overflow:hidden; }
 .prog-fill { height:100%; background:var(--green); border-radius:20px; transition:width .4s; }
 
-/* ── TASK (สิ่งที่ต้องทำต่อ) ── */
+/* ── TASK ── */
 .task { border:1px solid var(--border); border-radius:14px; margin-bottom:11px; overflow:hidden; }
 .task-head { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; padding:14px 15px; }
 .task-name { font-weight:700; font-size:14px; }
 .task-meta { font-size:12px; color:var(--text3); margin-top:4px; }
 .task-foot { display:flex; justify-content:space-between; align-items:center; gap:10px; border-top:1px solid var(--border); background:var(--bg); padding:11px 15px; font-size:12.5px; color:var(--text2); }
 
-/* ── TIMELINE (หลักฐานและเหตุการณ์) ── */
+/* ── TIMELINE ── */
 .tl { display:flex; gap:11px; padding:12px 0; border-bottom:1px solid var(--border); }
 .tl:last-child { border-bottom:none; }
 .tl-dot { flex:0 0 26px; width:26px; height:26px; border-radius:9px; background:var(--surf2); display:flex; align-items:center; justify-content:center; font-size:12px; }
@@ -125,8 +156,14 @@ tr.clickable:hover { background:var(--accent-d); }
 .link { color:var(--accent); font-weight:600; cursor:pointer; font-size:12.5px; background:none; border:none; font-family:inherit; }
 .back { display:inline-flex; align-items:center; gap:6px; color:var(--text2); font-size:13px; cursor:pointer; background:none; border:none; font-family:inherit; margin-bottom:12px; }
 .back:hover { color:var(--accent); }
-@media (max-width:1100px){ .grid3{grid-template-columns:1fr;} .cards{grid-template-columns:repeat(2,1fr);} }
-@media (max-width:760px){ .shell{grid-template-columns:1fr;} .side{display:none;} .main{padding:18px;} }
+.warn-bar { background:var(--amber-l); border:1px solid rgba(196,145,58,.3); border-radius:12px; padding:11px 15px; font-size:12.5px; color:var(--text2); margin-bottom:14px; }
+.kv { display:flex; justify-content:space-between; gap:10px; font-size:12.5px; padding:6px 0; border-bottom:1px dashed var(--border); }
+.kv:last-child { border-bottom:none; }
+.kv span:first-child { color:var(--text3); }
+.kv b { font-weight:600; text-align:right; }
+@media (max-width:1250px){ .prods{grid-template-columns:repeat(3,1fr);} }
+@media (max-width:1100px){ .grid3,.grid2{grid-template-columns:1fr;} .cards{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:760px){ .shell{grid-template-columns:1fr;} .side{display:none;} .main{padding:18px;} .prods{grid-template-columns:repeat(2,1fr);} }
 </style>
 </head>
 <body>
@@ -154,13 +191,17 @@ tr.clickable:hover { background:var(--accent-d); }
       <div class="brand-name">Sign<span>Dee</span></div>
     </div>
     <div class="nav-item active" data-nav="home" onclick="setNav('home')"><span class="nav-icon">⌂</span> หน้าหลัก</div>
-    <div class="nav-item" data-nav="contracts" onclick="setNav('contracts')"><span class="nav-icon">▤</span> สัญญาทั้งหมด</div>
-    <div class="nav-item" data-nav="todo" onclick="setNav('todo')"><span class="nav-icon">✓</span> สิ่งที่ต้องทำต่อ <span class="nav-badge" id="navTodo">0</span></div>
-    <div class="nav-item" data-nav="unpaid" onclick="setNav('unpaid')"><span class="nav-icon">◇</span> ค้างชำระ <span class="nav-badge" id="navUnpaid">0</span></div>
+    <div class="nav-item" data-nav="contracts" onclick="setNav('contracts')"><span class="nav-icon">▤</span> เอกสารทั้งหมด</div>
+    <div class="nav-item" data-nav="todo" onclick="setNav('todo')"><span class="nav-icon">✓</span> สิ่งที่ต้องทำต่อ <span class="nav-badge red" id="navTodo">0</span></div>
+    <div class="nav-item" data-nav="unpaid" onclick="setNav('unpaid')"><span class="nav-icon">◇</span> ค้างชำระ <span class="nav-badge red" id="navUnpaid">0</span></div>
+
+    <div class="nav-sec">ผลิตภัณฑ์</div>
+    <div id="sideProds"></div>
+
     <div class="side-foot">
       <div style="font-size:22px;margin-bottom:5px;">🔒</div>
       <div style="font-size:12px;font-weight:700;">ข้อมูลปลอดภัย</div>
-      <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5;">ทุกเหตุการณ์ถูกบันทึกเป็น Timeline</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:3px;line-height:1.5;">ไม่ดึงลายเซ็น/รูปบัตรมาแสดง</div>
       <button class="btn btn-sm btn-out" style="margin-top:10px;width:100%;" onclick="logout()">ออกจากระบบ</button>
     </div>
   </aside>
@@ -175,28 +216,55 @@ tr.clickable:hover { background:var(--accent-d); }
           <h1 class="page-title" id="listTitle">แดชบอร์ด SignDee</h1>
         </div>
         <div class="top-actions">
+          <span class="stamp" id="stamp"></span>
           <button class="btn btn-sm btn-out" onclick="loadData()">↻ รีเฟรช</button>
         </div>
       </div>
 
+      <div class="tabs" id="tabs"></div>
+      <div id="warnBar"></div>
+
       <div class="cards">
-        <div class="card"><div class="card-label">สัญญาทั้งหมด</div><div class="card-value" id="cTotal">—</div><div class="card-sub" id="cTotalSub">ทุกสถานะ</div></div>
-        <div class="card"><div class="card-label">ลงนามครบแล้ว</div><div class="card-value" id="cDone" style="color:var(--green)">—</div><div class="card-sub">สัญญาสมบูรณ์</div></div>
+        <div class="card"><div class="card-label">เอกสารทั้งหมด</div><div class="card-value" id="cTotal">—</div><div class="card-sub" id="cTotalSub">ทุกสถานะ</div></div>
+        <div class="card"><div class="card-label">ลงนามครบ / ปิดเคส</div><div class="card-value" id="cDone" style="color:var(--green)">—</div><div class="card-sub" id="cDoneSub">เอกสารสมบูรณ์</div></div>
         <div class="card"><div class="card-label">รอดำเนินการ</div><div class="card-value" id="cPending" style="color:var(--amber)">—</div><div class="card-sub">ยังไม่ครบขั้นตอน</div></div>
-        <div class="card"><div class="card-label">รายได้รวม</div><div class="card-value" id="cRevenue" style="color:var(--accent)">—</div><div class="card-sub" id="cRevenueSub">จากสัญญาที่ชำระแล้ว</div></div>
+        <div class="card"><div class="card-label">รายได้รวม</div><div class="card-value" id="cRevenue" style="color:var(--accent)">—</div><div class="card-sub" id="cRevenueSub">จากเอกสารที่ชำระแล้ว</div></div>
+      </div>
+
+      <div class="prods" id="prodCards"></div>
+
+      <div class="grid2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">เอกสารใหม่ 14 วันล่าสุด</div>
+            <span class="pill" id="chartDailySum">—</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-box"><canvas id="chartDaily"></canvas></div>
+            <div class="legend" id="legendDaily"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">รายได้รายเดือน</div>
+            <span class="pill blue" id="chartRevSum">—</span>
+          </div>
+          <div class="panel-body">
+            <div class="chart-box"><canvas id="chartRev"></canvas></div>
+            <div class="legend" id="legendRev"></div>
+          </div>
+        </div>
       </div>
 
       <div class="grid3">
-        <!-- สิ่งที่ต้องทำต่อ -->
         <div class="panel">
           <div class="panel-head">
             <div class="panel-title">สิ่งที่ต้องทำต่อ</div>
             <span class="pill" id="todoCount">0 งาน</span>
           </div>
-          <div class="panel-body" id="todoList"></div>
+          <div class="panel-body" id="todoList" style="max-height:430px;overflow:auto;"></div>
         </div>
 
-        <!-- กำหนดการ -->
         <div class="panel">
           <div class="panel-head">
             <div class="panel-title">กำหนดการ</div>
@@ -204,15 +272,14 @@ tr.clickable:hover { background:var(--accent-d); }
           </div>
           <div class="panel-body">
             <div class="dl-box" id="dlBox">
-              <div style="font-weight:700;font-size:13px;margin-bottom:7px;">ใกล้ถึงกำหนด</div>
+              <div style="font-weight:700;font-size:13px;margin-bottom:7px;">ค้างดำเนินการ</div>
               <div id="dlRows"></div>
             </div>
-            <div style="font-weight:700;font-size:13px;margin-bottom:6px;">สัญญาล่าสุด</div>
+            <div style="font-weight:700;font-size:13px;margin-bottom:6px;">เอกสารล่าสุด</div>
             <div id="calRows"></div>
           </div>
         </div>
 
-        <!-- หลักฐานและเหตุการณ์ -->
         <div class="panel">
           <div class="panel-head">
             <div class="panel-title">หลักฐานและเหตุการณ์</div>
@@ -222,25 +289,24 @@ tr.clickable:hover { background:var(--accent-d); }
         </div>
       </div>
 
-      <!-- ตารางสัญญา -->
       <div class="panel" style="margin-top:14px;">
         <div class="panel-head">
-          <div class="panel-title">สัญญาทั้งหมด <span class="pill" id="tblCount" style="margin-left:6px;">0</span></div>
-          <input class="search" id="searchBox" placeholder="ค้นหา ชื่อ / ทรัพย์สิน / ห้อง" oninput="renderTable()">
+          <div class="panel-title">รายการเอกสาร <span class="pill" id="tblCount" style="margin-left:6px;">0</span></div>
+          <input class="search" id="searchBox" placeholder="ค้นหา ชื่อ / ทรัพย์สิน / เลขที่" oninput="renderTable()">
         </div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>วันที่</th><th>คู่สัญญา</th><th>ทรัพย์สิน</th><th>สถานะ</th><th>ยอด</th><th></th></tr></thead>
+            <thead><tr><th>วันที่</th><th>ประเภท</th><th>เรื่อง</th><th>คู่สัญญา</th><th>สถานะ</th><th>ขั้นตอน</th><th>ยอด</th><th></th></tr></thead>
             <tbody id="tblBody"></tbody>
           </table>
-          <div class="empty" id="tblEmpty" style="display:none;">ไม่พบสัญญาที่ตรงกับการค้นหา</div>
+          <div class="empty" id="tblEmpty" style="display:none;">ไม่พบเอกสารที่ตรงกับการค้นหา</div>
         </div>
       </div>
     </section>
 
-    <!-- ══ CONTRACT DETAIL ══ -->
+    <!-- ══ DETAIL ══ -->
     <section id="viewDetail" class="hidden">
-      <button class="back" onclick="setNav('home')">← กลับไปหน้าแดชบอร์ด</button>
+      <button class="back" onclick="setNav(LAST_NAV)">← กลับไปหน้าแดชบอร์ด</button>
       <div class="top">
         <div>
           <div class="eyebrow" id="dEyebrow">—</div>
@@ -252,24 +318,24 @@ tr.clickable:hover { background:var(--accent-d); }
           </div>
         </div>
         <div class="top-actions">
-          <button class="btn btn-sm btn-accent" id="dOpenBtn">ดูสัญญา</button>
+          <button class="btn btn-sm btn-accent" id="dOpenBtn">เปิดเอกสาร</button>
         </div>
       </div>
 
       <div class="cards">
-        <div class="card"><div class="card-label">ค่าบริการ</div><div class="card-value" id="dAmt">—</div></div>
+        <div class="card"><div class="card-label">ค่าบริการ</div><div class="card-value" id="dAmt">—</div><div class="card-sub" id="dAmtSub">—</div></div>
         <div class="card"><div class="card-label">ขั้นตอนถัดไป</div><div class="card-value" id="dNext" style="font-size:17px;">—</div></div>
-        <div class="card"><div class="card-label">สร้างเมื่อ</div><div class="card-value" id="dCreated" style="font-size:17px;">—</div></div>
+        <div class="card"><div class="card-label">สร้างเมื่อ</div><div class="card-value" id="dCreated" style="font-size:17px;">—</div><div class="card-sub" id="dAge">—</div></div>
         <div class="card"><div class="card-label">หลักฐานทั้งหมด</div><div class="card-value" id="dEv">—</div><div class="card-sub">รายการ</div></div>
       </div>
 
       <div class="grid3">
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">สิ่งที่ต้องทำต่อ</div><span class="pill" id="dTodoCount">—</span></div>
+          <div class="panel-head"><div class="panel-title">ขั้นตอนทั้งหมด</div><span class="pill" id="dTodoCount">—</span></div>
           <div class="panel-body" id="dTodoList"></div>
         </div>
         <div class="panel">
-          <div class="panel-head"><div class="panel-title">กำหนดการ</div><span style="font-size:15px;">🔔</span></div>
+          <div class="panel-head"><div class="panel-title">ข้อมูลเอกสาร</div><span style="font-size:15px;">🔔</span></div>
           <div class="panel-body" id="dSchedule"></div>
         </div>
         <div class="panel">
@@ -286,18 +352,28 @@ tr.clickable:hover { background:var(--accent-d); }
 
 <script>
 const API = 'https://justsign-api.vercel.app/api/admin-stats';
-const APP_BASE = 'https://app.signdee.com/';
-let DATA = null, NAV = 'home', CUR = null;
+let DATA = null, ITEMS = [], PRODS = [], NAV = 'home', LAST_NAV = 'home', PROD = 'all', CUR = null;
+let CH_DAILY = null, CH_REV = null;
+
+const DEFAULT_PRODS = [
+  { key:'rent',   label:'สัญญาเช่า',      color:'#2E86C6', app:'https://app.signdee.com/' },
+  { key:'sale',   label:'ซื้อขายคอนโด',   color:'#1a7f5a', app:'https://sale.signdee.com/' },
+  { key:'nda',    label:'NDA',            color:'#8E6BC4', app:'https://app.signdee.com/index-nda.html' },
+  { key:'emp',    label:'สัญญาจ้าง',      color:'#C4913A', app:'https://app.signdee.com/index-emp.html' },
+  { key:'notice', label:'ทวงถาม/บอกเลิก', color:'#c0392b', app:'https://app.signdee.com/index-notice.html' }
+];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const baht = n => '฿' + (Number(n)||0).toLocaleString('th-TH');
 function fmtDate(iso){ if(!iso) return '—'; try{ return new Date(iso).toLocaleDateString('th-TH',{day:'numeric',month:'short',year:'2-digit'}); }catch(e){ return '—'; } }
 function fmtDateTime(iso){ if(!iso) return '—'; try{ return new Date(iso).toLocaleString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }catch(e){ return '—'; } }
+function fmtMonth(m){ if(!m) return '—'; try{ const d=new Date(m+'-01'); return d.toLocaleDateString('th-TH',{month:'short',year:'2-digit'}); }catch(e){ return m; } }
 function daysAgo(iso){ if(!iso) return 0; return Math.floor((Date.now()-new Date(iso))/86400000); }
 function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
 const getKey = () => { try{ return sessionStorage.getItem('signdee_admin_key'); }catch(e){ return null; } };
 const setKey = k => { try{ sessionStorage.setItem('signdee_admin_key',k); }catch(e){} };
+const prodOf = k => PRODS.find(p=>p.key===k) || { key:k, label:k, color:'#8E95A3', app:'#' };
 
 /* ── auth ── */
 async function fetchStats(key){
@@ -324,114 +400,308 @@ async function loadData(){
   catch(e){ toast('❌ '+e.message); }
 }
 
-/* ── สถานะ → ขั้นตอน (derive จากข้อมูลที่ API ส่งมา) ── */
-const STEPS = ['สร้างสัญญา','ชำระค่าบริการ','ผู้ให้เช่าลงนาม','ผู้เช่าลงนาม','สัญญาสมบูรณ์'];
-function stepsOf(c){
+/* ══════════════════════════════════════════════════════
+   normalize — รองรับทั้ง API v2 (items) และ v1 (contracts)
+   ══════════════════════════════════════════════════════ */
+const RENT_STEPS = ['สร้างสัญญา','ชำระค่าบริการ','ผู้ให้เช่าลงนาม','ผู้เช่าลงนาม','สัญญาสมบูรณ์'];
+
+function legacyItem(c){
   const st = c.status_th || '';
   const paid = c.payment_completed === true;
   const done = /สมบูรณ์|ครบ|เสร็จ/.test(st);
   const signing = /ลงนาม|รอเซ็น|รอลงนาม/.test(st);
-  if (done)    return 5;
-  if (signing) return paid ? 3 : 2;
-  if (paid)    return 2;
-  return 1;
-}
-function nextStepOf(c){
-  const n = stepsOf(c);
-  return n >= 5 ? 'เสร็จสมบูรณ์' : STEPS[n];
-}
-function statusPill(st){
-  const s = st || '';
-  if (/สมบูรณ์|ครบ|เสร็จ/.test(s))  return 'green';
-  if (/ค้างชำระ|ยังไม่จ่าย/.test(s)) return 'red';
-  if (/ลงนาม|รอ/.test(s))            return 'amber';
-  return '';
+  let step = 1;
+  if (done) step = 5; else if (signing) step = paid ? 3 : 2; else if (paid) step = 2;
+  return {
+    product:'rent', id:String(c.id), no:null, created_at:c.created_at, updated_at:null,
+    title:(c.property||'สัญญาเช่า')+(c.room_no?' · ห้อง '+c.room_no:''),
+    subtitle:(c.landlord_name||'—')+' → '+(c.tenant_name||'—'),
+    party_a:c.landlord_name||null, party_b:c.tenant_name||null,
+    party_a_label:'ผู้ให้เช่า', party_b_label:'ผู้เช่า',
+    status_raw:st||null, status_th:st|| (done?'สมบูรณ์':paid?'รอลงนาม':'ยังไม่ชำระ'),
+    paid:paid, paid_at:null, amount: paid?790:0, price:790,
+    step:step, steps_total:5, steps:RENT_STEPS,
+    next_step: step>=5 ? 'เสร็จสมบูรณ์' : RENT_STEPS[step], done: step>=5,
+    signed_a_at:null, signed_b_at:null, cert_no:null,
+    link:'https://app.signdee.com/?reload='+c.id, extra:{}
+  };
 }
 
-/* ── nav ── */
-function setNav(n){
-  NAV = n;
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.nav===n));
-  if (n==='home' || n==='contracts' || n==='todo' || n==='unpaid') {
-    $('viewDetail').classList.add('hidden'); $('viewList').classList.remove('hidden');
-    const t = { home:['ภาพรวมระบบ','แดชบอร์ด SignDee'], contracts:['รายการทั้งหมด','สัญญาทั้งหมด'],
-                todo:['ต้องดำเนินการ','สิ่งที่ต้องทำต่อ'], unpaid:['การชำระเงิน','สัญญาค้างชำระ'] }[n];
-    $('listEyebrow').textContent=t[0]; $('listTitle').textContent=t[1];
-    renderTable();
+function normalize(){
+  if (DATA && Array.isArray(DATA.items)) {
+    ITEMS = DATA.items.slice();
+    PRODS = (DATA.products && DATA.products.length) ? DATA.products.slice() : DEFAULT_PRODS.slice();
+    return;
   }
+  // โหมดเข้ากันได้กับ API เดิม (ยังไม่ได้ deploy admin-stats v2)
+  ITEMS = ((DATA && DATA.contracts) || []).map(legacyItem);
+  PRODS = [Object.assign({}, DEFAULT_PRODS[0], {
+    available:true, error:null, dropped:[],
+    total:ITEMS.length,
+    paid:ITEMS.filter(x=>x.paid).length,
+    unpaid:ITEMS.filter(x=>!x.paid).length,
+    done:ITEMS.filter(x=>x.done).length,
+    pending:ITEMS.filter(x=>!x.done).length,
+    revenue:ITEMS.filter(x=>x.paid).length*790, price:790
+  })];
+}
+
+/* ── ตัวกรองปัจจุบัน ── */
+function scoped(){
+  let rows = ITEMS.slice();
+  if (PROD !== 'all') rows = rows.filter(x=>x.product===PROD);
+  return rows;
+}
+function filtered(){
+  let rows = scoped();
+  if (NAV==='unpaid') rows = rows.filter(x=>!x.paid);
+  if (NAV==='todo')   rows = rows.filter(x=>!x.done);
+  return rows;
+}
+
+/* ── nav / tabs ── */
+function setNav(n){
+  NAV = n; LAST_NAV = n;
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.toggle('active', el.dataset.nav===n));
+  $('viewDetail').classList.add('hidden'); $('viewList').classList.remove('hidden');
+  const t = { home:['ภาพรวมระบบ','แดชบอร์ด SignDee'], contracts:['รายการทั้งหมด','เอกสารทั้งหมด'],
+              todo:['ต้องดำเนินการ','สิ่งที่ต้องทำต่อ'], unpaid:['การชำระเงิน','เอกสารค้างชำระ'] }[n] || ['ภาพรวมระบบ','แดชบอร์ด SignDee'];
+  const p = PROD==='all' ? '' : ' · ' + prodOf(PROD).label;
+  $('listEyebrow').textContent = t[0] + p;
+  $('listTitle').textContent = t[1];
+  renderAll();
   window.scrollTo(0,0);
 }
+function setProd(k){
+  PROD = k;
+  document.querySelectorAll('.nav-item[data-prod]').forEach(el=>el.classList.toggle('active', el.dataset.prod===k && NAV==='contracts'));
+  if (k!=='all' && NAV==='home') NAV='contracts';
+  setNav(NAV);
+}
 
-/* ── render overview ── */
+function renderTabs(){
+  const rows = ITEMS;
+  const mk = (key,label,color,n,active) =>
+    '<button class="tab '+(active?'active':'')+'" onclick="setProd(\''+key+'\')">'
+    + (color?'<span class="tdot" style="background:'+color+'"></span>':'')
+    + esc(label) + ' <span class="tnum">'+n+'</span></button>';
+  let h = mk('all','ทั้งหมด','',rows.length, PROD==='all');
+  PRODS.forEach(p=>{
+    const n = rows.filter(x=>x.product===p.key).length;
+    h += mk(p.key, p.label, p.color, n, PROD===p.key);
+  });
+  $('tabs').innerHTML = h;
+
+  $('sideProds').innerHTML = PRODS.map(p=>{
+    const n = rows.filter(x=>x.product===p.key).length;
+    return '<div class="nav-item '+(PROD===p.key?'active':'')+'" data-prod="'+p.key+'" onclick="setProd(\''+p.key+'\')">'
+      + '<span class="nav-dot" style="background:'+p.color+'"></span> '+esc(p.label)
+      + '<span class="nav-badge">'+n+'</span></div>';
+  }).join('');
+}
+
+function renderWarn(){
+  const bad = PRODS.filter(p=>p.available===false);
+  const drop = PRODS.filter(p=>p.dropped && p.dropped.length);
+  let h = '';
+  if (bad.length || drop.length) {
+    h = '<div class="warn-bar">';
+    if (bad.length) h += '⚠️ อ่านตารางไม่ได้: ' + bad.map(p=>'<b>'+esc(p.table||p.key)+'</b> ('+esc(p.error||'ไม่ทราบสาเหตุ')+')').join(' · ') + '<br>';
+    if (drop.length) h += 'ℹ️ คอลัมน์ที่ไม่มีในฐานข้อมูลและถูกข้ามไป: ' + drop.map(p=>esc(p.label)+': '+p.dropped.map(esc).join(', ')).join(' · ');
+    h += '</div>';
+  }
+  if (DATA && !Array.isArray(DATA.items))
+    h += '<div class="warn-bar">ℹ️ กำลังใช้ข้อมูลจาก API เวอร์ชันเดิม (เห็นเฉพาะสัญญาเช่า) — deploy <b>admin-stats.js v2</b> เพื่อดูครบทุกผลิตภัณฑ์</div>';
+  $('warnBar').innerHTML = h;
+}
+
+/* ══════════════ render ══════════════ */
 function renderAll(){
   if (!DATA) return;
-  const cs = DATA.contracts || [];
-  const paid = cs.filter(c=>c.payment_completed===true);
-  const done = cs.filter(c=>stepsOf(c)>=5);
-  const pending = cs.filter(c=>stepsOf(c)<5);
-  const unpaid = cs.filter(c=>c.payment_completed!==true);
+  normalize();
+  renderTabs();
+  renderWarn();
 
-  $('cTotal').textContent = cs.length;
+  const rows = scoped();
+  const paid = rows.filter(x=>x.paid);
+  const done = rows.filter(x=>x.done);
+  const pending = rows.filter(x=>!x.done);
+  const unpaid = rows.filter(x=>!x.paid);
+  const revenue = rows.reduce((s,x)=>s+(Number(x.amount)||0),0);
+
+  $('cTotal').textContent = rows.length;
   $('cTotalSub').textContent = paid.length + ' ชำระแล้ว · ' + unpaid.length + ' ยังไม่ชำระ';
   $('cDone').textContent = done.length;
+  $('cDoneSub').textContent = rows.length ? Math.round(done.length/rows.length*100)+'% ของทั้งหมด' : 'เอกสารสมบูรณ์';
   $('cPending').textContent = pending.length;
-  $('cRevenue').textContent = baht((DATA.revenue!=null ? DATA.revenue : paid.length*790));
-  $('cRevenueSub').textContent = 'จาก ' + paid.length + ' สัญญา';
-  $('navUnpaid').textContent = unpaid.length;
-  $('navTodo').textContent = pending.length;
+  $('cRevenue').textContent = baht(revenue);
+  $('cRevenueSub').textContent = 'จาก ' + paid.length + ' เอกสารที่ชำระแล้ว';
+  $('navUnpaid').textContent = ITEMS.filter(x=>!x.paid).length;
+  $('navTodo').textContent = ITEMS.filter(x=>!x.done).length;
+  $('stamp').textContent = DATA.generated_at ? 'อัปเดต ' + fmtDateTime(DATA.generated_at) : '';
 
+  renderProdCards();
+  renderCharts();
   renderTodo(pending);
-  renderSchedule(cs);
-  renderEvents(cs);
+  renderSchedule(rows);
+  renderEvents(rows);
   renderTable();
+}
+
+function renderProdCards(){
+  $('prodCards').innerHTML = PRODS.map(p=>{
+    const n = ITEMS.filter(x=>x.product===p.key);
+    const paid = n.filter(x=>x.paid).length;
+    const done = n.filter(x=>x.done).length;
+    const rev  = n.reduce((s,x)=>s+(Number(x.amount)||0),0);
+    return '<div class="prod '+(p.available===false?'off':'')+'" style="border-left-color:'+p.color+'" onclick="setProd(\''+p.key+'\')">'
+      + '<div class="prod-name"><span class="nav-dot" style="background:'+p.color+'"></span>'+esc(p.label)+'</div>'
+      + '<div class="prod-num">'+n.length+'</div>'
+      + '<div class="prod-meta">สมบูรณ์ '+done+' · ชำระแล้ว '+paid+'<br>รายได้ '+baht(rev)+'</div>'
+      + (p.available===false ? '<div class="prod-warn">อ่านตารางไม่ได้</div>' : '')
+      + '</div>';
+  }).join('');
+}
+
+/* ── กราฟ ── */
+function dailyBuckets(){
+  const map = {};
+  for (let i=13;i>=0;i--){
+    const k = new Date(Date.now()-i*86400000).toISOString().slice(0,10);
+    map[k] = { date:k };
+    PRODS.forEach(p=>map[k][p.key]=0);
+  }
+  ITEMS.forEach(x=>{
+    const k = String(x.created_at||'').slice(0,10);
+    if (map[k] && map[k][x.product]!==undefined) map[k][x.product]++;
+  });
+  return Object.keys(map).sort().map(k=>map[k]);
+}
+function monthlyBuckets(){
+  if (DATA && Array.isArray(DATA.monthly) && DATA.monthly.length) return DATA.monthly;
+  const map = {};
+  for (let i=5;i>=0;i--){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
+    const k = d.toISOString().slice(0,7);
+    map[k] = { month:k, revenue:0 };
+    PRODS.forEach(p=>map[k][p.key]=0);
+  }
+  ITEMS.forEach(x=>{
+    const k = String(x.created_at||'').slice(0,7);
+    if (map[k] && x.paid){ map[k].revenue += (Number(x.amount)||0); if(map[k][x.product]!==undefined) map[k][x.product]+=(Number(x.amount)||0); }
+  });
+  return Object.keys(map).sort().map(k=>map[k]);
+}
+
+const CH_BASE = {
+  responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{display:false}, tooltip:{ backgroundColor:'#0B1220', padding:10, cornerRadius:8,
+    titleFont:{family:'Sarabun',size:12}, bodyFont:{family:'Sarabun',size:12} } },
+  scales:{
+    x:{ stacked:true, grid:{display:false}, ticks:{ font:{family:'Sarabun',size:10.5}, color:'#8E95A3' } },
+    y:{ stacked:true, beginAtZero:true, border:{display:false},
+        grid:{ color:'#E6E4DC' }, ticks:{ font:{family:'Sarabun',size:10.5}, color:'#8E95A3', precision:0 } }
+  }
+};
+
+function renderCharts(){
+  if (typeof Chart === 'undefined') return;
+  const shown = PROD==='all' ? PRODS : PRODS.filter(p=>p.key===PROD);
+
+  // 1) เอกสารใหม่ 14 วัน (stacked)
+  const d = dailyBuckets();
+  const dsD = shown.map(p=>({
+    label:p.label, data:d.map(r=>r[p.key]||0), backgroundColor:p.color,
+    borderRadius:4, borderSkipped:false, barPercentage:.72, categoryPercentage:.8
+  }));
+  const totalNew = d.reduce((s,r)=>s+shown.reduce((t,p)=>t+(r[p.key]||0),0),0);
+  $('chartDailySum').textContent = totalNew + ' ฉบับ';
+  const labelsD = d.map(r=>{ const dt=new Date(r.date+'T00:00:00'); return dt.toLocaleDateString('th-TH',{day:'numeric',month:'short'}); });
+  if (CH_DAILY) CH_DAILY.destroy();
+  CH_DAILY = new Chart($('chartDaily'), { type:'bar', data:{ labels:labelsD, datasets:dsD }, options:CH_BASE });
+  $('legendDaily').innerHTML = shown.map(p=>'<span><i style="background:'+p.color+'"></i>'+esc(p.label)+'</span>').join('');
+
+  // 2) รายได้รายเดือน (stacked)
+  const m = monthlyBuckets();
+  const dsR = shown.map(p=>({
+    label:p.label, data:m.map(r=>r[p.key]||0), backgroundColor:p.color,
+    borderRadius:4, borderSkipped:false, barPercentage:.6, categoryPercentage:.75
+  }));
+  const totalRev = m.reduce((s,r)=>s+shown.reduce((t,p)=>t+(r[p.key]||0),0),0);
+  $('chartRevSum').textContent = baht(totalRev);
+  const optR = JSON.parse(JSON.stringify(CH_BASE));
+  optR.plugins.tooltip = CH_BASE.plugins.tooltip;
+  optR.scales.y.ticks.callback = null;
+  if (CH_REV) CH_REV.destroy();
+  CH_REV = new Chart($('chartRev'), {
+    type:'bar',
+    data:{ labels:m.map(r=>fmtMonth(r.month)), datasets:dsR },
+    options: Object.assign({}, CH_BASE, {
+      scales:{
+        x:{ stacked:true, grid:{display:false}, ticks:{ font:{family:'Sarabun',size:10.5}, color:'#8E95A3' } },
+        y:{ stacked:true, beginAtZero:true, border:{display:false}, grid:{ color:'#E6E4DC' },
+            ticks:{ font:{family:'Sarabun',size:10.5}, color:'#8E95A3',
+                    callback:(v)=>'฿'+Number(v).toLocaleString('th-TH') } }
+      }
+    })
+  });
+  $('legendRev').innerHTML = shown.map(p=>'<span><i style="background:'+p.color+'"></i>'+esc(p.label)+'</span>').join('');
+}
+
+/* ── panels ── */
+function statusPill(x){
+  if (x.done) return 'green';
+  if (!x.paid) return 'red';
+  return 'amber';
+}
+function tagOf(x){
+  const p = prodOf(x.product);
+  return '<span class="tag" style="background:'+p.color+'">'+esc(p.label)+'</span>';
 }
 
 function renderTodo(pending){
   const list = pending.slice(0,6);
   $('todoCount').textContent = pending.length + ' งาน';
-  $('todoList').innerHTML = list.length ? list.map(c=>{
-    const n = stepsOf(c), next = nextStepOf(c);
-    const cls = c.payment_completed ? 'amber' : 'red';
+  $('todoList').innerHTML = list.length ? list.map(x=>{
+    const cls = x.paid ? 'amber' : 'red';
     return '<div class="task">'
       + '<div class="task-head"><div>'
-        + '<div class="task-name">'+esc(c.property||'—')+(c.room_no?' · ห้อง '+esc(c.room_no):'')+'</div>'
-        + '<div class="task-meta">'+esc(c.landlord_name||'—')+' → '+esc(c.tenant_name||'—')+' · สร้าง '+fmtDate(c.created_at)+'</div>'
-      + '</div><span class="pill '+cls+'">'+esc(next)+'</span></div>'
-      + '<div class="task-foot"><span>ขั้นตอน '+n+'/5</span>'
-        + '<button class="btn btn-sm btn-out" onclick="openContract(\''+c.id+'\')">ดูรายละเอียด</button></div>'
+        + '<div class="task-name">'+esc(x.title)+'</div>'
+        + '<div class="task-meta">'+esc(x.subtitle)+' · สร้าง '+fmtDate(x.created_at)+'</div>'
+      + '</div><span class="pill '+cls+'">'+esc(x.next_step)+'</span></div>'
+      + '<div class="task-foot"><span>'+tagOf(x)+' &nbsp;ขั้นตอน '+x.step+'/'+x.steps_total+'</span>'
+        + '<button class="btn btn-sm btn-out" onclick="openItem(\''+x.product+'\',\''+x.id+'\')">ดูรายละเอียด</button></div>'
       + '</div>';
   }).join('') : '<div class="empty">ไม่มีงานค้าง ✓</div>';
 }
 
-function renderSchedule(cs){
-  const stale = cs.filter(c=>stepsOf(c)<5 && daysAgo(c.created_at)>=3)
-                  .sort((a,b)=>daysAgo(b.created_at)-daysAgo(a.created_at)).slice(0,4);
-  $('dlRows').innerHTML = stale.length ? stale.map(c=>
-    '<div class="dl-row"><span>'+esc(c.property||'—')+(c.room_no?' ห้อง '+esc(c.room_no):'')+'</span>'
-    + '<b>ค้าง '+daysAgo(c.created_at)+' วัน</b></div>').join('')
-    : '<div style="font-size:12.5px;color:var(--text2);">ไม่มีสัญญาค้างเกิน 3 วัน ✓</div>';
+function renderSchedule(rows){
+  const stale = rows.filter(x=>!x.done && daysAgo(x.created_at)>=3)
+                    .sort((a,b)=>daysAgo(b.created_at)-daysAgo(a.created_at)).slice(0,5);
+  $('dlRows').innerHTML = stale.length ? stale.map(x=>
+    '<div class="dl-row"><span>'+esc(x.title)+'</span><b>ค้าง '+daysAgo(x.created_at)+' วัน</b></div>').join('')
+    : '<div style="font-size:12.5px;color:var(--text2);">ไม่มีเอกสารค้างเกิน 3 วัน ✓</div>';
 
-  const recent = cs.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,6);
-  $('calRows').innerHTML = recent.map(c=>{
-    const col = stepsOf(c)>=5 ? 'var(--green)' : (c.payment_completed ? 'var(--accent)' : 'var(--amber)');
-    return '<div class="cal-row"><span class="cal-date">'+fmtDate(c.created_at)+'</span>'
+  const recent = rows.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,7);
+  $('calRows').innerHTML = recent.map(x=>{
+    const col = x.done ? 'var(--green)' : (x.paid ? prodOf(x.product).color : 'var(--amber)');
+    return '<div class="cal-row"><span class="cal-date">'+fmtDate(x.created_at)+'</span>'
       + '<span class="cal-dot" style="background:'+col+'"></span>'
-      + '<span style="flex:1;">'+esc(c.property||'—')+'</span></div>';
-  }).join('') || '<div class="empty">ยังไม่มีสัญญา</div>';
+      + '<span style="flex:1;">'+esc(x.title)+'</span></div>';
+  }).join('') || '<div class="empty">ยังไม่มีเอกสาร</div>';
 }
 
-function renderEvents(cs){
-  const evs = cs.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,10).map(c=>{
-    const n = stepsOf(c);
-    const icon = n>=5 ? '✓' : (c.payment_completed ? '⇧' : '✎');
-    const cls  = n>=5 ? 'done' : (c.payment_completed ? 'blue' : '');
-    const title = n>=5 ? 'ลงนามครบทุกฝ่าย' : (c.payment_completed ? 'ชำระค่าบริการแล้ว' : 'สร้างร่างสัญญา');
-    return { icon, cls, title, desc: (c.property||'—') + (c.room_no?' ห้อง '+c.room_no:'') + ' · ' + (c.landlord_name||'—'), at:c.created_at };
+function renderEvents(rows){
+  const evs = rows.slice().sort((a,b)=>new Date(b.created_at)-new Date(a.created_at)).slice(0,12).map(x=>{
+    const icon = x.done ? '✓' : (x.paid ? '⇧' : '✎');
+    const cls  = x.done ? 'done' : (x.paid ? 'blue' : '');
+    const title = x.done ? 'ดำเนินการครบถ้วน' : (x.paid ? 'ชำระค่าบริการแล้ว' : 'สร้างร่างเอกสาร');
+    return { icon, cls, title, desc: x.title + ' · ' + x.subtitle, at:x.created_at, prod:x.product };
   });
   $('evCount').textContent = evs.length;
   $('evList').innerHTML = evs.length ? evs.map(e=>
-    '<div class="tl"><div class="tl-dot '+e.cls+'">'+e.icon+'</div><div>'
-    + '<div class="tl-title">'+esc(e.title)+'</div>'
+    '<div class="tl"><div class="tl-dot '+e.cls+'">'+e.icon+'</div><div style="flex:1;">'
+    + '<div class="tl-title">'+esc(e.title)+' <span class="tag" style="background:'+prodOf(e.prod).color+'">'+esc(prodOf(e.prod).label)+'</span></div>'
     + '<div class="tl-desc">'+esc(e.desc)+'</div>'
     + '<div class="tl-time">'+fmtDateTime(e.at)+'</div>'
     + '</div></div>').join('') : '<div class="empty">ยังไม่มีเหตุการณ์</div>';
@@ -440,77 +710,92 @@ function renderEvents(cs){
 function renderTable(){
   if (!DATA) return;
   const q = ($('searchBox').value||'').trim().toLowerCase();
-  let rows = (DATA.contracts||[]);
-  if (NAV==='unpaid') rows = rows.filter(c=>c.payment_completed!==true);
-  if (NAV==='todo')   rows = rows.filter(c=>stepsOf(c)<5);
-  if (q) rows = rows.filter(c=>[c.landlord_name,c.tenant_name,c.property,c.room_no].some(x=>(x||'').toLowerCase().includes(q)));
+  let rows = filtered();
+  if (q) rows = rows.filter(x=>[x.title,x.subtitle,x.party_a,x.party_b,x.no,x.status_th]
+                        .some(v=>(v||'').toString().toLowerCase().includes(q)));
   $('tblCount').textContent = rows.length;
   $('tblEmpty').style.display = rows.length ? 'none' : 'block';
-  $('tblBody').innerHTML = rows.map(c=>{
-    const paid = c.payment_completed===true;
-    return '<tr class="clickable" onclick="openContract(\''+c.id+'\')">'
-      + '<td style="color:var(--text2);white-space:nowrap;">'+fmtDate(c.created_at)+'</td>'
-      + '<td><div class="who">'+esc(c.landlord_name||'—')+'<small>ผู้เช่า: '+esc(c.tenant_name||'—')+'</small></div></td>'
-      + '<td>'+esc(c.property||'—')+(c.room_no?'<br><small style="color:var(--text3)">ห้อง '+esc(c.room_no)+'</small>':'')+'</td>'
-      + '<td><span class="pill '+statusPill(c.status_th)+'">'+esc(c.status_th||'—')+'</span></td>'
-      + '<td class="amt">'+(paid?'฿790':'—')+'</td>'
-      + '<td><button class="link" onclick="event.stopPropagation();copyLink(\''+APP_BASE+'?reload='+c.id+'\')">📋 คัดลอกลิงก์</button></td>'
-      + '</tr>';
-  }).join('');
+  $('tblBody').innerHTML = rows.map(x=>
+    '<tr class="clickable" onclick="openItem(\''+x.product+'\',\''+x.id+'\')">'
+    + '<td style="color:var(--text2);white-space:nowrap;">'+fmtDate(x.created_at)+'</td>'
+    + '<td>'+tagOf(x)+'</td>'
+    + '<td>'+esc(x.title)+(x.no?'<br><small style="color:var(--text3)">'+esc(x.no)+'</small>':'')+'</td>'
+    + '<td><div class="who">'+esc(x.party_a||'—')+'<small>'+esc(x.party_b_label)+': '+esc(x.party_b||'—')+'</small></div></td>'
+    + '<td><span class="pill '+statusPill(x)+'">'+esc(x.status_th)+'</span></td>'
+    + '<td style="white-space:nowrap;color:var(--text2);">'+x.step+'/'+x.steps_total+'</td>'
+    + '<td class="amt">'+(x.paid?baht(x.amount):'—')+'</td>'
+    + '<td><button class="link" onclick="event.stopPropagation();copyLink(\''+(x.link||'')+'\')">📋 คัดลอกลิงก์</button></td>'
+    + '</tr>').join('');
 }
 
-/* ── contract detail ── */
-function openContract(id){
-  const c = (DATA.contracts||[]).find(x=>String(x.id)===String(id));
-  if (!c) return;
-  CUR = c;
+/* ── detail ── */
+function openItem(product,id){
+  const x = ITEMS.find(i=>i.product===product && String(i.id)===String(id));
+  if (!x) return;
+  CUR = x;
   $('viewList').classList.add('hidden'); $('viewDetail').classList.remove('hidden');
   document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
 
-  const n = stepsOf(c), paid = c.payment_completed===true;
-  $('dEyebrow').textContent = 'SD-' + String(c.id).slice(0,8).toUpperCase() + ' · สัญญาเช่า';
-  $('dTitle').textContent = (c.property||'สัญญาเช่า') + (c.room_no ? ' · ห้อง '+c.room_no : '');
-  $('dStatus').textContent = c.status_th || '—';
-  $('dStatus').className = 'pill ' + statusPill(c.status_th);
-  $('dStepDone').textContent = n; $('dStepTotal').textContent = 5;
-  $('dProg').style.width = (n/5*100) + '%';
-  $('dAmt').textContent = paid ? '฿790' : '—';
-  $('dNext').textContent = nextStepOf(c);
-  $('dCreated').textContent = fmtDate(c.created_at);
-  $('dOpenBtn').onclick = () => window.open(APP_BASE+'?reload='+c.id,'_blank');
+  const p = prodOf(x.product);
+  $('dEyebrow').innerHTML = tagOf(x) + ' &nbsp;' + esc(x.no || ('#' + String(x.id).slice(0,8).toUpperCase()));
+  $('dTitle').textContent = x.title;
+  $('dStatus').textContent = x.status_th;
+  $('dStatus').className = 'pill ' + statusPill(x);
+  $('dStepDone').textContent = x.step; $('dStepTotal').textContent = x.steps_total;
+  $('dProg').style.width = (x.step/x.steps_total*100) + '%';
+  $('dProg').style.background = x.done ? 'var(--green)' : p.color;
+  $('dAmt').textContent = x.paid ? baht(x.amount) : '—';
+  $('dAmtSub').textContent = x.paid ? ('ชำระแล้ว' + (x.paid_at ? ' · ' + fmtDate(x.paid_at) : '')) : ('ราคา ' + baht(x.price));
+  $('dNext').textContent = x.next_step;
+  $('dCreated').textContent = fmtDate(x.created_at);
+  $('dAge').textContent = 'ผ่านมา ' + daysAgo(x.created_at) + ' วัน';
+  $('dOpenBtn').onclick = () => window.open(x.link || p.app, '_blank');
 
-  // ขั้นตอนทั้งหมด (checklist)
-  const doneCount = n;
-  $('dTodoCount').textContent = Math.max(0, 5-doneCount) + ' งาน';
-  $('dTodoList').innerHTML = STEPS.map((s,i)=>{
+  // ขั้นตอนทั้งหมด
+  const steps = x.steps || [];
+  $('dTodoCount').textContent = Math.max(0, x.steps_total - x.step) + ' งาน';
+  $('dTodoList').innerHTML = steps.map((s,i)=>{
     const idx = i+1;
-    const isDone = idx <= doneCount;
-    const isNext = idx === doneCount+1;
+    const isDone = idx <= x.step;
+    const isNext = idx === x.step+1;
     const pill = isDone ? '<span class="pill green">เสร็จสิ้น</span>'
                : isNext ? '<span class="pill amber">รอดำเนินการ</span>'
                         : '<span class="pill">รอถึงกำหนด</span>';
     return '<div class="task"><div class="task-head"><div>'
       + '<div class="task-name">'+esc(s)+'</div>'
-      + '<div class="task-meta">ขั้นตอนที่ '+idx+' จาก 5</div>'
+      + '<div class="task-meta">ขั้นตอนที่ '+idx+' จาก '+x.steps_total+'</div>'
       + '</div>'+pill+'</div></div>';
-  }).join('');
+  }).join('') || '<div class="empty">ไม่มีข้อมูลขั้นตอน</div>';
 
-  // กำหนดการ
-  const age = daysAgo(c.created_at);
-  const overdue = n<5 && age>=3;
-  $('dSchedule').innerHTML =
-    (overdue ? '<div class="dl-box"><div style="font-weight:700;font-size:13px;margin-bottom:6px;">ค้างดำเนินการ</div>'
-      + '<div class="dl-row"><span>'+esc(nextStepOf(c))+'</span><b>ค้าง '+age+' วัน</b></div></div>' : '')
-    + '<div style="font-weight:700;font-size:13px;margin-bottom:6px;">ไทม์ไลน์สัญญา</div>'
-    + '<div class="cal-row"><span class="cal-date">'+fmtDate(c.created_at)+'</span><span class="cal-dot" style="background:var(--accent)"></span><span>สร้างร่างสัญญา</span></div>'
-    + (paid ? '<div class="cal-row"><span class="cal-date">—</span><span class="cal-dot" style="background:var(--green)"></span><span>ชำระค่าบริการ ฿790</span></div>' : '')
-    + (n>=5 ? '<div class="cal-row"><span class="cal-date">—</span><span class="cal-dot" style="background:var(--green)"></span><span>ลงนามครบทุกฝ่าย</span></div>'
-            : '<div class="cal-row"><span class="cal-date">—</span><span class="cal-dot" style="background:var(--amber)"></span><span>'+esc(nextStepOf(c))+' (รอ)</span></div>');
+  // ข้อมูลเอกสาร
+  const kv = [];
+  kv.push([x.party_a_label, x.party_a || '—']);
+  kv.push([x.party_b_label, x.party_b || '—']);
+  if (x.cert_no) kv.push(['เลขที่ใบรับรอง', x.cert_no]);
+  kv.push(['ชำระเงิน', x.paid ? 'แล้ว' + (x.paid_at ? ' · ' + fmtDateTime(x.paid_at) : '') : 'ยังไม่ชำระ']);
+  if (x.signed_a_at) kv.push([x.party_a_label + 'ลงนาม', fmtDateTime(x.signed_a_at)]);
+  if (x.signed_b_at) kv.push([x.party_b_label + 'ลงนาม', fmtDateTime(x.signed_b_at)]);
+  const EX_LABEL = {
+    rent:'ค่าเช่า/เดือน', deposit:'เงินประกัน', total_price:'ราคาซื้อขาย', deposit_amt:'เงินมัดจำ',
+    deposit_pay_via:'ช่องทางมัดจำ', deposit_paid_at:'มัดจำเมื่อ', deposit_payout_status:'สถานะโอนมัดจำ',
+    salary:'เงินเดือน', employment_type:'ประเภทการจ้าง', start_date:'เริ่มงาน', position:'ตำแหน่ง',
+    arrears_total:'ยอดค้างชำระ', deadline:'ครบกำหนด', sent_at:'ส่งหนังสือ', recv_at:'ผู้รับได้รับ',
+    payment_provider:'ผู้ให้บริการชำระเงิน', creator_role:'ผู้ร่างสัญญา', doc_hash:'Doc hash'
+  };
+  const MONEY = ['rent','deposit','total_price','deposit_amt','salary','arrears_total'];
+  Object.keys(x.extra||{}).forEach(k=>{
+    const v = x.extra[k];
+    if (v===null || v===undefined || v==='' || v===0) return;
+    kv.push([EX_LABEL[k]||k, MONEY.indexOf(k)>=0 ? baht(v) : (/\d{4}-\d{2}-\d{2}/.test(String(v)) ? fmtDate(v) : String(v))]);
+  });
+  $('dSchedule').innerHTML = kv.map(r=>'<div class="kv"><span>'+esc(r[0])+'</span><b>'+esc(r[1])+'</b></div>').join('');
 
-  // หลักฐาน/เหตุการณ์
-  const evs = [{icon:'✎', cls:'', title:'สร้างร่างสัญญา', desc:(c.landlord_name||'—')+' → '+(c.tenant_name||'—'), at:c.created_at}];
-  if (paid) evs.push({icon:'⇧', cls:'blue', title:'ชำระค่าบริการแล้ว', desc:'฿790 · ปลดล็อกการลงนาม', at:null});
-  if (n>=5) evs.push({icon:'✓', cls:'done', title:'ลงนามครบทุกฝ่าย', desc:'สัญญาสมบูรณ์ · PDF พร้อมใบรับรอง', at:null});
+  // เหตุการณ์
+  const evs = [{icon:'✎', cls:'', title:'สร้างร่างเอกสาร', desc:x.subtitle, at:x.created_at}];
+  if (x.paid) evs.push({icon:'⇧', cls:'blue', title:'ชำระค่าบริการแล้ว', desc:baht(x.amount)+' · ปลดล็อกขั้นตอนถัดไป', at:x.paid_at});
+  if (x.signed_a_at) evs.push({icon:'✍', cls:'blue', title:x.party_a_label+'ลงนาม', desc:x.party_a||'—', at:x.signed_a_at});
+  if (x.signed_b_at) evs.push({icon:'✍', cls:'blue', title:x.party_b_label+'ลงนาม', desc:x.party_b||'—', at:x.signed_b_at});
+  if (x.done) evs.push({icon:'✓', cls:'done', title:'ดำเนินการครบถ้วน', desc:(x.cert_no?'ใบรับรอง '+x.cert_no:'เอกสารสมบูรณ์'), at:null});
   $('dEv').textContent = evs.length; $('dEvCount').textContent = evs.length;
   $('dEvList').innerHTML = evs.map(e=>
     '<div class="tl"><div class="tl-dot '+e.cls+'">'+e.icon+'</div><div>'
@@ -522,6 +807,7 @@ function openContract(id){
 }
 
 function copyLink(link){
+  if (!link) { toast('ไม่มีลิงก์สำหรับเอกสารนี้'); return; }
   try { navigator.clipboard.writeText(link); toast('✅ คัดลอกลิงก์แล้ว'); }
   catch(e){ prompt('คัดลอกลิงก์:', link); }
 }

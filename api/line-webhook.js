@@ -6,6 +6,7 @@
 // ============================================================
 
 const crypto = require('crypto');
+const EBOOK = require('./_line_ebook.js');
 
 /* ══════════ helpers (เดิมอยู่ใน lib/reminder-lib.js) ══════════ */
 const SB = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
@@ -224,19 +225,34 @@ module.exports = async (req, res) => {
   if (typeof body === 'string') { try { body = JSON.parse(body); } catch (e) { body = {}; } }
   const events = (body && body.events) || [];
 
-  // ตอบ 200 ให้ LINE ทันที (กัน timeout) แล้วประมวลผลต่อ
-  res.status(200).json({ ok: true });
+  // ⚠️ ต้องประมวลผลให้จบ "ก่อน" ตอบ 200
+  //    เดิมตอบ 200 ก่อนแล้วค่อยทำงาน — บน Vercel งาน async หลังส่ง response
+  //    ถูกตัดกลางคัน ทำให้ยิงข้อความกลับ LINE ไม่ทัน (เงียบ ไม่มี error)
+  const work = (async () => {
+    for (const ev of events) {
+      try {
+        if (await EBOOK.handleEvent(ev)) continue;   // ← eBook จัดการแล้ว
 
-  for (const ev of events) {
-    try {
-      if (ev.type === 'postback') await handlePostback(ev);
-      else if (ev.type === 'follow') await handleNdaFollow(ev);
-      else if (ev.type === 'message' && ev.message && ev.message.type === 'image') await handleImage(ev);
-      else if (ev.type === 'message' && ev.message && ev.message.type === 'text')  await handleEmpLinkText(ev);
-    } catch (e) {
-      console.error('[webhook] event error:', e.message);
+        if (ev.type === 'postback') await handlePostback(ev);
+        else if (ev.type === 'follow') await handleNdaFollow(ev);
+        else if (ev.type === 'message' && ev.message && ev.message.type === 'image') await handleImage(ev);
+        else if (ev.type === 'message' && ev.message && ev.message.type === 'text')  await handleEmpLinkText(ev);
+      } catch (e) {
+        console.error('[webhook] event error:', e.message);
+      }
     }
-  }
+  })();
+
+  // กัน LINE รอนานเกินไป — เกิน 9 วินาทีตอบ 200 ไปก่อน (LINE จะได้ไม่ retry)
+  await Promise.race([
+    work,
+    new Promise(resolve => setTimeout(() => {
+      console.error('[webhook] processing timeout — ตอบ 200 ไปก่อน');
+      resolve();
+    }, 9000)),
+  ]);
+
+  return res.status(200).json({ ok: true });
 };
 
 

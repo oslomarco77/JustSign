@@ -3320,20 +3320,6 @@ footer{border-top:1px solid var(--border);padding:40px 0;}
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
-<!-- ตัวจัดการรูปกลาง — ต้องโหลดก่อนสคริปต์หลักที่เรียก SignDeeImg -->
-<script src="/img-safe.js"></script>
-<!-- ws-link.js — ผูกสัญญากลับเข้า Workspace ของ Agreement OS (ทาง A)
-
-     ปิดอยู่จนกว่าจะตั้งค่า: ถ้าไม่มี window.AGREEMENT_OS_BASE ไฟล์นี้จะไม่ยิง
-     เน็ตเลยแม้แต่ครั้งเดียว และไม่กระทบ flow ของหน้านี้แม้แต่นิดเดียว
-
-     เปิดใช้เมื่อ deploy Agreement OS แล้ว โดยใส่บรรทัดนี้ "ก่อน" script ด้านล่าง:
-       <script>window.AGREEMENT_OS_BASE = 'https://<โดเมน-agreement-os>';</script>
-
-     ⚠️ ทดสอบบน Vercel Preview URL ก่อนเสมอ และอย่าลืมเติมโดเมนของหน้านี้
-     ลงใน HANDOFF_ALLOWED_ORIGINS ฝั่ง Agreement OS ไม่งั้นจะโดน CORS บล็อก -->
-<script src="/ws-link.js"></script>
-
 <script>
 // ═══ STATE ═══
 const draft = JSON.parse(localStorage.getItem('justsign_draft') || '{}');
@@ -4225,51 +4211,30 @@ function handleUpload(e, party) {
   const file = e.target.files[0];
   if (file) processFile(file, party);
 }
-async function processFile(file, party) {
+function processFile(file, party) {
   if (file.size > 5 * 1024 * 1024) { showToast('⚠️ ไฟล์ใหญ่เกินไป (สูงสุด 5MB)'); return; }
-
+  uploads[party] = file;
   const prefix = party;
-
+  const zone = document.getElementById(`${prefix}CardZone`);
+  zone.classList.add('has-file');
+  document.getElementById(`${prefix}CardIcon`).textContent = '✅';
+  const _ct = document.getElementById(`${prefix}CardTitle`);
+  _ct.textContent = file.name.length > 30 ? file.name.slice(0,28)+'…' : file.name;
+  _ct.style.color = '';
+  document.getElementById(`${prefix}CardChange`).style.display = 'block';
   if (file.type.startsWith('image/')) {
-    /* แปลงเป็น JPEG ตั้งแต่ตอนอัปโหลด ไม่ใช่ตอนบันทึก
-       เดิม _compressPhoto ถูกเรียกตอน save และถ้าถอดรหัสไม่ได้จะคืนไฟล์ต้นฉบับ
-       ทำให้ HEIC จาก iPhone ถูกเก็บดิบลง DB แล้วภาคผนวกสำเนาบัตรว่างเปล่า */
-    const res = await SignDeeImg.process(file, { maxEdge: 1200, quality: 0.8 });
-
-    if (!res.ok) {
-      SignDeeImg.explainFailure([{ name: file.name, kind: res.kind }]);
-      return;   // ไม่แตะ UI เลย ผู้ใช้เห็นว่ายังไม่ได้แนบไฟล์
-    }
-
-  uploads[party] = file;
-  const zone = document.getElementById(`${prefix}CardZone`);
-  zone.classList.add('has-file');
-  document.getElementById(`${prefix}CardIcon`).textContent = '✅';
-  const _ct = document.getElementById(`${prefix}CardTitle`);
-  _ct.textContent = file.name.length > 30 ? file.name.slice(0,28)+'…' : file.name;
-  _ct.style.color = '';
-  document.getElementById(`${prefix}CardChange`).style.display = 'block';
-
-    const img = document.getElementById(`${prefix}CardPreview`);
-    img.src = res.dataUrl;
-    img.style.display = 'block';
-
-    // Store for PDF appendix ก — สำเนาบัตรประชาชน (เป็น JPEG แน่นอนแล้ว)
-    if (party === 'll')       window._llCardData  = { dataUrl: res.dataUrl, name: file.name };
-    else if (party === 'tn2') window._tn2CardData = { dataUrl: res.dataUrl, name: file.name };
-    else                      window._tnCardData  = { dataUrl: res.dataUrl, name: file.name };
-    return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = document.getElementById(`${prefix}CardPreview`);
+      img.src = ev.target.result;
+      img.style.display = 'block';
+      // Store for PDF appendix ก — สำเนาบัตรประชาชน
+      if (party === 'll')       window._llCardData  = { dataUrl: ev.target.result, name: file.name };
+      else if (party === 'tn2') window._tn2CardData = { dataUrl: ev.target.result, name: file.name };
+      else                      window._tnCardData  = { dataUrl: ev.target.result, name: file.name };
+    };
+    reader.readAsDataURL(file);
   }
-
-  // ไฟล์ที่ไม่ใช่รูป (เช่น PDF) — เก็บไว้เฉย ๆ ตามพฤติกรรมเดิม
-  uploads[party] = file;
-  const zone = document.getElementById(`${prefix}CardZone`);
-  zone.classList.add('has-file');
-  document.getElementById(`${prefix}CardIcon`).textContent = '✅';
-  const _ct = document.getElementById(`${prefix}CardTitle`);
-  _ct.textContent = file.name.length > 30 ? file.name.slice(0,28)+'…' : file.name;
-  _ct.style.color = '';
-  document.getElementById(`${prefix}CardChange`).style.display = 'block';
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -4376,7 +4341,7 @@ function _setJuristic(party, on) {
   if (typeof autoSave === 'function') autoSave();
 }
 
-async function onInlineCardPick(event, party) {
+function onInlineCardPick(event, party) {
   const file = event.target.files && event.target.files[0];
   event.target.value = ''; // ให้เลือกไฟล์เดิมซ้ำได้
   if (!file) return;
@@ -4384,15 +4349,12 @@ async function onInlineCardPick(event, party) {
     if (typeof showToast === 'function') showToast('กรุณาเลือกไฟล์รูปภาพของบัตร');
     return;
   }
-  /* แปลงเป็น JPEG ก่อนเสมอ ห้ามส่งไฟล์ดิบต่อ
-     เดิมอ่านเป็น dataURL แล้วส่งเข้า _carryCardToVerify ตรง ๆ
-     ทำให้ HEIC จาก iPhone ถูกเก็บใน _llCardData แล้วภาคผนวก ก ว่างเปล่า
-     ใช้ความละเอียดสูงกว่ารูปทั่วไปเพื่อให้ OCR อ่านวรรณยุกต์ ( ่ ้ ๊ ๋ ) ได้ */
-  const res = await SignDeeImg.process(file, { maxEdge: 1400, quality: 0.85, maxBytes: 1200 * 1024 });
-  if (!res.ok) { SignDeeImg.explainFailure([{ name: file.name, kind: res.kind }]); return; }
-
-  _carryCardToVerify(party, res.dataUrl, file.name); // เด้งรูปไปหน้ายืนยันตัวตนก่อน
-  runIdCardOCR(res.dataUrl, party, party + 'OcrPanelInline');
+  const reader = new FileReader();
+  reader.onload = ev => {
+    _carryCardToVerify(party, ev.target.result, file.name); // เด้งรูปไปหน้ายืนยันตัวตนก่อน
+    runIdCardOCR(ev.target.result, party, party + 'OcrPanelInline');
+  };
+  reader.readAsDataURL(file);
 }
 
 async function runIdCardOCR(dataUrl, party, panelId) {
@@ -5184,18 +5146,15 @@ function addRoomPhotos(files) {
   const rem = MAX_ROOM_PHOTOS - window._roomPhotos.length;
   if (rem <= 0) { showToast('⚠️ เพิ่มรูปได้สูงสุด ' + MAX_ROOM_PHOTOS + ' รูป'); return; }
   if (files.length > rem) showToast('⚠️ เพิ่มได้อีก ' + rem + ' รูปเท่านั้น');
-  // แปลงเป็น JPEG ตั้งแต่ตอนอัปโหลด แล้วรวบไฟล์ที่แปลงไม่ได้มาแจ้งทีเดียว
-  (async () => {
-    const rejected = [];
-    for (const file of files.slice(0, rem)) {
-      if (file.size > 10 * 1024 * 1024) { showToast('⚠️ ' + file.name.slice(0,20) + '... ใหญ่เกิน 10MB'); continue; }
-      const res = await SignDeeImg.process(file, { maxEdge: 1000, quality: 0.6 });
-      if (!res.ok) { rejected.push({ name: file.name, kind: res.kind }); continue; }
-      window._roomPhotos.push({ key: 'r' + Date.now() + Math.random(), dataUrl: res.dataUrl, name: file.name, category: 'ภาพทั่วไป' });
+  files.slice(0, rem).forEach(file => {
+    if (file.size > 10 * 1024 * 1024) { showToast('⚠️ ' + file.name.slice(0,20) + '... ใหญ่เกิน 10MB'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      window._roomPhotos.push({ key: 'r' + Date.now() + Math.random(), dataUrl: ev.target.result, name: file.name, category: 'ภาพทั่วไป' });
       renderRoomGrid();
-    }
-    if (rejected.length) SignDeeImg.explainFailure(rejected);
-  })();
+    };
+    reader.readAsDataURL(file);
+  });
 }
 function removeRoomPhoto(idx) { window._roomPhotos.splice(idx, 1); renderRoomGrid(); }
 function clearAllRoomPhotos() { window._roomPhotos = []; renderRoomGrid(); }
@@ -5244,27 +5203,16 @@ function depositSlipDrop(e) {
 function addDepositSlips(files) {
   if (window._depositSlips.length >= 10) { showToast('⚠️ เพิ่มสลิปได้สูงสุด 10 ไฟล์'); return; }
   const rem = 10 - window._depositSlips.length;
-  (async () => {
-    const rejected = [];
-    for (const file of files.slice(0, rem)) {
-      if (file.size > 5 * 1024 * 1024) { showToast('⚠️ ' + file.name.slice(0,20) + '... ใหญ่เกิน 5MB'); continue; }
-
-      // สลิปอาจเป็น PDF ได้ ไม่ใช่รูปเสมอไป — ไฟล์ที่ไม่ใช่รูปเก็บตามเดิม
-      if (!file.type.startsWith('image/')) {
-        const dataUrl = await new Promise(r => { const rd = new FileReader(); rd.onload = ev => r(ev.target.result); rd.onerror = () => r(null); rd.readAsDataURL(file); });
-        if (dataUrl) window._depositSlips.push({ key: 'dep_' + Date.now() + Math.random(), dataUrl: dataUrl, name: file.name, type: file.type });
-        renderDepositSlipGrid(); autoSave();
-        continue;
-      }
-
-      const res = await SignDeeImg.process(file, { maxEdge: 1200, quality: 0.6 });
-      if (!res.ok) { rejected.push({ name: file.name, kind: res.kind }); continue; }
-      window._depositSlips.push({ key: 'dep_' + Date.now() + Math.random(), dataUrl: res.dataUrl, name: file.name, type: 'image/jpeg' });
+  files.slice(0, rem).forEach(file => {
+    if (file.size > 5 * 1024 * 1024) { showToast('⚠️ ' + file.name.slice(0,20) + '... ใหญ่เกิน 5MB'); return; }
+    const reader = new FileReader();
+    reader.onload = ev => {
+      window._depositSlips.push({ key: 'dep_' + Date.now() + Math.random(), dataUrl: ev.target.result, name: file.name, type: file.type });
       renderDepositSlipGrid();
       autoSave();
-    }
-    if (rejected.length) SignDeeImg.explainFailure(rejected);
-  })();
+    };
+    reader.readAsDataURL(file);
+  });
 }
 function removeDepositSlip(idx) {
   window._depositSlips.splice(idx, 1);
@@ -5314,18 +5262,7 @@ function processRoomFile(file, key, zoneId) {
 
 // ═══ PAYMENT ═══
 // ═══ PAYMENT — Opn Payments จริง ═══
-/* เลือก API base ตาม hostname
-   ⚠️ production ต้องยิงไป justsign-api.vercel.app เท่านั้น
-      เพราะ env vars (STRIPE_SECRET_KEY / BEAM_* / TURNSTILE_SECRET) อยู่ที่ project นั้น
-      app.signdee.com ไม่ได้เห็น env ชุดเดียวกัน — เคยลองเปลี่ยนเป็น same-origin แล้ว
-      ทำให้ create-payment-intent พัง 500 บน production (29 ก.ค. 69)
-   ใช้ same-origin เฉพาะ Vercel preview เพื่อให้เทสต์ OCR ได้โดยไม่ติด Turnstile */
-const JUSTSIGN_API = (function(){
-  const h=(location.hostname||'').toLowerCase();
-  if(/\.vercel\.app$/.test(h) && h !== 'justsign-api.vercel.app') return '';   // preview → same-origin
-  return 'https://justsign-api.vercel.app';
-})();
-window.JUSTSIGN_API = JUSTSIGN_API;
+const JUSTSIGN_API = 'https://justsign-api.vercel.app';
 window._OCR_ENABLED = true; // ปิด OCR auto-fill ได้ด้วยการตั้งเป็น false
 // ── เลือก payment provider: 'stripe' หรือ 'opn' ──
 // Stripe = บัญชี Verified แล้ว พร้อมใช้ทันที / Opn = รอ Live mode approval
@@ -7531,11 +7468,6 @@ async function saveToSupabase() {
       // เก็บ row id ไว้ใช้ครั้งต่อไป
       contractRowId = newId;
       localStorage.setItem('ps_contract_row_id', contractRowId);
-
-      // ── ผูกกลับเข้า Workspace ถ้ามาจาก Agreement OS (ทาง A) ──
-      // ⚠️ ห้าม await — การบันทึกสัญญาต้องไม่รอระบบภายนอก
-      // window.SignDeeWS เป็นการอ่าน property จึงไม่ ReferenceError แม้ ws-link.js โหลดไม่ขึ้น
-      try { if (window.SignDeeWS) window.SignDeeWS.bind(newId); } catch (e) {}
     }
 
     console.log('[SignDee] Supabase saved ✓ step', payload.current_step);
@@ -8613,12 +8545,22 @@ initContractReview = function() {
 
 // ── Upsert read token into Supabase row ──
 // ── บีบอัดรูป (ย่อขนาด + JPEG) ก่อนเก็บลง DB เพื่อให้ไฟล์เล็ก ──
-/* บีบอัดตอนบันทึก — ปกติจะได้ JPEG มาแล้วจากตอนอัปโหลด
-   แต่ draft เก่าใน localStorage อาจมี HEIC ค้างอยู่
-   เดิมคืนไฟล์ต้นฉบับเมื่อถอดรหัสไม่ได้ ทำให้ไฟล์ดิบหลุดลง DB
-   ตอนนี้คืน null แทน แล้วผู้เรียกตัดฟิลด์นั้นทิ้งไป ดีกว่าเก็บของที่เปิดไม่ได้ */
-async function _compressPhoto(dataUrl, maxDim, quality) {
-  return await SignDeeImg.toJpeg(dataUrl, { maxEdge: maxDim, quality: quality });
+function _compressPhoto(dataUrl, maxDim, quality) {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width, h = img.height;
+        if (w >= h && w > maxDim) { h = Math.round(h * maxDim / w); w = maxDim; }
+        else if (h > w && h > maxDim) { w = Math.round(w * maxDim / h); h = maxDim; }
+        const c = document.createElement('canvas'); c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    } catch(e) { resolve(dataUrl); }
+  });
 }
 
 // ── เซฟรูปสภาพห้องลง Supabase (ครั้งเดียวต่อ session) เพื่อให้เครื่องผู้เซ็นทางไกลเห็น ──
@@ -8630,13 +8572,9 @@ async function _saveRoomPhotosToSupabase() {
     const payload = {};
     // รูปสภาพห้อง
     const rp = [];
-    let _dropped = 0;
     for (const p of (window._roomPhotos || [])) {
-      const _u = await _compressPhoto(p.dataUrl, 1000, 0.6);
-      if (!_u) { _dropped++; continue; }   // ข้ามรูปที่ถอดรหัสไม่ได้ ดีกว่าเก็บไฟล์ดิบที่เปิดไม่ขึ้น
-      rp.push({ url: _u, category: p.category || '' });
+      rp.push({ url: await _compressPhoto(p.dataUrl, 1000, 0.6), category: p.category || '' });
     }
-    if (_dropped) { try { showToast('⚠️ มี ' + _dropped + ' รูปที่ระบบอ่านไม่ได้ จึงไม่ถูกบันทึก'); } catch(_){} }
     payload.room_photos = rp;
     // สำเนาบัตรประชาชน (ll/tn/tn2)
     payload.ll_card  = (window._llCardData  && window._llCardData.dataUrl)  ? { url: await _compressPhoto(window._llCardData.dataUrl, 1200, 0.6) }  : null;
