@@ -1,0 +1,26 @@
+.git
+node_modules
+_trash
+
+# โฟลเดอร์ซ้ำที่หลุดมาอยู่ที่ราก — ตัวจริงอยู่ใต้ api/commerce/
+admin
+orders
+
+# โครงสร้างซ้ำซ้อนที่ unzip มาผิดที่
+api/commerce/api
+api/commerce/public
+api/commerce/tests
+
+# ไฟล์ทดสอบ ห้ามขึ้น production
+tests
+
+# เอกสาร สคีมา และ snippet — ไม่ควรเปิดสาธารณะ
+*.sql
+*.md
+*.snippet.json
+deploy.txt
+.env
+.env.*
+
+# ���Ǥ��� � �����Ҩ������� api/_lib/ (�ҹ����� A)
+lib
