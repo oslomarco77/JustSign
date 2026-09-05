@@ -154,6 +154,192 @@ async function createBeamCharge(contractId, product) {
   };
 }
 
+/* ══════════════════════════════════════════════════════════════════════
+   STRIPE CONNECT — มัดจำผ่านบัตรเครดิต (DIRECT charge, Platform model)
+   Marketplace ไม่รองรับในไทย → ใช้ Platform (direct charge) เงินเข้าผู้ขายตรง
+   SignDee ไม่ถือเงิน · charge เกิดบนบัญชีผู้ขาย (Stripe-Account header)
+   เสียบผ่าน action ใน endpoint เดิม (Vercel เต็ม 12 function)
+   ทางที่ 3: ผู้ซื้อจ่าย A, ผู้ขายได้ D เต็ม, SignDee net 1.5%
+   controller: losses.payments='stripe' (TH บังคับ — ผู้ขายรับผิด losses) · fees.payer='application' (platform จ่าย Stripe fee แล้วหักคืนจาก application_fee)
+   ══════════════════════════════════════════════════════════════════════ */
+const SB_URL  = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+const SB_KEY  = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const CARD_RATE = 0.0365, CARD_FIXED = 1000, SIGNDEE_RATE = 0.015;   // บัตรในประเทศ 3.65%+฿10 · SignDee 1.5%
+
+function _sbHeaders() {
+  return { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' };
+}
+async function sbSelect(path) {
+  const r = await fetch(`${SB_URL}/rest/v1/${path}`, { headers: _sbHeaders() });
+  if (!r.ok) return [];
+  return r.json().catch(() => []);
+}
+async function sbUpsert(table, row, onConflict) {
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?on_conflict=${onConflict}`, {
+    method: 'POST',
+    headers: { ..._sbHeaders(), Prefer: 'resolution=merge-duplicates,return=representation' },
+    body: JSON.stringify(row),
+  });
+  const j = await r.json().catch(() => []);
+  return Array.isArray(j) ? j[0] : j;
+}
+async function sbPatch(table, match, patch) {
+  const qs = Object.entries(match).map(([k, v]) => `${k}=eq.${encodeURIComponent(v)}`).join('&');
+  const r = await fetch(`${SB_URL}/rest/v1/${table}?${qs}`, {
+    method: 'PATCH', headers: { ..._sbHeaders(), Prefer: 'return=representation' }, body: JSON.stringify(patch),
+  });
+  const j = await r.json().catch(() => []);
+  return Array.isArray(j) ? j[0] : j;
+}
+
+// เรียก Stripe API แบบ form-encoded (รองรับ Stripe-Account header สำหรับ Connect)
+async function stripeReq(method, path, params, opts) {
+  const headers = { Authorization: `Bearer ${STRIPE_SECRET_KEY}` };
+  if (opts && opts.stripeAccount) headers['Stripe-Account'] = opts.stripeAccount;
+  let url = 'https://api.stripe.com' + path, body;
+  if (method === 'GET') {
+    if (params) url += '?' + toForm(params).toString();
+  } else {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    body = params ? toForm(params).toString() : '';
+    if (opts && opts.idempotencyKey) headers['Idempotency-Key'] = String(opts.idempotencyKey);
+  }
+  const r = await fetch(url, { method, headers, body });
+  const j = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, data: j };
+}
+
+// คำนวณยอดที่ผู้ซื้อจ่าย (ทางที่ 3) — ทุกอย่างเป็นสตางค์
+function depositMath(depositSatang) {
+  const D = Math.round(depositSatang);
+  const A = Math.round((D * (1 + SIGNDEE_RATE) + CARD_FIXED) / (1 - CARD_RATE));
+  return { buyerPays: A, sellerGets: D, applicationFee: A - D };
+}
+
+// ── action: connect_onboard — สร้าง Express account (ถ้ายังไม่มี) + Account Link ──
+async function handleConnectOnboard(body, res) {
+  const uid = body.member_uid;
+  if (!uid) return res.status(400).json({ error: 'member_uid required' });
+  let rows = await sbSelect(`sd_connect_accounts?member_uid=eq.${encodeURIComponent(uid)}&select=*&limit=1`);
+  let acct = rows[0];
+  let acctId = acct && acct.stripe_account_id;
+
+  if (!acctId) {
+    const cr = await stripeReq('POST', '/v1/accounts', {
+      country: 'TH',
+      email: body.email || undefined,
+      capabilities: { card_payments: { requested: true }, transfers: { requested: true } },   // Stripe บังคับ card_payments ต้องมี transfers คู่กัน
+      business_type: 'individual',
+      // TH: platform ห้ามรับผิด losses → ตั้ง controller ให้ผู้ขายรับผิดเอง (losses.payments='stripe')
+      // fees.payer='application' = platform จ่าย Stripe fee แล้วหักคืนผ่าน application_fee (ทางที่ 3)
+      // TH: express บังคับ platform คุม losses (ขัดกับกฎไทย) → ใช้ dashboard 'none'
+      //  losses.payments='stripe' = ผู้ขายรับผิด · requirement_collection='stripe' = Stripe โฮสต์ onboarding/KYC
+      controller: {
+        fees: { payer: 'application' },
+        losses: { payments: 'stripe' },
+        requirement_collection: 'stripe',
+        stripe_dashboard: { type: 'none' },
+      },
+    });
+    if (!cr.ok) return res.status(502).json({ error: cr.data.error?.message || 'stripe account create failed' });
+    acctId = cr.data.id;
+    await sbUpsert('sd_connect_accounts', {
+      member_uid: uid, email: body.email || null, line_user_id: body.line_user_id || null,
+      stripe_account_id: acctId, updated_at: new Date().toISOString(),
+    }, 'member_uid');
+  }
+
+  const link = await stripeReq('POST', '/v1/account_links', {
+    account: acctId,
+    refresh_url: body.refresh_url || 'https://sale.signdee.com/?connect=refresh',
+    return_url:  body.return_url  || 'https://sale.signdee.com/?connect=done',
+    type: 'account_onboarding',
+  });
+  if (!link.ok) return res.status(502).json({ error: link.data.error?.message || 'account_link failed' });
+  return res.status(200).json({ url: link.data.url, stripe_account_id: acctId });
+}
+
+// ── action: connect_status — เช็คสถานะบัญชี + ซิงก์ลง DB ──
+async function handleConnectStatus(body, res) {
+  const uid = body.member_uid;
+  if (!uid) return res.status(400).json({ error: 'member_uid required' });
+  const rows = await sbSelect(`sd_connect_accounts?member_uid=eq.${encodeURIComponent(uid)}&select=*&limit=1`);
+  const acct = rows[0];
+  if (!acct || !acct.stripe_account_id) return res.status(200).json({ connected: false });
+
+  const a = await stripeReq('GET', '/v1/accounts/' + acct.stripe_account_id);
+  if (!a.ok) return res.status(200).json({ connected: true, stripe_account_id: acct.stripe_account_id, charges_enabled: false });
+  const d = a.data;
+  await sbPatch('sd_connect_accounts', { member_uid: uid }, {
+    charges_enabled: !!d.charges_enabled, payouts_enabled: !!d.payouts_enabled,
+    details_submitted: !!d.details_submitted,
+    requirements_due: (d.requirements && d.requirements.currently_due) || [],
+    updated_at: new Date().toISOString(),
+  });
+  return res.status(200).json({
+    connected: true, stripe_account_id: acct.stripe_account_id,
+    charges_enabled: !!d.charges_enabled, payouts_enabled: !!d.payouts_enabled,
+    details_submitted: !!d.details_submitted,
+    requirements_due: (d.requirements && d.requirements.currently_due) || [],
+  });
+}
+
+// ── action: create_deposit — Checkout Session (บัตร) destination charge เข้าบัญชีผู้ขาย ──
+async function handleCreateDeposit(body, res) {
+  const contractId = body.contract_id;
+  if (!contractId) return res.status(400).json({ error: 'contract_id required' });
+  const rows = await sbSelect(`sale_contracts?id=eq.${encodeURIComponent(contractId)}&select=id,deposit_amt,deposit_stripe_account,condo_name,unit_no&limit=1`);
+  const c = rows[0];
+  if (!c) return res.status(404).json({ error: 'contract not found' });
+  const sellerAcct = body.stripe_account || c.deposit_stripe_account;
+  if (!sellerAcct) return res.status(400).json({ error: 'ผู้ขายยังไม่ได้เปิดรับชำระด้วยบัตร' });
+  const depositSatang = Math.round(Number(c.deposit_amt || 0) * 100);
+  if (depositSatang < 2000) return res.status(400).json({ error: 'ยอดมัดจำต่ำเกินไป' });
+
+  const m = depositMath(depositSatang);
+  const base = body.return_base || 'https://sale.signdee.com/';
+  const sep = base.includes('?') ? '&' : '?';
+  const sess = await stripeReq('POST', '/v1/checkout/sessions', {
+    mode: 'payment',
+    payment_method_types: ['card'],
+    'line_items[0][price_data][currency]': 'thb',
+    'line_items[0][price_data][product_data][name]': 'เงินมัดจำ ' + (c.condo_name || 'ห้องชุด') + (c.unit_no ? ' ห้อง ' + c.unit_no : ''),
+    'line_items[0][price_data][unit_amount]': String(m.buyerPays),
+    'line_items[0][quantity]': '1',
+    'payment_intent_data[application_fee_amount]': String(m.applicationFee),
+    'payment_intent_data[metadata][contract_id]': contractId,
+    'payment_intent_data[metadata][kind]': 'sale_deposit',
+    success_url: base + sep + 'deposit_session={CHECKOUT_SESSION_ID}',
+    cancel_url:  base + sep + 'deposit_cancel=1',
+  }, { stripeAccount: sellerAcct });   // direct charge: charge เกิดบนบัญชีผู้ขาย (Platform model — ไทยรองรับแบบนี้)
+  if (!sess.ok) return res.status(502).json({ error: sess.data.error?.message || 'checkout session failed' });
+  return res.status(200).json({
+    checkout_url: sess.data.url, session_id: sess.data.id,
+    buyer_pays: m.buyerPays, seller_gets: m.sellerGets, fee: m.buyerPays - m.sellerGets,
+  });
+}
+
+// ── action: verify_deposit — ยืนยัน Checkout Session แล้วเขียน deposit_paid ──
+async function handleVerifyDeposit(body, res) {
+  const contractId = body.contract_id, sessionId = body.session_id;
+  if (!contractId || !sessionId) return res.status(400).json({ error: 'contract_id + session_id required' });
+  const crow = (await sbSelect(`sale_contracts?id=eq.${encodeURIComponent(contractId)}&select=deposit_stripe_account&limit=1`))[0];
+  const sellerAcct = (crow && crow.deposit_stripe_account) || body.stripe_account;
+  const s = await stripeReq('GET', '/v1/checkout/sessions/' + encodeURIComponent(sessionId), null, sellerAcct ? { stripeAccount: sellerAcct } : undefined);
+  if (!s.ok) return res.status(502).json({ error: 'session lookup failed' });
+  const paid = s.data.payment_status === 'paid';
+  if (!paid) return res.status(200).json({ paid: false, status: s.data.payment_status });
+  const patch = {
+    deposit_pay_via: 'card',
+    deposit_paid_at: new Date().toISOString(),
+    deposit_amount_paid: s.data.amount_total,
+    deposit_charge_id: s.data.payment_intent || sessionId,
+    deposit_payout_status: 'pending',
+  };
+  await sbPatch('sale_contracts', { id: contractId }, patch);
+  return res.status(200).json({ paid: true, amount_total: s.data.amount_total });
+}
+
 module.exports = async (req, res) => {
   // --- CORS (ปรับ '*' เป็นโดเมน signdee จริงได้ทีหลังเพื่อความปลอดภัย) ---
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -166,6 +352,21 @@ module.exports = async (req, res) => {
 
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    /* ⚠️ ห้ามย้ายการตรวจ STRIPE_SECRET_KEY ขึ้นไปไว้ต้น handler
+       เดิมตรวจตั้งแต่ต้นทำให้คำขอที่ใช้ Beam (QR PromptPay) ถูกบล็อกไปด้วย
+       ทั้งที่ไม่ได้แตะ Stripe เลย → สร้าง QR ไม่ได้ทั้งระบบ
+       ตรวจเฉพาะ action ของ Stripe Connect (มัดจำผ่านบัตร) ที่ใช้ key จริง */
+    const _stripeOnlyActions = ['connect_onboard', 'connect_status', 'create_deposit', 'verify_deposit'];
+    if (_stripeOnlyActions.indexOf(body.action) !== -1 && !STRIPE_SECRET_KEY) {
+      return res.status(500).json({ error: 'Missing STRIPE_SECRET_KEY' });
+    }
+
+    // ── Stripe Connect (มัดจำผ่านบัตร) — จาก origin/main ──
+    if (body.action === 'connect_onboard') return await handleConnectOnboard(body, res);
+    if (body.action === 'connect_status')  return await handleConnectStatus(body, res);
+    if (body.action === 'create_deposit')  return await handleCreateDeposit(body, res);
+    if (body.action === 'verify_deposit')  return await handleVerifyDeposit(body, res);
+
     // ── DEV skip (ต้องมี secret ตรงกับ ENV) ──
     if (body.action === 'dev_skip') return await handleDevSkip(body, res);
 
